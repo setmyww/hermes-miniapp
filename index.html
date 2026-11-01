@@ -122,6 +122,26 @@
     backdrop-filter: blur(12px);
   }
   .loc.sel .more { background: #fff; color: #000; }
+
+  /* unavailable location: dimmed scene crossed by two hazard tapes with a running caption */
+  .loc.off svg.scene { filter: grayscale(1) brightness(.42); }
+  .loc.off .name { opacity: .3; }
+  .loc.off:active { transform: none; }
+  .tape { position: absolute; left: -12%; width: 124%; height: 30px; z-index: 3; overflow: hidden;
+          background: #f5c400; color: #111; display: flex; align-items: center;
+          box-shadow: 0 6px 18px rgba(0,0,0,.55); transform: translateY(-50%) rotate(var(--rot));
+          animation: tapeIn .7s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 70ms + var(--d)); }
+  .tape::before, .tape::after { content: ""; position: absolute; left: 0; right: 0; height: 5px;
+          background: repeating-linear-gradient(-45deg, #111 0 8px, #f5c400 8px 16px); }
+  .tape::before { top: 0; } .tape::after { bottom: 0; }
+  .tape-a { top: 46%; --rot: -10deg; --d: .25s; }
+  .tape-b { top: 60%; --rot: 7deg; --d: .4s; }
+  .tape span { white-space: nowrap; font: 800 12px/1 "Inter", sans-serif; letter-spacing: .22em; padding-left: 12px;
+               animation: tapeRun 9s linear infinite; }
+  .tape-b span { animation-direction: reverse; animation-duration: 11s; }
+  #locList.settled .tape { animation: none; }
+  @keyframes tapeIn { from { transform: translateY(-50%) rotate(var(--rot)) scaleX(0); } }
+  @keyframes tapeRun { to { transform: translateX(-50%); } }
   .loc .name {
     position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 24%); z-index: 1; white-space: nowrap;
     font: 700 min(112px, calc(104cqw / (var(--len) * .6))) / 1 var(--display); letter-spacing: -.045em;
@@ -505,9 +525,9 @@ const DEMO_META = {
   ],
   locations: [
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38 },
-    { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42 },
-    { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31 },
-    { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57 },
+    { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42, available: false },
+    { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31, available: false },
+    { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3,
 };
@@ -610,24 +630,45 @@ function renderHome() {
   $("subLink").textContent = me.sub_link || "Ключ придёт сообщением в чат с ботом";
   $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
   const loc = meta.locations[selectedLoc];
-  if (loc) $("statPing").firstChild.textContent = loc.ping;
+  $("statPing").firstChild.textContent = loc && isAvail(loc) ? loc.ping : "—";
 }
 
+// a location without the flag (older bot data) counts as available
+const isAvail = (l) => l.available !== false;
+
+function pickAvailable() {
+  if (!meta.locations[selectedLoc] || !isAvail(meta.locations[selectedLoc])) {
+    selectedLoc = meta.locations.findIndex(isAvail);
+  }
+}
+
+const TAPE_TEXT = Array(6).fill("НЕДОСТУПНО · СКОРО ·").join(" ");
+const LOCK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+
 function renderLocations() {
-  $("locCount").textContent = `${meta.locations.length} ${plural(meta.locations.length, "сервер", "сервера", "серверов")}`;
-  $("locList").innerHTML = meta.locations.map((l, i) => `
-    <div class="loc ${i === selectedLoc ? "sel" : ""}" data-i="${i}" style="--i:${i + 1}">
+  pickAvailable();
+  const avail = meta.locations.filter(isAvail).length;
+  $("locCount").textContent = `${avail} из ${meta.locations.length} доступно`;
+  $("locList").innerHTML = meta.locations.map((l, i) => {
+    const off = !isAvail(l);
+    return `
+    <div class="loc ${i === selectedLoc ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
       ${scene(l.scene)}
-      <span class="chip">${l.city} · ${l.ping} ms</span>
-      <span class="more">${i === selectedLoc
+      <span class="chip">${l.city} · ${off ? "недоступно" : l.ping + " ms"}</span>
+      <span class="more">${off ? LOCK : i === selectedLoc
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'}</span>
       <div class="name" style="--len:${l.name.length}">${l.name}</div>
-    </div>`).join("");
+      ${off ? `<div class="tape tape-a"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>
+               <div class="tape tape-b"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>` : ""}
+    </div>`;
+  }).join("");
   $("locList").querySelectorAll(".loc").forEach((el) => el.onclick = () => {
+    const l = meta.locations[+el.dataset.i];
+    if (!isAvail(l)) { tg?.HapticFeedback?.notificationOccurred("warning"); return toast(`${l.name}: локация пока недоступна`); }
     // re-rendering after a pick shouldn't replay the entrance animation
     selectedLoc = +el.dataset.i; haptic(); $("locList").classList.add("settled"); renderLocations(); renderHome();
-    toast(`${meta.locations[selectedLoc].name} выбрана`);
+    toast(`${l.name} выбрана`);
   });
 }
 
@@ -668,7 +709,7 @@ function renderProfile() {
   $("demoNote").hidden = !DEMO;
 }
 
-function render() { renderHome(); renderLocations(); renderPlans(); renderProfile(); }
+function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderProfile(); }
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
