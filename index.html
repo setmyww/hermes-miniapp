@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>HERMES</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --surface: #131417;
+    --surface-2: #1b1c20;
+    --line: rgba(255,255,255,.08);
+    --line-2: rgba(255,255,255,.14);
+    --text: #f4f4f5;
+    --muted: #8b8d93;
+    --dim: #55575d;
+    --green: #5ee0a0;
+    --radius: 26px;
+    --display: "Inter Tight", "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 15px/1.4 "Inter", system-ui, sans-serif;
+    min-height: 100vh;
+    background:
+      radial-gradient(120% 60% at 50% -10%, #1d1a17 0%, transparent 60%),
+      var(--bg);
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+  .app { max-width: 480px; margin: 0 auto; padding: 14px 16px 120px; }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 700 20px/1 var(--display); letter-spacing: -.02em; }
+  .brand svg { width: 22px; height: 22px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px;
+    border-radius: 99px; border: 1px solid var(--line-2); font-size: 12.5px; color: var(--muted);
+    background: rgba(255,255,255,.03); backdrop-filter: blur(10px);
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+  .pill.on { color: var(--text); }
+  .pill.on .dot { background: var(--green); box-shadow: 0 0 10px var(--green); }
+
+  .view { display: none; animation: in .35s ease; }
+  .view.active { display: block; }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  h1.title { font: 600 34px/1.05 var(--display); letter-spacing: -.03em; margin: 6px 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+
+  /* hero (grid + starburst, Golden Suisse vibe) */
+  .hero {
+    position: relative; border-radius: var(--radius); overflow: hidden; background: #050505;
+    border: 1px solid var(--line); aspect-ratio: 1 / 1.02; padding: 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .hero .grid { position: absolute; inset: 0; pointer-events: none; }
+  .hero .burst {
+    position: absolute; left: 50%; top: 46%; width: 46%; transform: translate(-50%, -50%);
+    transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+  .hero.on .burst { transform: translate(-50%, -50%) rotate(45deg); }
+  .hero-top, .hero-bottom { position: relative; display: flex; justify-content: space-between; align-items: flex-end; }
+  .hero-top { align-items: flex-start; font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  .days { font: 500 92px/.85 var(--display); letter-spacing: -.06em; }
+  .days small { display: block; font: 500 13px/1.4 "Inter"; letter-spacing: 0; color: var(--muted); margin-top: 10px; }
+  .connect {
+    width: 104px; height: 104px; border-radius: 50%; background: #fff; color: #000;
+    font: 600 10.5px/1.2 "Inter"; letter-spacing: .05em; text-transform: uppercase; padding: 0 10px;
+    display: grid; place-items: center; text-align: center; flex: none;
+    box-shadow: 0 10px 40px rgba(255,255,255,.12); transition: transform .15s;
+  }
+  .connect:active { transform: scale(.94); }
+
+  /* stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 14px; }
+  .stat b { display: block; font: 600 24px/1 var(--display); letter-spacing: -.03em; margin-top: 10px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card h3 { margin: 0; font: 600 17px/1.2 var(--display); letter-spacing: -.01em; }
+  .card p { margin: 6px 0 0; color: var(--muted); font-size: 13.5px; }
+  .btn {
+    height: 48px; padding: 0 20px; border-radius: 99px; background: #fff; color: #000;
+    font-weight: 600; font-size: 14.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
+  .btn.block { width: 100%; }
+  .btn:active { opacity: .8; }
+  .trial { background: linear-gradient(135deg, #1f2a24, #14171a 60%); border-color: rgba(94,224,160,.18); }
+  .link-box {
+    margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: #0c0d0f; border: 1px dashed var(--line-2);
+    font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all;
+  }
+
+  /* locations (Panora vibe) */
+  .loc-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 16px; }
+  .loc-head h1 { margin: 0; }
+  .loc {
+    position: relative; height: 196px; border-radius: var(--radius); overflow: hidden; margin-bottom: 12px;
+    container-type: inline-size; border: 1px solid var(--line); transition: transform .2s;
+  }
+  .loc:active { transform: scale(.985); }
+  .loc svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .loc::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.35)); }
+  .loc .chip {
+    position: absolute; top: 14px; left: 14px; z-index: 2; height: 28px; padding: 0 12px; border-radius: 99px;
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #fff;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.32); backdrop-filter: blur(12px);
+  }
+  .loc .more {
+    position: absolute; top: 14px; right: 14px; z-index: 2; width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.32);
+    backdrop-filter: blur(12px);
+  }
+  .loc.sel .more { background: #fff; color: #000; }
+  .loc .name {
+    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 24%); z-index: 1; white-space: nowrap;
+    font: 700 min(112px, calc(104cqw / (var(--len) * .6))) / 1 var(--display); letter-spacing: -.045em;
+    background: linear-gradient(180deg, rgba(255,255,255,.95) 10%, rgba(255,255,255,.55) 55%, rgba(255,255,255,.2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,.25));
+  }
+
+  /* plans (Skillset vibe) */
+  .seg { display: flex; gap: 6px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; margin-bottom: 14px; }
+  .seg button { flex: 1; height: 38px; border-radius: 99px; font-size: 13.5px; color: var(--muted); font-weight: 500; transition: .2s; }
+  .seg button.on { background: #f4f4f5; color: #000; }
+  .price-card { background: #f2f2f0; color: #0a0a0a; border-radius: var(--radius); padding: 22px; margin-bottom: 12px; }
+  .price-card .lbl { font-size: 13px; color: #6b6b6b; }
+  .price { font: 600 76px/.9 var(--display); letter-spacing: -.06em; margin: 18px 0 6px; display: flex; align-items: baseline; gap: 8px; }
+  .price span { font-size: 22px; letter-spacing: -.02em; }
+  .per { font-size: 13px; color: #6b6b6b; }
+  .feat { list-style: none; padding: 0; margin: 20px 0 22px; display: grid; gap: 10px; }
+  .feat li { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  .feat li::before { content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none; background: #0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/11px no-repeat; }
+  .price-card .btn { background: #0a0a0a; color: #fff; }
+  .badge { font-size: 11.5px; padding: 4px 10px; border-radius: 99px; background: #0a0a0a; color: #fff; }
+
+  /* profile */
+  .me { display: flex; align-items: center; gap: 14px; margin: 6px 0 20px; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #2b2d33, #121316); border: 1px solid var(--line-2); display: grid; place-items: center; font: 600 22px var(--display); }
+  .me b { font: 600 20px/1.2 var(--display); display: block; }
+  .me span { color: var(--muted); font-size: 13px; }
+  .list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+  .list button { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px 18px; text-align: left; border-bottom: 1px solid var(--line); }
+  .list button:last-child { border-bottom: 0; }
+  .list svg { width: 20px; height: 20px; color: var(--muted); flex: none; }
+  .list .grow { flex: 1; }
+  .list .count { font-size: 12px; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; }
+  .ref-num { font: 500 64px/.9 var(--display); letter-spacing: -.05em; margin: 14px 0 4px; }
+
+  /* tab bar */
+  .tabs {
+    position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: flex; gap: 2px; padding: 5px; border-radius: 99px; z-index: 10;
+    background: rgba(28,29,33,.72); border: 1px solid var(--line-2);
+    backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+  }
+  .tabs button { width: 74px; height: 52px; border-radius: 99px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; color: var(--muted); transition: .2s; }
+  .tabs button svg { width: 20px; height: 20px; }
+  .tabs button.on { background: rgba(255,255,255,.12); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+
+  .toast {
+    position: fixed; left: 50%; top: 18px; transform: translate(-50%, -80px); z-index: 20;
+    background: #fff; color: #000; padding: 10px 18px; border-radius: 99px; font-size: 13.5px; font-weight: 500;
+    transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .toast.show { transform: translate(-50%, 0); }
+  .demo { font-size: 11px; color: var(--dim); text-align: center; margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M12 2v8M12 14v8M2 12h8M14 12h8M5 5l4.5 4.5M14.5 14.5L19 19M19 5l-4.5 4.5M9.5 14.5L5 19"/></svg>
+      HERMES
+    </div>
+    <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">—</span></div>
+  </header>
+
+  <!-- HOME -->
+  <section class="view active" id="v-home">
+    <div class="hero" id="hero">
+      <svg class="grid" viewBox="0 0 100 102" preserveAspectRatio="none" stroke="rgba(255,255,255,.07)" stroke-width=".25">
+        <line x1="50" y1="0" x2="50" y2="102"/><line x1="0" y1="47" x2="100" y2="47"/>
+        <line x1="0" y1="0" x2="100" y2="94"/><line x1="100" y1="0" x2="0" y2="94"/>
+      </svg>
+      <svg class="burst" viewBox="0 0 100 100" stroke="#fff" stroke-width="3.2" fill="none">
+        <path d="M50 4v36M50 60v36M4 50h36M60 50h36M18 18l17 17M65 65l17 17M82 18L65 35M35 65L18 82"/>
+      </svg>
+      <div class="hero-top"><span id="heroLabel">Подписка</span><span id="heroUntil"></span></div>
+      <div class="hero-bottom">
+        <div class="days"><span id="daysLeft">0</span><small id="daysCaption">дней осталось</small></div>
+        <button class="connect" id="connectBtn">Подклю&shy;чить</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span>Устройства</span><b id="statDevices">3</b></div>
+      <div class="stat"><span>Трафик</span><b>∞</b></div>
+      <div class="stat"><span>Пинг</span><b id="statPing">31<small style="font-size:13px;color:var(--muted)"> ms</small></b></div>
+    </div>
+
+    <div class="card trial" id="trialCard" hidden>
+      <div class="row">
+        <div><h3>Попробуйте бесплатно</h3><p id="trialText">3 дня полного доступа</p></div>
+        <button class="btn" id="trialBtn">Начать</button>
+      </div>
+    </div>
+
+    <div class="card" id="keyCard" hidden>
+      <div class="row"><h3>Ваш ключ</h3><button class="btn ghost" style="height:36px;font-size:13px" id="copyBtn">Копировать</button></div>
+      <div class="link-box" id="subLink"></div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div><h3>Как подключить</h3><p>Happ, v2rayTun, Hiddify — 3 шага</p></div>
+        <button class="btn ghost" style="height:40px" data-go="profile">Открыть</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCATIONS -->
+  <section class="view" id="v-locations">
+    <div class="loc-head">
+      <h1 class="title">Локации</h1>
+      <span class="pill" id="locCount">4 сервера</span>
+    </div>
+    <div id="locList"></div>
+  </section>
+
+  <!-- PLANS -->
+  <section class="view" id="v-plans">
+    <h1 class="title">Тарифы</h1>
+    <p class="sub">Без лимитов трафика. Оплата звёздами Telegram.</p>
+    <div class="seg" id="seg"></div>
+    <div class="price-card">
+      <div class="row"><span class="lbl" id="planTitle">1 месяц</span><span class="badge" id="planBadge" hidden>Выгодно</span></div>
+      <div class="price"><b id="planPrice">150</b><span>⭐</span></div>
+      <div class="per" id="planPer">≈ 5 ⭐ в день</div>
+      <ul class="feat">
+        <li>Все локации</li>
+        <li id="featDevices">До 3 устройств</li>
+        <li>VLESS + Reality — обходит блокировки</li>
+        <li>Без рекламы и логов</li>
+      </ul>
+      <button class="btn block" id="buyBtn">Оплатить</button>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="view" id="v-profile">
+    <div class="me">
+      <div class="avatar" id="avatar">H</div>
+      <div><b id="meName">Гость</b><span id="meId"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h3>Пригласить друга</h3><span class="pill" id="refBonus">+7 дней</span></div>
+      <div class="ref-num" id="refCount">0</div>
+      <p>друзей приглашено. Бонус начисляется, когда друг оплатит подписку.</p>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn block" id="shareBtn">Поделиться</button>
+        <button class="btn ghost" id="copyRefBtn">Копировать</button>
+      </div>
+    </div>
+
+    <div class="list">
+      <button data-app="ios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span class="grow">iPhone / iPad — Happ</span><span class="count">→</span></button>
+      <button data-app="android"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 3l-1-2M15 3l1-2"/></svg><span class="grow">Android — v2rayTun</span><span class="count">→</span></button>
+      <button data-app="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="grow">Windows / macOS — Hiddify</span><span class="count">→</span></button>
+    </div>
+
+    <div class="list">
+      <button id="supportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-6h4M4 13h4v6H6a2 2 0 01-2-2v-4z"/></svg><span class="grow">Поддержка</span><span class="count">→</span></button>
+      <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg><span class="grow">Продлить подписку</span><span class="count">→</span></button>
+    </div>
+    <p class="demo" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
+  </section>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/></svg>Главная</button>
+  <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
+  <button data-go="plans"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="17" rx="1"/></svg>Тарифы</button>
+  <button data-go="profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>Профиль</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+const initData = tg?.initData || "";
+// STATIC: page hosted without a backend (e.g. GitHub Pages); the bot passes the user's
+// status in ?s= and actions go back to the bot as t.me/<bot>?start=<action> deep links.
+const STATE = new URLSearchParams(location.search).get("s");
+const STATIC = !!STATE;
+const DEMO = !STATIC && !initData;
+const $ = (id) => document.getElementById(id);
+
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0a0b0d"); tg.setBackgroundColor?.("#0a0b0d"); }
+
+const DEMO_ME = {
+  id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
+  trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3,
+  referrals: 4, referral_bonus_days: 7,
+};
+const DEMO_META = {
+  plans: [
+    { id: "m1", title: "1 месяц", days: 30, stars: 150 },
+    { id: "m3", title: "3 месяца", days: 90, stars: 400 },
+    { id: "m6", title: "6 месяцев", days: 180, stars: 750 },
+    { id: "y1", title: "12 месяцев", days: 365, stars: 1350 },
+  ],
+  locations: [
+    { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38 },
+    { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42 },
+    { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31 },
+    { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57 },
+  ],
+  bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3,
+};
+
+let me = DEMO_ME, meta = DEMO_META, plan = "m1", selectedLoc = 0;
+
+function decodeState(s) {
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
+  const st = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+  return {
+    me: {
+      id: st.u, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
+      sub_link: null, device_limit: st.n, referrals: st.r, referral_bonus_days: st.b,
+    },
+    meta: {
+      plans: st.p.map(([id, title, days, stars]) => ({ id, title, days, stars })),
+      locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td,
+    },
+  };
+}
+
+// Hands an action to the bot: opens its chat with /start <action>
+function toBot(action) {
+  const url = `https://t.me/${meta.bot_username}?start=${action}`;
+  if (tg?.openTelegramLink) { tg.openTelegramLink(url); setTimeout(() => tg.close(), 300); }
+  else window.open(url, "_blank");
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", "X-Init-Data": initData, ...(opts.headers || {}) },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function haptic(type = "light") { tg?.HapticFeedback?.impactOccurred(type); }
+function toast(text) {
+  const t = $("toast"); t.textContent = text; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1800);
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); } catch {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  haptic("medium"); toast("Скопировано");
+}
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
+
+/* landscape artwork per location */
+function scene(kind) {
+  const s = {
+    alps: `<defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f5f9e"/><stop offset="1" stop-color="#5fa7d9"/></linearGradient>
+      <linearGradient id="a2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#a9b4bf"/></linearGradient></defs>
+      <rect width="400" height="220" fill="url(#a1)"/>
+      <path d="M-10 220 L120 120 L170 140 L250 50 L300 90 L330 80 L420 170 L420 220Z" fill="url(#a2)"/>
+      <path d="M250 50 L230 110 L200 130 L170 140 L250 50Z M250 50 L275 120 L300 90Z" fill="#6f7f8f" opacity=".55"/>
+      <path d="M-10 220 L80 170 L160 190 L260 160 L420 200 L420 220Z" fill="#41525f"/>`,
+    hills: `<defs><linearGradient id="h1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb4c4"/><stop offset="1" stop-color="#dfe5e8"/></linearGradient></defs>
+      <rect width="400" height="220" fill="url(#h1)"/>
+      <path d="M-10 150 Q90 70 200 80 T420 110 L420 220 L-10 220Z" fill="#4f7a3c"/>
+      <path d="M-10 150 Q90 70 200 80 Q150 120 120 150Z" fill="#6b9450" opacity=".7"/>
+      <path d="M-10 190 Q120 140 260 165 T420 160 L420 220 L-10 220Z" fill="#2f4f25"/>`,
+    dunes: `<defs><linearGradient id="d1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d98bb"/><stop offset="1" stop-color="#c7b7a8"/></linearGradient>
+      <linearGradient id="d2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c0602f"/><stop offset="1" stop-color="#8f3d1d"/></linearGradient></defs>
+      <rect width="400" height="220" fill="url(#d1)"/>
+      <path d="M-10 160 Q120 150 230 70 Q300 110 420 140 L420 220 L-10 220Z" fill="url(#d2)"/>
+      <path d="M230 70 Q260 130 200 220 L420 220 L420 140 Q300 110 230 70Z" fill="#6e2c14" opacity=".55"/>
+      <path d="M-10 195 Q140 160 300 200 L300 220 L-10 220Z" fill="#a8502a"/>`,
+    fjord: `<defs><linearGradient id="f1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22374c"/><stop offset="1" stop-color="#7a98ae"/></linearGradient></defs>
+      <rect width="400" height="220" fill="url(#f1)"/>
+      <path d="M-10 160 L40 70 L90 100 L150 40 L190 150 Z" fill="#1d2a33"/>
+      <path d="M200 150 L260 60 L300 90 L350 30 L420 120 L420 150Z" fill="#253540"/>
+      <rect y="150" width="400" height="70" fill="#3e5b6e"/>
+      <path d="M0 150 L190 150 L150 200 L90 175 L40 205Z M210 150 L420 150 L420 175 L350 210 L300 185 L260 205Z" fill="#2b4252" opacity=".7"/>`,
+  };
+  return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">${s[kind] || s.alps}</svg>`;
+}
+
+function renderHome() {
+  const on = me.active;
+  $("statusPill").classList.toggle("on", on);
+  $("statusText").textContent = on ? "Активна" : "Не активна";
+  $("hero").classList.toggle("on", on);
+  $("daysLeft").textContent = me.days_left;
+  $("daysCaption").textContent = on ? `${plural(me.days_left, "день", "дня", "дней")} осталось` : "подписка не активна";
+  $("heroUntil").textContent = on ? "до " + new Date(me.expires_at * 1000).toLocaleDateString("ru-RU") : "";
+  $("connectBtn").innerHTML = on ? "Подклю&shy;чить" : "Купить";
+  $("statDevices").textContent = me.device_limit;
+  $("trialCard").hidden = !me.trial_available;
+  $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
+  $("keyCard").hidden = !(on && (me.sub_link || STATIC));
+  $("subLink").textContent = me.sub_link || "Ключ придёт сообщением в чат с ботом";
+  $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
+  const loc = meta.locations[selectedLoc];
+  if (loc) $("statPing").firstChild.textContent = loc.ping;
+}
+
+function renderLocations() {
+  $("locCount").textContent = `${meta.locations.length} ${plural(meta.locations.length, "сервер", "сервера", "серверов")}`;
+  $("locList").innerHTML = meta.locations.map((l, i) => `
+    <div class="loc ${i === selectedLoc ? "sel" : ""}" data-i="${i}">
+      ${scene(l.scene)}
+      <span class="chip">${l.city} · ${l.ping} ms</span>
+      <span class="more">${i === selectedLoc
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'}</span>
+      <div class="name" style="--len:${l.name.length}">${l.name}</div>
+    </div>`).join("");
+  $("locList").querySelectorAll(".loc").forEach((el) => el.onclick = () => {
+    selectedLoc = +el.dataset.i; haptic(); renderLocations(); renderHome();
+    toast(`${meta.locations[selectedLoc].name} выбрана`);
+  });
+}
+
+function renderPlans() {
+  $("seg").innerHTML = meta.plans.map((p) =>
+    `<button class="${p.id === plan ? "on" : ""}" data-p="${p.id}">${p.days >= 365 ? "Год" : Math.round(p.days / 30) + " мес"}</button>`).join("");
+  $("seg").querySelectorAll("button").forEach((b) => b.onclick = () => { plan = b.dataset.p; haptic(); renderPlans(); });
+  const p = meta.plans.find((x) => x.id === plan);
+  const base = meta.plans[0].stars / meta.plans[0].days;
+  const save = Math.round((1 - p.stars / p.days / base) * 100);
+  $("planTitle").textContent = p.title;
+  $("planPrice").textContent = p.stars;
+  $("planPer").textContent = `≈ ${(p.stars / p.days).toFixed(1)} ⭐ в день`;
+  $("planBadge").hidden = save < 5;
+  $("planBadge").textContent = `−${save}%`;
+  $("featDevices").textContent = `До ${me.device_limit} устройств`;
+}
+
+function renderProfile() {
+  const u = tg?.initDataUnsafe?.user;
+  const name = u ? [u.first_name, u.last_name].filter(Boolean).join(" ") : "Гость";
+  $("meName").textContent = name;
+  $("meId").textContent = u?.username ? "@" + u.username : (u ? "ID " + u.id : "демо-аккаунт");
+  $("avatar").textContent = name[0]?.toUpperCase() || "H";
+  $("refCount").textContent = me.referrals;
+  $("refBonus").textContent = `+${me.referral_bonus_days} дней`;
+  $("demoNote").hidden = !DEMO;
+}
+
+function render() { renderHome(); renderLocations(); renderPlans(); renderProfile(); }
+
+function go(view) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "v-" + view));
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === view));
+  window.scrollTo({ top: 0 }); haptic();
+}
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
+
+const refLink = () => `https://t.me/${meta.bot_username}?start=ref${me.id}`;
+
+$("connectBtn").onclick = () => {
+  if (!me.active) return go("plans");
+  if (!me.sub_link) return toBot("key");
+  // Happ deep link imports the subscription in one tap; fall back to copying.
+  if (tg?.openLink) tg.openLink("happ://add/" + me.sub_link); else copy(me.sub_link);
+};
+$("copyBtn").onclick = () => me.sub_link ? copy(me.sub_link) : toBot("key");
+$("copyRefBtn").onclick = () => copy(refLink());
+$("shareBtn").onclick = () => {
+  const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
+  tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
+};
+$("supportBtn").onclick = () => {
+  const url = `https://t.me/${meta.support}`;
+  tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
+};
+const APPS = {
+  ios: "https://apps.apple.com/app/happ-proxy-utility/id6504287215",
+  android: "https://play.google.com/store/apps/details?id=com.v2raytun.android",
+  desktop: "https://github.com/hiddify/hiddify-app/releases",
+};
+document.querySelectorAll("[data-app]").forEach((b) => b.onclick = () => {
+  const url = APPS[b.dataset.app];
+  tg?.openLink ? tg.openLink(url) : window.open(url, "_blank");
+});
+
+$("trialBtn").onclick = async () => {
+  if (STATIC) return toBot("trial");
+  if (DEMO) { me = { ...me, trial_available: false }; render(); return toast("Пробный период активирован"); }
+  try { me = await api("/api/trial", { method: "POST" }); render(); haptic("heavy"); toast("Пробный период активирован"); }
+  catch { toast("Пробный период уже использован"); }
+};
+
+$("buyBtn").onclick = async () => {
+  if (STATIC) return toBot("buy_" + plan);
+  if (DEMO) return toast("Оплата доступна в Telegram");
+  try {
+    const { link } = await api("/api/invoice", { method: "POST", body: JSON.stringify({ plan }) });
+    tg.openInvoice(link, async (status) => {
+      if (status === "paid") {
+        tg.HapticFeedback?.notificationOccurred("success");
+        // the bot applies the payment on successful_payment; give it a moment
+        setTimeout(async () => { me = await api("/api/me"); render(); go("home"); toast("Подписка продлена"); }, 1500);
+      }
+    });
+  } catch { toast("Не удалось создать счёт"); }
+};
+
+(async () => {
+  if (STATIC) {
+    try { ({ me, meta } = decodeState(STATE)); } catch { toast("Ошибка загрузки"); }
+  } else if (!DEMO) {
+    try { [me, meta] = await Promise.all([api("/api/me"), api("/api/meta")]); }
+    catch { toast("Ошибка загрузки"); }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
