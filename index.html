@@ -204,8 +204,22 @@
   }
   .hero.on::before { animation: breathe 4.5s ease-in-out infinite; }
   @keyframes breathe { 0%, 100% { opacity: .25; transform: translate(-50%, -50%) scale(.9); } 50% { opacity: .9; transform: translate(-50%, -50%) scale(1.08); } }
-  .hero .burst path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.6s var(--ease-out) .15s forwards; transform-box: view-box; transform-origin: 50% 50%; }
-  .hero.on .burst path { animation: draw 1.6s var(--ease-out) .15s forwards, spin 60s linear 1.8s infinite; }
+  /* rays draw in one after another, then a light wave runs around them while the star slowly turns */
+  .hero .burst .ray { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.1s var(--ease-out) calc(.15s + var(--r) * 70ms) forwards; }
+  .hero.on .burst .ray { animation: draw 1.1s var(--ease-out) calc(.15s + var(--r) * 70ms) forwards,
+                                    beam 2.4s ease-in-out calc(1.6s + var(--r) * 300ms) infinite; }
+  .hero .burst .rays { transform-box: view-box; transform-origin: 50% 50%; }
+  .hero.on .burst .rays { animation: spin 60s linear 1.8s infinite; }
+  .hero.on .burst { filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
+  @keyframes beam { 0%, 100% { opacity: .4; } 12% { opacity: 1; } 35% { opacity: .4; } }
+
+  /* unlimited traffic: a light segment runs endlessly along the infinity loop */
+  .inf-b { line-height: 0; }
+  .inf { width: 46px; height: 24px; overflow: visible; }
+  .inf .base { stroke: rgba(255,255,255,.18); }
+  .inf .run { stroke: #fff; stroke-dasharray: 28 72; animation: inf-run 2.6s linear infinite;
+              filter: drop-shadow(0 0 4px rgba(255,255,255,.85)); }
+  @keyframes inf-run { to { stroke-dashoffset: -100; } }
   @keyframes draw { to { stroke-dashoffset: 0; } }
   @keyframes spin { to { transform: rotate(360deg); } }
   .hero .grid line { stroke-dasharray: 200; stroke-dashoffset: 200; animation: grid 1.4s var(--ease-out) forwards; }
@@ -287,7 +301,16 @@
         <line x1="0" y1="0" x2="100" y2="94"/><line x1="100" y1="0" x2="0" y2="94"/>
       </svg>
       <svg class="burst" viewBox="0 0 100 100" stroke="#fff" stroke-width="3.2" fill="none">
-        <path pathLength="1" d="M50 4v36M50 60v36M4 50h36M60 50h36M18 18l17 17M65 65l17 17M82 18L65 35M35 65L18 82"/>
+        <g class="rays"><!-- clockwise from the top; --r drives the running light wave -->
+          <path class="ray" style="--r:0" pathLength="1" d="M50 4v36"/>
+          <path class="ray" style="--r:1" pathLength="1" d="M82 18L65 35"/>
+          <path class="ray" style="--r:2" pathLength="1" d="M96 50H60"/>
+          <path class="ray" style="--r:3" pathLength="1" d="M82 82L65 65"/>
+          <path class="ray" style="--r:4" pathLength="1" d="M50 96V60"/>
+          <path class="ray" style="--r:5" pathLength="1" d="M18 82L35 65"/>
+          <path class="ray" style="--r:6" pathLength="1" d="M4 50h36"/>
+          <path class="ray" style="--r:7" pathLength="1" d="M18 18l17 17"/>
+        </g>
       </svg>
       <div class="hero-top"><span id="heroLabel">Подписка</span><span id="heroUntil"></span></div>
       <div class="hero-bottom">
@@ -298,7 +321,11 @@
 
     <div class="stats">
       <div class="stat"><span>Устройства</span><b id="statDevices">3</b></div>
-      <div class="stat"><span>Трафик</span><b>∞</b></div>
+      <div class="stat"><span>Трафик</span><b class="inf-b" aria-label="без ограничений">
+        <svg class="inf" viewBox="0 0 48 24" fill="none" stroke-width="3.2" stroke-linecap="round">
+          <path class="base" d="M24 12C28 4 40 4 40 12S28 20 24 12 8 4 8 12 20 20 24 12Z"/>
+          <path class="run" pathLength="100" d="M24 12C28 4 40 4 40 12S28 20 24 12 8 4 8 12 20 20 24 12Z"/>
+        </svg></b></div>
       <div class="stat"><span>Пинг</span><b id="statPing">31<small style="font-size:13px;color:var(--muted)"> ms</small></b></div>
     </div>
 
