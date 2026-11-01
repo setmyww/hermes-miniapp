@@ -65,7 +65,7 @@
     position: absolute; left: 50%; top: 46%; width: 46%; transform: translate(-50%, -50%);
     transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
   }
-  .hero .burst.wings { width: 66%; top: 42%; overflow: visible; }
+  .hero .burst.hands-icon { left: 0; width: 100%; top: 45%; transform: translateY(-50%); }
   .hero-top, .hero-bottom { position: relative; display: flex; justify-content: space-between; align-items: flex-end; }
   .hero-top { align-items: flex-start; font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
   .days { font: 500 92px/.85 var(--display); letter-spacing: -.06em; }
@@ -204,30 +204,33 @@
   }
   .hero.on::before { animation: breathe 4.5s ease-in-out infinite; }
   @keyframes breathe { 0%, 100% { opacity: .25; transform: translate(-50%, -50%) scale(.9); } 50% { opacity: .9; transform: translate(-50%, -50%) scale(1.08); } }
-  /* wings: unfold on load; with an active subscription they fly (flap + lift + speed lines),
-     otherwise they rest with a slow, small breath */
-  .wings .wing, .wings .flier { transform-box: view-box; }
-  .wings .wing-r { transform-origin: 104px 84px; }   /* rotate around the shoulders */
-  .wings .wing-l { transform-origin: 96px 84px; }
-  .wings .flier { transform-origin: 100px 60px; animation: wingsIn .9s var(--spring) .1s backwards; }
-  .wings .wing-r { animation: restR 3.2s ease-in-out infinite; }
-  .wings .wing-l { animation: restL 3.2s ease-in-out infinite; }
-  .hero.on .wings { filter: drop-shadow(0 0 12px rgba(255,255,255,.22)); }
-  .hero.on .wings .wing-r { animation: flapR 1.1s cubic-bezier(.45,0,.35,1) 1s infinite; }
-  .hero.on .wings .wing-l { animation: flapL 1.1s cubic-bezier(.45,0,.35,1) 1s infinite; }
-  .hero.on .wings .flier { animation: wingsIn .9s var(--spring) .1s backwards, lift 1.1s cubic-bezier(.45,0,.35,1) 1s infinite; }
-  .wings .speed line { stroke-width: 2.5; opacity: 0; }
-  .hero.on .wings .speed line { animation: whoosh 1.4s linear infinite; }
-  .hero.on .wings .speed line:nth-child(2) { animation-delay: .45s; animation-duration: 1.1s; }
-  .hero.on .wings .speed line:nth-child(3) { animation-delay: .9s; animation-duration: 1.6s; }
-  @keyframes wingsIn { from { opacity: 0; transform: scale(.35) rotate(-8deg); } to { opacity: 1; transform: none; } }
-  @keyframes flapR { 0%, 100% { transform: rotate(-24deg); } 45% { transform: rotate(18deg); } }
-  @keyframes flapL { 0%, 100% { transform: rotate(24deg); } 45% { transform: rotate(-18deg); } }
-  @keyframes lift { 0%, 100% { transform: translateY(5px); } 55% { transform: translateY(-7px); } }
-  @keyframes restR { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(3deg); } }
-  @keyframes restL { 0%, 100% { transform: rotate(4deg); } 50% { transform: rotate(-3deg); } }
-  @keyframes whoosh { 0% { transform: translateX(210px); opacity: 0; } 15% { opacity: .55; }
-                      85% { opacity: .35; } 100% { transform: translateX(-40px); opacity: 0; } }
+  /* hands: drawn as one white line, they slide in from the card edges and keep reaching for each other;
+     the globe between them pops in, floats and turns (meridians sweep across) */
+  .hands-icon .hands { filter: drop-shadow(0 0 5px rgba(255,255,255,.55)) drop-shadow(0 0 14px rgba(255,255,255,.18)); }
+  .hands-icon .hand path { fill: none; stroke: #fff; stroke-width: 26; stroke-linecap: round; stroke-linejoin: round;
+                           stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: drawHand 1.5s var(--ease-out) .1s forwards; }
+  .hands-icon .hand-l { animation: handInL 1.3s var(--ease-out) backwards; }
+  .hands-icon .hand-r { animation: handInR 1.3s var(--ease-out) backwards; }
+  .hero.on .hands-icon .hand-l { animation: handInL 1.3s var(--ease-out) backwards, reachL 3.4s ease-in-out 1.4s infinite; }
+  .hero.on .hands-icon .hand-r { animation: handInR 1.3s var(--ease-out) backwards, reachR 3.4s ease-in-out 1.4s infinite; }
+  .hands-icon .globe { transform-box: fill-box; transform-origin: center; filter: drop-shadow(0 0 6px rgba(255,255,255,.6));
+                       animation: pop .8s var(--spring) 1.1s backwards; }
+  .hero.on .hands-icon .globe { animation: pop .8s var(--spring) 1.1s backwards, float 3.4s ease-in-out 1.9s infinite; }
+  .hands-icon .globe circle, .hands-icon .globe path { fill: none; stroke: #fff; stroke-width: 5.5; stroke-linecap: round; }
+  .hands-icon .meridian { transform-box: view-box; transform-origin: 370px 266px; vector-effect: non-scaling-stroke;
+                          animation: turn 4.2s linear infinite; animation-delay: calc(var(--m) * -1.4s); }
+  .hands-icon .globe-halo { opacity: .4; }
+  .hero.on .hands-icon .globe-halo { animation: halo 3.4s ease-in-out 1.9s infinite; }
+  /* finish as a plain solid line: dash rounding can leave gaps on scaled paths */
+  @keyframes drawHand { 99% { stroke-dashoffset: 0; stroke-dasharray: 1 1; } 100% { stroke-dashoffset: 0; stroke-dasharray: none; } }
+  @keyframes handInL { from { transform: translateX(-90px); opacity: 0; } }
+  @keyframes handInR { from { transform: translateX(90px); opacity: 0; } }
+  @keyframes reachL { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+  @keyframes reachR { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+  @keyframes pop { from { transform: scale(0); opacity: 0; } }
+  @keyframes float { 0%, 100% { transform: translateY(3px); } 50% { transform: translateY(-5px); } }
+  @keyframes turn { from { transform: scaleX(1); } to { transform: scaleX(-1); } }
+  @keyframes halo { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
 
   /* unlimited traffic: a light segment runs endlessly along the infinity loop */
   .inf-b { line-height: 0; }
@@ -316,23 +319,39 @@
         <line x1="50" y1="0" x2="50" y2="102"/><line x1="0" y1="47" x2="100" y2="47"/>
         <line x1="0" y1="0" x2="100" y2="94"/><line x1="100" y1="0" x2="0" y2="94"/>
       </svg>
-      <svg class="burst wings" viewBox="0 0 200 110" fill="none" aria-hidden="true">
+      <!-- two hands reaching for each other, passing a spinning globe (pose after the user's reference) -->
+      <svg class="burst hands-icon" viewBox="0 175 735 215" fill="none" aria-hidden="true">
         <defs>
-          <linearGradient id="wingFill" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9ccd3"/>
-          </linearGradient>
-          <!-- the HERMES wing (same shape as the avatar), shoulder at 380,690 -->
-          <g id="wingShape">
-            <path fill="url(#wingFill)" d="M330 640C330 470 470 330 720 300C764 295 778 344 744 362C786 384 774 446 720 452C752 486 728 546 668 546C688 596 638 636 578 620C556 684 452 722 384 702C348 692 330 670 330 640Z"/>
-            <path stroke="#0b0c0e" stroke-width="22" stroke-linecap="round" d="M452 636Q520 642 540 588Q600 582 604 520Q660 508 652 450Q700 434 684 384"/>
-          </g>
+          <radialGradient id="globeHalo"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+          <clipPath id="globeClip"><circle cx="370" cy="266" r="38"/></clipPath>
         </defs>
-        <g class="speed" stroke="#fff" stroke-linecap="round">
-          <line x1="0" y1="34" x2="34" y2="34"/><line x1="0" y1="62" x2="24" y2="62"/><line x1="0" y1="88" x2="30" y2="88"/>
+        <circle class="globe-halo" cx="370" cy="266" r="84" fill="url(#globeHalo)"/>
+        <g class="hands">
+          <g class="hand hand-l"><g transform="translate(130 190) scale(.3333)">
+            <path pathLength="1" d="M-390 300 C-200 290 -60 285 0 270 C90 245 200 195 265 182 C300 175 310 120 330 90 C340 75 360 70 365 90 C368 115 340 170 330 205 C320 245 300 275 270 290 C230 305 160 320 135 340 C120 352 130 365 150 360"/>
+            <path pathLength="1" d="M150 360 C220 385 330 370 420 345 C480 330 540 310 575 300 C595 296 595 320 575 335 C520 360 400 345 305 350"/>
+            <path pathLength="1" d="M330 225 C360 190 380 150 410 125 C430 110 455 108 470 120 C485 135 470 160 455 190 C440 220 425 245 415 255"/>
+            <path pathLength="1" d="M420 255 C450 230 480 210 500 195 C520 182 545 180 555 192 C565 205 550 230 535 255 C525 270 510 285 500 290"/>
+            <path pathLength="1" d="M-390 525 C-200 515 -60 465 0 465 C80 462 180 470 235 488 C300 470 380 445 440 420 C480 400 530 360 560 330"/>
+          </g></g>
+          <g class="hand hand-r"><g transform="translate(390 170) scale(.3333)">
+            <path pathLength="1" d="M1040 45 C900 60 800 100 750 100 C640 98 520 92 420 97 C340 105 270 125 230 150 C180 180 120 225 75 255 C55 270 70 290 95 282 C140 265 170 240 200 225"/>
+            <path pathLength="1" d="M180 210 C260 195 400 185 450 195 C490 205 525 220 520 235 C515 250 490 245 470 255"/>
+            <path pathLength="1" d="M177 250 C147 300 122 345 112 375 C107 392 127 398 139 388 C162 360 187 330 212 300"/>
+            <path pathLength="1" d="M242 290 C222 350 202 420 192 455 C187 472 209 480 222 468 C242 435 262 390 282 345"/>
+            <path pathLength="1" d="M317 320 C312 380 312 440 317 490 C319 508 345 510 349 492 C357 445 362 395 377 340"/>
+            <path pathLength="1" d="M360 400 C400 380 450 352 500 330 C560 305 610 298 650 290 C700 280 740 268 790 266 C880 264 970 272 1040 276"/>
+          </g></g>
         </g>
-        <g class="flier">
-          <g class="wing wing-l"><use href="#wingShape" transform="translate(96 84) scale(-.17 .17) translate(-380 -690)"/></g>
-          <g class="wing wing-r"><use href="#wingShape" transform="translate(104 84) scale(.17) translate(-380 -690)"/></g>
+        <g class="globe">
+          <circle cx="370" cy="266" r="38"/>
+          <g clip-path="url(#globeClip)">
+            <path d="M332 266 H408 M336 248 H404 M336 284 H404"/>
+            <!-- meridians: half-circles squashed left/right in turn = the globe turning -->
+            <path class="meridian" style="--m:0" d="M370 228 A38 38 0 0 1 370 304"/>
+            <path class="meridian" style="--m:1" d="M370 228 A38 38 0 0 1 370 304"/>
+            <path class="meridian" style="--m:2" d="M370 228 A38 38 0 0 1 370 304"/>
+          </g>
         </g>
       </svg>
       <div class="hero-top"><span id="heroLabel">Подписка</span><span id="heroUntil"></span></div>
