@@ -6,312 +6,216 @@
 <title>HERMES</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@100,400..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0b0d;
-    --surface: #131417;
-    --surface-2: #1b1c20;
-    --line: rgba(255,255,255,.08);
-    --line-2: rgba(255,255,255,.14);
-    --text: #f4f4f5;
-    --muted: #8b8d93;
-    --dim: #55575d;
-    --green: #5ee0a0;
-    --radius: 26px;
-    --display: "Inter Tight", "Inter", system-ui, sans-serif;
+    --card: #131313;
+    --line: rgba(255,255,255,.1);
+    --line-2: rgba(255,255,255,.22);
+    --text: #ecebe8;
+    --muted: #8f8d89;
+    --dim: #4a4845;
+    --accent: #ff4d1f;
+    --radius: 18px;
+    /* Doto is the LED-dot face but has no Cyrillic: Russian falls through to DotGothic16 */
+    --dots: "Doto", "DotGothic16", monospace;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --ease-out: cubic-bezier(.2,.8,.2,1);
+    --spring: cubic-bezier(.34,1.56,.64,1);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: var(--bg); color: var(--text); }
-  body {
-    font: 15px/1.4 "Inter", system-ui, sans-serif;
-    min-height: 100vh;
+  [hidden] { display: none !important; }
+  html { background: #171615; }
+  body { margin: 0; color: var(--text); font: 13px/1.45 var(--mono); min-height: 100vh; overflow-x: hidden; }
+  /* a fixed layer: background-attachment: fixed doesn't work in iOS webviews */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1;
     background:
-      radial-gradient(120% 60% at 50% -10%, #1d1a17 0%, transparent 60%),
-      var(--bg);
-    overflow-x: hidden;
+      radial-gradient(120% 52% at 8% 0%, #f2b98a 0%, #c98c60 30%, rgba(125,104,88,0) 72%),
+      linear-gradient(180deg, #79716a 0%, #45413e 42%, #1b1a19 82%);
   }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
-  .app { max-width: 480px; margin: 0 auto; padding: 14px 16px 120px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 18px 12px 112px; }
 
   /* header */
-  .top { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-bottom: 14px; }
-  .brand { display: flex; align-items: center; gap: 10px; font: 700 21px/1 "Cinzel", var(--display); letter-spacing: .08em; }
-  .brand svg { width: 22px; height: 22px; }
-  .pill {
-    display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px;
-    border-radius: 99px; border: 1px solid var(--line-2); font-size: 12.5px; color: var(--muted);
-    background: rgba(255,255,255,.03); backdrop-filter: blur(10px);
+  .hd { padding: 6px 6px 18px; color: #fff; }
+  .hd-title { font: 800 46px/1 var(--dots); font-variation-settings: "ROND" 100; letter-spacing: .03em; }
+  .hd-sub { font: 700 24px/32px var(--dots); font-variation-settings: "ROND" 100; letter-spacing: .03em; margin-top: 2px; }
+  /* DotGothic16 is drawn on a 16-unit pixel grid: a dot mask at the size of one pixel turns its strokes into LED dots */
+  .dm { font-family: "DotGothic16", monospace; font-weight: 400; letter-spacing: 0; font-size: calc(var(--c) * 16);
+        -webkit-mask: radial-gradient(circle, #000 56%, transparent 62%) 0 0 / var(--c) var(--c); mask: radial-gradient(circle, #000 56%, transparent 62%) 0 0 / var(--c) var(--c); }
+  .hd-sub.dm { --c: 2px; }
+  .hd-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
+  .led { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
+  #app.on .hd-status .led, .led.on { background: var(--accent); box-shadow: 0 0 8px rgba(255,77,31,.8); animation: ledPulse 2.2s ease-in-out infinite; }
+  @keyframes ledPulse { 50% { opacity: .45; } }
+
+  /* card grid */
+  .view { display: none; counter-reset: card; }
+  .view.active { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .wide { grid-column: 1 / -1; }
+  .card {
+    position: relative; background: var(--card); border-radius: var(--radius); padding: 14px 15px 15px; min-width: 0;
+    box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05);
   }
-  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
-  .pill.on { color: var(--text); }
-  .pill.on .dot { background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .h { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; min-height: 18px; }
+  .h::before { counter-increment: card; content: counter(card, decimal-leading-zero); font-size: 12px; }
+  .h .grow { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
+  .tag.hot { color: var(--accent); }
+  .lbl { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .val { display: block; font: 900 24px/1.15 var(--dots); font-variation-settings: "ROND" 100; margin-top: 3px; }
+  .val { white-space: nowrap; }
+  .val small { font-size: 15px; }
+  .note { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
 
-  .view { display: none; animation: in .35s ease; }
-  .view.active { display: block; }
-  @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-
-  h1.title { font: 600 34px/1.05 var(--display); letter-spacing: -.03em; margin: 6px 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 20px; }
-
-  /* hero (grid + starburst, Golden Suisse vibe) */
-  .hero {
-    position: relative; border-radius: var(--radius); overflow: hidden; background: #050505;
-    border: 1px solid var(--line); aspect-ratio: 1 / 1.02; padding: 22px;
-    display: flex; flex-direction: column; justify-content: space-between;
-  }
-  .hero .grid { position: absolute; inset: 0; pointer-events: none; }
-  .hero .burst {
-    position: absolute; left: 50%; top: 46%; width: 46%; transform: translate(-50%, -50%);
-    transition: transform 1.2s cubic-bezier(.2,.8,.2,1);
-  }
-  .hero .burst.planet-icon { left: 50%; width: 62%; top: 43%; transform: translate(-50%, -50%); overflow: visible; }
-  .hero-top, .hero-bottom { position: relative; display: flex; justify-content: space-between; align-items: flex-end; }
-  .hero-top { align-items: flex-start; font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
-  .days { font: 500 92px/.85 var(--display); letter-spacing: -.06em; }
-  .days small { display: block; font: 500 13px/1.4 "Inter"; letter-spacing: 0; color: var(--muted); margin-top: 10px; }
-  .connect {
-    width: 80px; height: 80px; border-radius: 50%; background: #fff; color: #000;
-    font: 600 9px/1.2 "Inter"; letter-spacing: .04em; text-transform: uppercase; padding: 0 8px;
-    display: grid; place-items: center; text-align: center; flex: none;
-    box-shadow: 0 10px 40px rgba(255,255,255,.12); transition: transform .15s;
-  }
-  .connect:active { transform: scale(.94); }
-
-  /* stat tiles */
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
-  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 14px; }
-  .stat b { display: block; font: 600 24px/1 var(--display); letter-spacing: -.03em; margin-top: 10px; }
-  .stat span { font-size: 12px; color: var(--muted); }
-
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .card h3 { margin: 0; font: 600 17px/1.2 var(--display); letter-spacing: -.01em; }
-  .card p { margin: 6px 0 0; color: var(--muted); font-size: 13.5px; }
   .btn {
-    height: 48px; padding: 0 20px; border-radius: 99px; background: #fff; color: #000;
-    font-weight: 600; font-size: 14.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 42px; padding: 0 18px; border-radius: 99px; background: var(--accent); color: #120602; font-size: 12px; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none;
+    transition: transform .18s var(--ease-out);
   }
-  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); font-weight: 500; }
   .btn.block { width: 100%; }
-  .btn:active { opacity: .8; }
-  .trial { background: linear-gradient(135deg, #1f2a24, #14171a 60%); border-color: rgba(94,224,160,.18); }
-  .link-box {
-    margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: #0c0d0f; border: 1px dashed var(--line-2);
-    font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all;
-  }
+  .btn:active { transform: scale(.96); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
-  /* locations (Panora vibe) */
-  .loc-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 16px; }
-  .loc-head h1 { margin: 0; }
-  .loc {
-    position: relative; height: 196px; border-radius: var(--radius); overflow: hidden; margin-bottom: 12px;
-    container-type: inline-size; border: 1px solid var(--line); transition: transform .2s;
+  /* home: planet */
+  #globeBox { position: relative; width: 100%; aspect-ratio: 1 / .94; margin: 2px 0 4px; }
+  #globe { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .net-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .net-stats { display: flex; gap: 14px; min-width: 0; }
+  .connect {
+    height: 40px; padding: 0 14px 0 12px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent);
+    font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; flex: none;
+    transition: transform .18s var(--ease-out), background .18s;
   }
+  .connect svg { width: 11px; height: 11px; }
+  .connect:active { transform: scale(.95); background: rgba(255,77,31,.14); }
+
+  /* home: subscription gauge */
+  .sub-body { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+  .ring { position: relative; width: 124px; height: 124px; flex: none; }
+  .ring svg { width: 100%; height: 100%; display: block; }
+  .ring circle { fill: var(--dim); transition: fill .3s; transition-delay: calc(var(--n) * 14ms + 200ms); }
+  .ring circle.lit { fill: #fff; }
+  .ring circle.head { fill: var(--accent); }
+  .ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-in b { font: 800 36px/1 var(--dots); font-variation-settings: "ROND" 100; }
+  .ring-in span { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+  .legend { display: grid; gap: 9px; min-width: 0; flex: 1; }
+  .legend > div { min-width: 0; }
+  .legend b { display: block; font-size: 12.5px; font-weight: 500; margin-top: 1px; }
+
+  /* home: devices and traffic */
+  .big { font: 800 40px/1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; display: block; }
+  .dotbar { display: flex; gap: 5px; margin-top: 12px; }
+  .dotbar i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); transition: background .3s; transition-delay: calc(var(--n) * 60ms + 200ms); }
+  .dotbar i.lit { background: var(--accent); }
+  .inf { display: block; width: 100%; max-width: 110px; height: 40px; margin-top: 12px; overflow: visible; }
+  /* unlimited traffic: an orange pulse runs around the dotted infinity sign */
+  .inf circle { fill: rgba(255,255,255,.3); animation: infPulse 2.6s linear infinite; animation-delay: calc(var(--t) * -2.6s); }
+  @keyframes infPulse { 0% { fill: var(--accent); } 16% { fill: #fff; } 40%, 100% { fill: rgba(255,255,255,.3); } }
+
+  .link-box { margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--line-2); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+
+  /* locations */
+  #locList { display: grid; gap: 10px; }
+  .loc { height: 176px; padding: 0; overflow: hidden; transition: transform .2s; cursor: pointer; }
   .loc:active { transform: scale(.985); }
-  .loc svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .loc::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.35)); }
-  .loc .chip {
-    position: absolute; top: 14px; left: 14px; z-index: 2; height: 28px; padding: 0 12px; border-radius: 99px;
-    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #fff;
-    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.32); backdrop-filter: blur(12px);
+  .loc .h { position: absolute; top: 14px; left: 15px; right: 15px; z-index: 2; }
+  .loc.sel { box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 0 0 1.5px var(--accent); }
+  .loc svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; animation: sceneDrift 18s ease-in-out infinite alternate; transform-origin: 50% 70%; }
+  @keyframes sceneDrift { from { transform: scale(1.02) translateX(-1.5%); } to { transform: scale(1.08) translateX(1.5%); } }
+  .name-box { position: absolute; left: 15px; right: 15px; bottom: 10px; z-index: 1; container-type: inline-size; }
+  .loc .name {
+    white-space: nowrap; color: #fff;
+    font: 900 min(50px, calc(100cqw / (var(--len) * .62))) / 1 var(--dots); font-variation-settings: "ROND" 100;
+    text-shadow: 0 0 14px #131313, 0 0 4px #131313;
   }
-  .loc .more {
-    position: absolute; top: 14px; right: 14px; z-index: 2; width: 28px; height: 28px; border-radius: 50%;
-    display: grid; place-items: center; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.32);
-    backdrop-filter: blur(12px);
-  }
-  .loc.sel .more { background: #fff; color: #000; }
-
   /* unavailable location: dimmed scene crossed by two hazard tapes with a running caption */
-  .loc.off svg.scene { filter: grayscale(1) brightness(.42); }
-  .loc.off .name { opacity: .3; }
+  .loc.off { cursor: default; }
+  .loc.off svg.scene { opacity: .35; }
+  .loc.off .name { opacity: .35; }
   .loc.off:active { transform: none; }
-  .tape { position: absolute; left: -12%; width: 124%; height: 30px; z-index: 3; overflow: hidden;
-          background: #f5c400; color: #111; display: flex; align-items: center;
-          box-shadow: 0 6px 18px rgba(0,0,0,.55); transform: translateY(-50%) rotate(var(--rot));
+  .tape { position: absolute; left: -12%; width: 124%; height: 28px; z-index: 3; overflow: hidden;
+          background: var(--accent); color: #120602; display: flex; align-items: center;
+          box-shadow: 0 6px 16px rgba(0,0,0,.55); transform: translateY(-50%) rotate(var(--rot));
           animation: tapeIn .7s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 70ms + var(--d)); }
   .tape::before, .tape::after { content: ""; position: absolute; left: 0; right: 0; height: 5px;
-          background: repeating-linear-gradient(-45deg, #111 0 8px, #f5c400 8px 16px); }
+          background: repeating-linear-gradient(-45deg, #120602 0 8px, var(--accent) 8px 16px); }
   .tape::before { top: 0; } .tape::after { bottom: 0; }
-  .tape-a { top: 46%; --rot: -10deg; --d: .25s; }
-  .tape-b { top: 60%; --rot: 7deg; --d: .4s; }
-  .tape span { white-space: nowrap; font: 800 12px/1 "Inter", sans-serif; letter-spacing: .22em; padding-left: 12px;
-               animation: tapeRun 9s linear infinite; }
+  .tape-a { top: 50%; --rot: -9deg; --d: .25s; }
+  .tape-b { top: 64%; --rot: 6deg; --d: .4s; }
+  .tape span { white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: .2em; padding-left: 12px; animation: tapeRun 9s linear infinite; }
   .tape-b span { animation-direction: reverse; animation-duration: 11s; }
   #locList.settled .tape { animation: none; }
   @keyframes tapeIn { from { transform: translateY(-50%) rotate(var(--rot)) scaleX(0); } }
   @keyframes tapeRun { to { transform: translateX(-50%); } }
-  .loc .name {
-    position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 24%); z-index: 1; white-space: nowrap;
-    font: 700 min(112px, calc(104cqw / (var(--len) * .6))) / 1 var(--display); letter-spacing: -.045em;
-    background: linear-gradient(180deg, rgba(255,255,255,.95) 10%, rgba(255,255,255,.55) 55%, rgba(255,255,255,.2));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 2px 12px rgba(0,0,0,.25));
-  }
 
-  /* plans (Skillset vibe) */
-  .seg { display: flex; gap: 6px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; margin-bottom: 14px; }
-  .seg button { flex: 1; height: 38px; border-radius: 99px; font-size: 13.5px; color: var(--muted); font-weight: 500; transition: .2s; }
-  .seg button.on { background: #f4f4f5; color: #000; }
-  .price-card { background: #f2f2f0; color: #0a0a0a; border-radius: var(--radius); padding: 22px; margin-bottom: 12px; }
-  .price-card .lbl { font-size: 13px; color: #6b6b6b; }
-  .price { font: 600 76px/.9 var(--display); letter-spacing: -.06em; margin: 18px 0 6px; display: flex; align-items: baseline; gap: 8px; }
-  .price span { font-size: 22px; letter-spacing: -.02em; }
-  .per { font-size: 13px; color: #6b6b6b; }
-  .feat { list-style: none; padding: 0; margin: 20px 0 22px; display: grid; gap: 10px; }
-  .feat li { display: flex; gap: 10px; align-items: center; font-size: 14px; }
-  .feat li::before { content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none; background: #0a0a0a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/11px no-repeat; }
-  .price-card .btn { background: #0a0a0a; color: #fff; }
-  .badge { font-size: 11.5px; padding: 4px 10px; border-radius: 99px; background: #0a0a0a; color: #fff; }
+  /* plans */
+  #tiers { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tier { text-align: left; display: block; width: 100%; transition: transform .18s var(--ease-out), box-shadow .2s; }
+  .tier:active { transform: scale(.97); }
+  .tier.on { box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 0 0 1.5px var(--accent); }
+  .tier .led { margin-left: auto; }
+  .tier .digit { display: block; font: 800 52px/1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; }
+  .tier .word { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .tier .cost { display: block; font: 900 26px/1.1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; }
+  .tier .tier-tag { display: block; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 4px; min-height: 15px; }
+  .tier .tier-tag.hot { color: var(--accent); }
+  .price { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; }
+  .price b { font: 800 66px/.95 var(--dots); font-variation-settings: "ROND" 100; }
+  .price span { font: 800 26px/1 var(--dots); font-variation-settings: "ROND" 100; }
+  .price-card.bump { animation: bump .4s var(--spring); }
+  @keyframes bump { from { transform: scale(.975); } }
+  .feat { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 9px; }
+  .feat li { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+  .feat li::before { content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23120602' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/11px no-repeat; }
+  .pays { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .pays span { height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line-2); display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .05em; color: var(--muted); text-transform: uppercase; }
 
   /* profile */
-  .me { display: flex; align-items: center; gap: 14px; margin: 6px 0 20px; }
-  .avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #2b2d33, #121316); border: 1px solid var(--line-2); display: grid; place-items: center; font: 600 22px var(--display); }
-  .me b { font: 600 20px/1.2 var(--display); display: block; }
-  .me span { color: var(--muted); font-size: 13px; }
-  .list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
-  .list button { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px 18px; text-align: left; border-bottom: 1px solid var(--line); }
-  .list button:last-child { border-bottom: 0; }
-  .list svg { width: 20px; height: 20px; color: var(--muted); flex: none; }
+  .me { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+  .avatar { width: 54px; height: 54px; border-radius: 50%; border: 2px dotted rgba(255,255,255,.55); display: grid; place-items: center; font: 800 26px/1 var(--dots); font-variation-settings: "ROND" 100; flex: none; }
+  .me b { font-size: 15px; font-weight: 500; display: block; overflow-wrap: anywhere; }
+  .me span { color: var(--muted); font-size: 12px; }
+  .list { margin-top: 8px; }
+  .list button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 0; text-align: left; border-bottom: 1px solid var(--line); font-size: 12.5px; transition: opacity .15s; }
+  .list button:last-child { border-bottom: 0; padding-bottom: 2px; }
+  .list button:active { opacity: .55; }
+  .list svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
   .list .grow { flex: 1; }
-  .list .count { font-size: 12px; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; }
-  .ref-num { font: 500 64px/.9 var(--display); letter-spacing: -.05em; margin: 14px 0 4px; }
+  .list .go { color: var(--accent); }
+
+  .foot { --c: 1.5px; line-height: 28px; color: rgba(255,255,255,.8); padding: 20px 6px 0; }
+  .foot i { color: var(--accent); font-style: normal; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .demo { font-size: 10.5px; color: var(--muted); text-align: center; }
 
   /* tab bar */
   .tabs {
-    position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-    display: flex; gap: 2px; padding: 5px; border-radius: 99px; z-index: 10;
-    background: rgba(28,29,33,.72); border: 1px solid var(--line-2);
-    backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
-    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    display: flex; padding: 5px; border-radius: 99px; z-index: 10; background: rgba(14,14,14,.86); border: 1px solid var(--line);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 14px 34px rgba(0,0,0,.5);
   }
-  .tabs button { width: 74px; height: 52px; border-radius: 99px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; color: var(--muted); transition: .2s; }
-  .tabs button svg { width: 20px; height: 20px; }
-  .tabs button.on { background: rgba(255,255,255,.12); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  .tabs button { position: relative; z-index: 1; width: 78px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); transition: color .25s; }
+  .tabs button svg { width: 19px; height: 19px; }
+  .tabs button.on { color: #fff; }
+  .tabs button.on svg { color: var(--accent); animation: pop .4s var(--spring); }
+  @keyframes pop { from { transform: scale(.6); } }
+  .tab-ind { position: absolute; top: 5px; bottom: 5px; left: 0; width: 0; border-radius: 99px; pointer-events: none; background: rgba(255,255,255,.09); transition: transform .45s var(--spring), width .45s var(--spring); }
 
   .toast {
-    position: fixed; left: 50%; top: 18px; transform: translate(-50%, -80px); z-index: 20;
-    background: #fff; color: #000; padding: 10px 18px; border-radius: 99px; font-size: 13.5px; font-weight: 500;
-    transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    position: fixed; left: 50%; top: 16px; transform: translate(-50%, -80px); z-index: 20; white-space: nowrap;
+    background: #0d0d0d; border: 1px solid var(--accent); color: var(--text); padding: 9px 16px; border-radius: 99px; font-size: 12px;
+    transition: transform .45s var(--spring);
   }
   .toast.show { transform: translate(-50%, 0); }
-  .demo { font-size: 11px; color: var(--dim); text-align: center; margin-top: 18px; }
-
-  /* ---------- motion ---------- */
-  :root { --ease-out: cubic-bezier(.2,.8,.2,1); --spring: cubic-bezier(.34,1.56,.64,1); }
 
   /* staggered entrance: every block of a view rises in, delayed by its --i */
-  .view { animation: none; }
-  .view.active > *, .view.active .loc { animation: rise .6s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  .view.active > *, .view.active .loc, .view.active .tier { animation: rise .55s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
   #locList.settled .loc { animation: none; }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(18px) scale(.98); filter: blur(6px); }
-    to { opacity: 1; transform: none; filter: none; }
-  }
-
-  /* header: status dot ripples while the subscription is active */
-  .pill.on .dot { animation: ping 2.2s ease-out infinite; }
-  @keyframes ping {
-    0% { box-shadow: 0 0 0 0 rgba(94,224,160,.55); }
-    70%, 100% { box-shadow: 0 0 0 7px rgba(94,224,160,0); }
-  }
-
-  /* hero: rays draw in, then slowly turn; a soft glow breathes behind them */
-  .hero::before {
-    content: ""; position: absolute; left: 50%; top: 46%; width: 70%; aspect-ratio: 1; transform: translate(-50%, -50%);
-    background: radial-gradient(closest-side, rgba(255,255,255,.10), transparent); opacity: 0; pointer-events: none;
-  }
-  .hero.on::before { animation: breathe 4.5s ease-in-out infinite; }
-  @keyframes breathe { 0%, 100% { opacity: .25; transform: translate(-50%, -50%) scale(.9); } 50% { opacity: .9; transform: translate(-50%, -50%) scale(1.08); } }
-  /* planet: pops in, then turns — continents drift (one full turn of the strip), meridians sweep, satellite orbits */
-  .planet-icon .planet { transform-box: view-box; transform-origin: 150px 150px; animation: planetIn .9s var(--spring) .15s backwards;
-                         filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
-  .planet-icon .land { animation: pDrift 18s linear infinite; }
-  .planet-icon .p-meridian { transform-box: view-box; transform-origin: 150px 150px; vector-effect: non-scaling-stroke;
-                             animation: turn 6s linear infinite; animation-delay: calc(var(--m) * -2s); }
-  .planet-icon .p-halo { animation: halo 4s ease-in-out infinite; }
-  .planet-icon .p-sat { filter: drop-shadow(0 0 5px #fff); }
-  /* without a subscription the planet turns much slower */
-  .hero:not(.on) .planet-icon .land { animation-duration: 40s; }
-  .hero:not(.on) .planet-icon .p-meridian { animation-duration: 14s; }
-  @keyframes planetIn { from { opacity: 0; transform: scale(.4) rotate(-40deg); } }
-  @keyframes pDrift { to { transform: translateX(-515px); } }
-  @keyframes turn { from { transform: scaleX(1); } to { transform: scaleX(-1); } }
-  @keyframes halo { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
-
-  /* Greek meander friezes along the card edges, drawn in from the left */
-  .hero .meander { position: absolute; left: 14px; right: 14px; height: 12px; width: calc(100% - 28px); opacity: .38;
-                   transform-origin: left center; animation: frieze 1.4s var(--ease-out) .2s backwards; pointer-events: none; }
-  .hero .meander-top { top: 8px; }
-  .hero .meander-bottom { bottom: 8px; transform: scaleY(-1); animation-name: friezeFlip; }
-  @keyframes frieze { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-  @keyframes friezeFlip { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-
-  /* unlimited traffic: a light segment runs endlessly along the infinity loop */
-  .inf-b { line-height: 0; }
-  .inf { width: 46px; height: 24px; overflow: visible; }
-  .inf .base { stroke: rgba(255,255,255,.18); }
-  .inf .run { stroke: #fff; stroke-dasharray: 28 72; animation: inf-run 2.6s linear infinite;
-              filter: drop-shadow(0 0 4px rgba(255,255,255,.85)); }
-  @keyframes inf-run { to { stroke-dashoffset: -100; } }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .hero .grid line { stroke-dasharray: 200; stroke-dashoffset: 200; animation: grid 1.4s var(--ease-out) forwards; }
-  @keyframes grid { to { stroke-dashoffset: 0; } }
-
-  /* connect button: rings ripple outward */
-  .connect { position: relative; }
-  .connect::before, .connect::after {
-    content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.5);
-    opacity: 0; pointer-events: none;
-  }
-  .hero.on .connect::before { animation: ring 2.8s ease-out infinite; }
-  .hero.on .connect::after { animation: ring 2.8s ease-out 1.4s infinite; }
-  @keyframes ring { 0% { opacity: .6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.75); } }
-
-  /* trial card: a light sheen sweeps across */
-  .trial { position: relative; overflow: hidden; }
-  .trial::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.07) 50%, transparent 65%);
-    transform: translateX(-100%); animation: sheen 3.6s ease-in-out 1s infinite;
-  }
-  @keyframes sheen { 60%, 100% { transform: translateX(100%); } }
-
-  /* locations: landscapes drift slowly, names slide up into place */
-  .loc svg.scene { animation: drift 16s ease-in-out infinite alternate; transform-origin: 50% 60%; }
-  .loc:nth-child(2n) svg.scene { animation-duration: 19s; animation-direction: alternate-reverse; }
-  @keyframes drift { from { transform: scale(1.02) translateX(-1.5%); } to { transform: scale(1.1) translateX(1.5%); } }
-  .view.active .loc .name { animation: nameUp 1s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 70ms + 150ms); }
-  #locList.settled .loc .name { animation: none; }
-  @keyframes nameUp { from { opacity: 0; transform: translate(-50%, 80%); } to { opacity: 1; transform: translate(-50%, 24%); } }
-  .loc .more svg { animation: pop .45s var(--spring); }
-
-  /* sliding indicators for the tab bar and the plan switch */
-  .tabs button, .seg button { position: relative; z-index: 1; }
-  .tabs button.on { background: transparent; box-shadow: none; }
-  .tab-ind, .seg-ind {
-    position: absolute; top: 5px; bottom: 5px; left: 0; width: 0; border-radius: 99px; pointer-events: none;
-    transition: transform .45s var(--spring), width .45s var(--spring);
-  }
-  .tab-ind { background: rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
-  .seg { position: relative; }
-  .seg button.on { background: transparent; }
-  .seg button { transition: color .3s; }
-  .seg-ind { background: #f4f4f5; }
-  .tabs button.on svg { animation: pop .45s var(--spring); }
-  @keyframes pop { 0% { transform: scale(.6); } 100% { transform: scale(1); } }
-
-  /* plans: the price card gives a small bump when the plan changes */
-  .price-card.bump { animation: bump .45s var(--spring); }
-  @keyframes bump { 0% { transform: scale(.97); } 100% { transform: scale(1); } }
-
-  /* tactile presses */
-  .btn, .stat, .list button { transition: transform .18s var(--ease-out), opacity .18s; }
-  .btn:active, .list button:active { transform: scale(.96); opacity: 1; }
-  .stat:active { transform: scale(.97); }
-  .toast { transition: transform .45s var(--spring); }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -319,195 +223,157 @@
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M12 2v8M12 14v8M2 12h8M14 12h8M5 5l4.5 4.5M14.5 14.5L19 19M19 5l-4.5 4.5M9.5 14.5L5 19"/></svg>
-      HERMES
-    </div>
-    <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">—</span></div>
+<!-- dot fills for the location artwork -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="dB" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.15" fill="#fff" fill-opacity=".85"/></pattern>
+    <pattern id="dM" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1" fill="#fff" fill-opacity=".42"/></pattern>
+    <pattern id="dS" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".8" fill="#fff" fill-opacity=".2"/></pattern>
+    <pattern id="dO" width="4.5" height="4.5" patternUnits="userSpaceOnUse"><circle cx="2.25" cy="2.25" r="1.2" fill="#ff4d1f"/></pattern>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <header class="hd">
+    <div class="hd-title">HERMES</div>
+    <div class="hd-sub" id="hdSub">VPN</div>
+    <div class="hd-status"><span class="led"></span><span id="statusText">—</span></div>
   </header>
 
   <!-- HOME -->
   <section class="view active" id="v-home">
-    <div class="hero" id="hero">
-      <svg class="grid" viewBox="0 0 100 102" preserveAspectRatio="none" stroke="rgba(255,255,255,.07)" stroke-width=".25">
-        <line x1="50" y1="0" x2="50" y2="102"/><line x1="0" y1="47" x2="100" y2="47"/>
-        <line x1="0" y1="0" x2="100" y2="94"/><line x1="100" y1="0" x2="0" y2="94"/>
-      </svg>
-      <!-- Greek friezes (meander) along the top and bottom of the card -->
-      <svg class="meander meander-top" aria-hidden="true"><rect width="100%" height="100%" fill="url(#meanderTile)"/></svg>
-      <svg class="meander meander-bottom" aria-hidden="true"><rect width="100%" height="100%" fill="url(#meanderTile)"/></svg>
-      <!-- a slowly turning planet: dotted continents drift across, meridians sweep, a satellite circles on a tilted orbit -->
-      <svg class="burst planet-icon" viewBox="0 0 300 300" fill="none" aria-hidden="true">
-        <defs>
-          <radialGradient id="pHalo"><stop offset=".45" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-          <radialGradient id="pShade" cx="35%" cy="32%" r="78%">
-            <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".6" stop-color="#000" stop-opacity=".15"/>
-            <stop offset="1" stop-color="#000" stop-opacity=".78"/>
-          </radialGradient>
-          <pattern id="pDots" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.45" fill="#fff"/></pattern>
-          <clipPath id="pClip"><circle cx="150" cy="150" r="82"/></clipPath>
-          <mask id="pLand" maskUnits="userSpaceOnUse" x="-600" y="0" width="1600" height="300">
-            <g class="land" fill="#fff">
-              <g>
-              <path d="M20 108 C40 92 78 96 92 112 C104 126 86 146 70 150 C58 166 36 160 30 142 C14 136 8 120 20 108Z"/>
-              <path d="M60 178 C78 170 96 182 92 200 C88 216 70 224 60 212 C50 200 46 186 60 178Z"/>
-              <path d="M150 84 C176 74 214 86 222 104 C232 124 206 132 196 146 C186 168 160 172 150 154 C134 142 128 120 136 104 C138 94 142 88 150 84Z"/>
-              <path d="M182 186 C200 180 214 192 208 208 C202 222 186 226 178 214 C172 204 172 192 182 186Z"/>
-              <path d="M270 96 C296 88 330 100 336 120 C342 140 320 150 300 148 C284 162 262 158 258 140 C252 124 256 104 270 96Z"/>
-              <path d="M300 176 C322 168 352 180 350 200 C348 218 324 226 308 216 C292 208 286 186 300 176Z"/>
-              <path d="M396 90 C420 82 448 94 452 112 C456 128 436 136 420 132 C404 142 386 134 384 118 C382 104 386 94 396 90Z"/>
-              <path d="M420 164 C446 156 480 168 486 190 C490 208 468 220 448 214 C428 222 410 210 410 192 C408 178 412 168 420 164Z"/>
-              <path d="M496 120 C508 112 520 118 518 130 C516 142 504 146 496 138 C490 132 490 124 496 120Z"/>
-              </g>
-              <g transform="translate(515 0)">
-              <path d="M20 108 C40 92 78 96 92 112 C104 126 86 146 70 150 C58 166 36 160 30 142 C14 136 8 120 20 108Z"/>
-              <path d="M60 178 C78 170 96 182 92 200 C88 216 70 224 60 212 C50 200 46 186 60 178Z"/>
-              <path d="M150 84 C176 74 214 86 222 104 C232 124 206 132 196 146 C186 168 160 172 150 154 C134 142 128 120 136 104 C138 94 142 88 150 84Z"/>
-              <path d="M182 186 C200 180 214 192 208 208 C202 222 186 226 178 214 C172 204 172 192 182 186Z"/>
-              <path d="M270 96 C296 88 330 100 336 120 C342 140 320 150 300 148 C284 162 262 158 258 140 C252 124 256 104 270 96Z"/>
-              <path d="M300 176 C322 168 352 180 350 200 C348 218 324 226 308 216 C292 208 286 186 300 176Z"/>
-              <path d="M396 90 C420 82 448 94 452 112 C456 128 436 136 420 132 C404 142 386 134 384 118 C382 104 386 94 396 90Z"/>
-              <path d="M420 164 C446 156 480 168 486 190 C490 208 468 220 448 214 C428 222 410 210 410 192 C408 178 412 168 420 164Z"/>
-              <path d="M496 120 C508 112 520 118 518 130 C516 142 504 146 496 138 C490 132 490 124 496 120Z"/>
-              </g>
-            </g>
-          </mask>
-          <path id="pOrbit" d="M25 150 A125 34 0 1 0 275 150 A125 34 0 1 0 25 150"/>
-          <pattern id="meanderTile" width="22" height="12" patternUnits="userSpaceOnUse">
-            <path d="M0 11 H20 V1 H6 V8 H14 V4 H10" fill="none" stroke="#fff" stroke-width="1.6"/>
-          </pattern>
-        </defs>
-        <circle cx="150" cy="150" r="140" fill="url(#pHalo)" class="p-halo"/>
-        <g class="planet">
-          <g transform="rotate(-16 150 150)">
-            <!-- back half of the orbit, behind the planet -->
-            <ellipse cx="150" cy="150" rx="125" ry="34" stroke="#fff" stroke-opacity=".22" stroke-width="1.6"/>
-            <circle cx="150" cy="150" r="82" fill="#0b0b0c"/>
-            <g clip-path="url(#pClip)">
-              <rect x="40" y="60" width="220" height="180" fill="url(#pDots)" mask="url(#pLand)" opacity=".85"/>
-              <g stroke="#fff" stroke-opacity=".28" stroke-width="1.3">
-                <path d="M68 150 H232 M76 112 H224 M76 188 H224 M98 80 H202 M98 220 H202"/>
-                <path class="p-meridian" style="--m:0" d="M150 68 A82 82 0 0 1 150 232"/>
-                <path class="p-meridian" style="--m:1" d="M150 68 A82 82 0 0 1 150 232"/>
-                <path class="p-meridian" style="--m:2" d="M150 68 A82 82 0 0 1 150 232"/>
-              </g>
-              <circle cx="150" cy="150" r="82" fill="url(#pShade)"/>
-            </g>
-            <circle cx="150" cy="150" r="82" stroke="#fff" stroke-width="2.2"/>
-            <!-- front half of the orbit, over the planet -->
-            <path d="M25 150 A125 34 0 0 0 275 150" stroke="#fff" stroke-opacity=".55" stroke-width="1.8"/>
-            <circle r="5" fill="#fff" class="p-sat">
-              <animateMotion dur="7s" repeatCount="indefinite" rotate="auto"><mpath href="#pOrbit"/></animateMotion>
-              <!-- dim on the far half of the orbit, where it passes behind the planet -->
-              <animate attributeName="opacity" dur="7s" repeatCount="indefinite" values="1;1;.18;.18;1" keyTimes="0;.47;.53;.97;1"/>
-            </circle>
-          </g>
-        </g>
-      </svg>
-      <div class="hero-top"><span id="heroLabel">Подписка</span><span id="heroUntil"></span></div>
-      <div class="hero-bottom">
-        <div class="days"><span id="daysLeft">0</span><small id="daysCaption">дней осталось</small></div>
-        <button class="connect" id="connectBtn">Подклю&shy;чить</button>
+    <div class="card wide">
+      <div class="h"><span class="grow">Сеть HERMES</span><span class="tag" id="liveTag">OFFLINE</span></div>
+      <div id="globeBox"><canvas id="globe" aria-hidden="true"></canvas></div>
+      <div class="net-row">
+        <div class="net-stats">
+          <div><span class="lbl">Локация</span><span class="val" id="netLoc">—</span></div>
+          <div><span class="lbl">Пинг</span><span class="val" id="netPing">—</span></div>
+        </div>
+        <button class="connect" id="connectBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 2l17 10L5 22z"/></svg><span id="connectText">Подключить</span></button>
       </div>
     </div>
 
-    <div class="stats">
-      <div class="stat"><span>Устройства</span><b id="statDevices">3</b></div>
-      <div class="stat"><span>Трафик</span><b class="inf-b" aria-label="без ограничений">
-        <svg class="inf" viewBox="0 0 48 24" fill="none" stroke-width="3.2" stroke-linecap="round">
-          <path class="base" d="M24 12C28 4 40 4 40 12S28 20 24 12 8 4 8 12 20 20 24 12Z"/>
-          <path class="run" pathLength="100" d="M24 12C28 4 40 4 40 12S28 20 24 12 8 4 8 12 20 20 24 12Z"/>
-        </svg></b></div>
-      <div class="stat"><span>Пинг</span><b id="statPing">31<small style="font-size:13px;color:var(--muted)"> ms</small></b></div>
+    <div class="card wide">
+      <div class="h"><span class="grow">Подписка</span></div>
+      <div class="sub-body">
+        <div class="ring">
+          <svg viewBox="0 0 124 124" id="ring"></svg>
+          <div class="ring-in"><b id="daysLeft">0</b><span id="daysCaption">дней</span></div>
+        </div>
+        <div class="legend">
+          <div><span class="lbl">Тариф</span><b id="subPlan">—</b></div>
+          <div><span class="lbl">Действует до</span><b id="subUntil">—</b></div>
+          <div><span class="lbl">Статус</span><b id="subState">—</b></div>
+        </div>
+      </div>
     </div>
 
-    <div class="card trial" id="trialCard" hidden>
-      <div class="row">
-        <div><h3>Попробуйте бесплатно</h3><p id="trialText">3 дня полного доступа</p></div>
+    <div class="card">
+      <div class="h"><span class="grow">Устройства</span></div>
+      <span class="big" id="statDevices">3</span>
+      <div class="dotbar" id="devDots"></div>
+    </div>
+    <div class="card">
+      <div class="h"><span class="grow">Трафик</span></div>
+      <svg class="inf" id="inf" viewBox="0 0 110 40" role="img" aria-label="без ограничений"></svg>
+      <span class="lbl" style="margin-top:8px">Без лимита</span>
+    </div>
+
+    <div class="card wide" id="trialCard" hidden>
+      <div class="h"><span class="grow">Бесплатно</span><span class="tag hot"><span class="led on"></span>NEW</span></div>
+      <div class="row" style="margin-top:10px">
+        <span id="trialText" style="font-size:13.5px">3 дня</span>
         <button class="btn" id="trialBtn">Начать</button>
       </div>
     </div>
 
-    <div class="card" id="keyCard" hidden>
-      <div class="row"><h3>Ваш ключ</h3><button class="btn ghost" style="height:36px;font-size:13px" id="copyBtn">Копировать</button></div>
+    <div class="card wide" id="keyCard" hidden>
+      <div class="row"><div class="h grow" style="flex:1"><span class="grow">Ваш ключ</span></div><button class="btn ghost" style="height:32px;padding:0 12px;font-size:10.5px" id="copyBtn">Копировать</button></div>
       <div class="link-box" id="subLink"></div>
     </div>
 
-    <div class="card">
-      <div class="row">
-        <div><h3>Как подключить</h3><p>Happ, v2rayTun, Hiddify — 3 шага</p></div>
-        <button class="btn ghost" style="height:40px" data-go="profile">Открыть</button>
+    <div class="card wide">
+      <div class="h"><span class="grow">Как подключить</span></div>
+      <div class="row" style="margin-top:8px">
+        <p class="note" style="margin:0">Happ, v2rayTun, Hiddify — 3 шага</p>
+        <button class="btn ghost" style="height:36px;padding:0 14px;font-size:10.5px" data-go="profile">Открыть</button>
       </div>
     </div>
   </section>
 
   <!-- LOCATIONS -->
   <section class="view" id="v-locations">
-    <div class="loc-head">
-      <h1 class="title">Локации</h1>
-      <span class="pill" id="locCount">4 сервера</span>
-    </div>
-    <div id="locList"></div>
+    <div id="locList" class="wide"></div>
   </section>
 
   <!-- PLANS -->
   <section class="view" id="v-plans">
-    <h1 class="title">Тарифы</h1>
-    <p class="sub">Без лимитов трафика. Оплата звёздами Telegram.</p>
-    <div class="seg" id="seg"></div>
-    <div class="price-card">
-      <div class="row"><span class="lbl" id="planTitle">1 месяц</span><span class="badge" id="planBadge" hidden>Выгодно</span></div>
-      <div class="price"><b id="planPrice">150</b><span>⭐</span></div>
-      <div class="per" id="planPer">≈ 5 ⭐ в день</div>
+    <div id="tiers"></div>
+    <div class="card wide price-card">
+      <div class="h"><span class="grow" id="planTitle">2 устройства</span><span class="tag" id="planDays">30 ДНЕЙ</span></div>
+      <div class="price"><b id="planPrice">199</b><span>₽</span></div>
+      <p class="note" id="planPer">≈ 199 ⭐</p>
+      <p class="note" id="planNote" style="color:var(--accent)" hidden></p>
       <ul class="feat">
-        <li>Все локации</li>
-        <li id="featDevices">До 3 устройств</li>
+        <li id="featDevices">До 2 устройств</li>
+        <li>Без лимитов трафика</li>
         <li>VLESS + Reality — обходит блокировки</li>
         <li>Без рекламы и логов</li>
       </ul>
       <button class="btn block" id="buyBtn">Оплатить</button>
+      <div class="pays"><span>Звёзды</span><span>Крипта</span><span>Подарок</span></div>
     </div>
   </section>
 
   <!-- PROFILE -->
   <section class="view" id="v-profile">
-    <div class="me">
-      <div class="avatar" id="avatar">H</div>
-      <div><b id="meName">Гость</b><span id="meId"></span></div>
+    <div class="card wide">
+      <div class="h"><span class="grow">Аккаунт</span></div>
+      <div class="me">
+        <div class="avatar" id="avatar">H</div>
+        <div><b id="meName">Гость</b><span id="meId"></span></div>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="row"><h3>Пригласить друга</h3><span class="pill" id="refBonus">+7 дней</span></div>
-      <div class="ref-num" id="refCount">0</div>
-      <p>друзей приглашено. Бонус начисляется, когда друг оплатит подписку.</p>
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <button class="btn block" id="shareBtn">Поделиться</button>
+    <div class="card wide">
+      <div class="h"><span class="grow">Пригласить друга</span><span class="tag hot" id="refBonus">+7 ДНЕЙ</span></div>
+      <span class="big" id="refCount">0</span>
+      <p class="note">друзей приглашено. Бонус начисляется, когда друг оплатит подписку.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" style="flex:1" id="shareBtn">Поделиться</button>
         <button class="btn ghost" id="copyRefBtn">Копировать</button>
       </div>
     </div>
 
-    <div class="list">
-      <button data-app="ios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span class="grow">iPhone / iPad — Happ</span><span class="count">→</span></button>
-      <button data-app="android"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 3l-1-2M15 3l1-2"/></svg><span class="grow">Android — v2rayTun</span><span class="count">→</span></button>
-      <button data-app="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="grow">Windows / macOS — Hiddify</span><span class="count">→</span></button>
+    <div class="card wide">
+      <div class="h"><span class="grow">Приложения</span></div>
+      <div class="list">
+        <button data-app="ios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span class="grow">iPhone / iPad — Happ</span><span class="go">→</span></button>
+        <button data-app="android"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 3l-1-2M15 3l1-2"/></svg><span class="grow">Android — v2rayTun</span><span class="go">→</span></button>
+        <button data-app="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="grow">Windows / macOS — Hiddify</span><span class="go">→</span></button>
+      </div>
     </div>
 
-    <div class="list">
-      <button id="supportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-6h4M4 13h4v6H6a2 2 0 01-2-2v-4z"/></svg><span class="grow">Поддержка</span><span class="count">→</span></button>
-      <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg><span class="grow">Продлить подписку</span><span class="count">→</span></button>
+    <div class="card wide">
+      <div class="h"><span class="grow">Помощь</span></div>
+      <div class="list">
+        <button id="supportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-6h4M4 13h4v6H6a2 2 0 01-2-2v-4z"/></svg><span class="grow">Поддержка</span><span class="go">→</span></button>
+        <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg><span class="grow">Продлить подписку</span><span class="go">→</span></button>
+      </div>
     </div>
-    <p class="demo" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
+    <p class="demo wide" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
   </section>
+
+  <div class="foot dm">БЫСТРЫЙ И<br>ПРИВАТНЫЙ VPN <i>_</i></div>
 </div>
 
 <nav class="tabs" id="tabs">
   <span class="tab-ind" id="tabInd"></span>
-  <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/></svg>Главная</button>
-  <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
-  <button data-go="plans"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="17" rx="1"/></svg>Тарифы</button>
-  <button data-go="profile"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>Профиль</button>
+  <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>Главная</button>
+  <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
+  <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
+  <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -522,19 +388,19 @@ const STATIC = !!STATE;
 const DEMO = !STATIC && !initData;
 const $ = (id) => document.getElementById(id);
 
-if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0a0b0d"); tg.setBackgroundColor?.("#0a0b0d"); }
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#c98c60"); tg.setBackgroundColor?.("#171615"); }
 
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
-  trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3,
+  trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства",
   referrals: 4, referral_bonus_days: 7,
 };
 const DEMO_META = {
   plans: [
-    { id: "m1", title: "1 месяц", days: 30, stars: 150 },
-    { id: "m3", title: "3 месяца", days: 90, stars: 400 },
-    { id: "m6", title: "6 месяцев", days: 180, stars: 750 },
-    { id: "y1", title: "12 месяцев", days: 365, stars: 1350 },
+    { id: "d2", title: "2 устройства", days: 30, stars: 199, devices: 2 },
+    { id: "d3", title: "3 устройства", days: 30, stars: 250, devices: 3 },
+    { id: "d5", title: "5 устройств", days: 30, stars: 350, devices: 5 },
+    { id: "d10", title: "10 устройств", days: 30, stars: 555, devices: 10 },
   ],
   locations: [
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38 },
@@ -545,7 +411,7 @@ const DEMO_META = {
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3,
 };
 
-let me = DEMO_ME, meta = DEMO_META, plan = "m1", selectedLoc = 0;
+let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
 
 function decodeState(s) {
   const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
@@ -553,10 +419,11 @@ function decodeState(s) {
   return {
     me: {
       id: st.u, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
-      sub_link: null, device_limit: st.n, referrals: st.r, referral_bonus_days: st.b,
+      sub_link: null, device_limit: st.n, plan: st.pl, referrals: st.r, referral_bonus_days: st.b,
     },
     meta: {
-      plans: st.p.map(([id, title, days, stars]) => ({ id, title, days, stars })),
+      // buttons in old chat messages still carry the old plan list, without device counts
+      plans: st.p.every((p) => p[4]) ? st.p.map(([id, title, days, stars, devices]) => ({ id, title, days, stars, devices })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td,
     },
   };
@@ -597,53 +464,237 @@ function plural(n, one, few, many) {
   return many;
 }
 
-/* landscape artwork per location */
+/* ---------- dotted globe ---------- */
+
+// Coastlines as [lon, lat] rings, coarse on purpose: the planet is only ~70 dots across
+const LAND = [
+  // North America
+  [-168,66,-162,70,-156,71,-140,70,-128,70,-115,68,-108,68,-95,69,-94,72,-85,70,-82,67,-87,64,-94,61,-93,58,-85,55,-82,52,-79,51,-79,55,-77,57,-78,62,-72,62,-65,60,-62,57,-56,53,-60,50,-66,50,-65,47,-61,46,-66,44,-70,43,-71,41,-75,39,-76,35,-81,31,-80,26,-81,25,-83,29,-89,30,-94,29,-97,26,-97,22,-95,18,-91,18,-90,21,-87,21,-88,16,-83,15,-83,10,-80,9,-77,8,-80,7,-85,10,-92,14,-96,16,-105,20,-109,25,-113,31,-110,24,-115,30,-118,34,-122,37,-124,42,-124,48,-128,51,-133,56,-140,60,-150,60,-153,58,-160,56,-165,54,-158,58,-162,60,-166,62,-162,64],
+  [-80,73,-70,71,-62,67,-66,62,-75,65,-82,70], [-120,74,-105,73,-102,69,-115,69], [-90,76,-75,77,-62,82,-75,83,-90,81],
+  [-44,60,-51,64,-54,70,-60,76,-72,78,-65,81,-40,83,-22,82,-20,75,-24,70,-32,68,-40,65], // Greenland
+  [-24,65,-18,66.5,-14,65,-18,63.5,-23,64], // Iceland
+  [-85,22,-80,23,-74,20,-78,20,-82,22], [-74,20,-68,19,-69,18,-74,18], // Cuba, Hispaniola
+  // South America
+  [-77,8,-72,12,-62,11,-52,5,-50,0,-44,-2,-35,-6,-37,-12,-39,-17,-41,-22,-48,-25,-49,-29,-54,-34,-58,-35,-57,-38,-62,-39,-65,-43,-66,-47,-69,-51,-68,-55,-72,-54,-75,-50,-74,-42,-73,-37,-71,-30,-70,-18,-76,-14,-81,-6,-80,-2,-78,2,-78,7],
+  // Africa, Madagascar
+  [-17,15,-17,21,-13,27,-6,35,10,37,11,33,20,31,25,32,32,31,35,28,37,21,43,12,51,12,44,2,40,-3,39,-10,40,-15,35,-24,28,-33,20,-35,18,-32,12,-18,13,-8,9,0,9,4,-4,5,-8,4,-13,8],
+  [49,-12,50,-16,47,-25,44,-24,44,-17],
+  // Eurasia
+  [-9,37,-9,43,-2,43.5,-1,46,-4.5,48.5,2,51,8,54,9,57,11,54,20,54.5,22,59,30,60,23,60,21,63,25,65.5,22,66,17,62,18,60,13,55.5,11,59,5,59,5,62,14,68,25,71,31,70,41,67,35,64.5,44,66,54,68.5,68,68.5,67,72,73,73,80,73,88,76,104,78,113,74,130,71.5,140,72.5,160,70,180,69,180,65,172,61,163,59,162,55,157,51,155.5,57,155,59,142,59,135,54,141,52,135,44,130,42.5,127,39.5,129,36,126.5,34.5,125,38,121,39,118,39,122,37,120,34,122,30,119,25,113,22,108,21.5,106,19,109,13,105,9,100,13,99,10,103,2,101,3,98,8,98,16,94,16,92,21,88,22,82,16,80,13,78,8.5,76,10,73,18,72.5,21,67,25,61,25,57,26,54,27,50,30,48,30,50,26.5,51.5,24,56,26,59.5,22.5,55,17,45,13,43,13,39,21,35,28,34.5,31,36,36,30,36,27,37,26,40,29,41,35,42,41,41.5,39,44,37,45.5,34,46,31,46,28,44,28,41,24,40.5,23,37,20,40,19,42,14,45,12.5,44,18,40,16,38,12,42,8,44,3,43,0,39.5,-2,37,-5,36],
+  [-180,65,-170,66,-175,68,-180,69], // Chukotka past the date line
+  [-5,50,1,51,1,53,-2,56,-3,58.5,-6,57,-3,54,-5,52], [-10,52,-6,52,-6,55,-9,54.5], // Britain, Ireland
+  [52,71,56,74,68,77,60,75,55,71], [12,78,20,80,25,78,17,76.5], [80,9.5,82,7,80.5,6], // Novaya Zemlya, Svalbard, Sri Lanka
+  [130,32,132,35,137,37,140,40,141.5,41,142,38,140,35,136,34,132,33], [140,42,142,45,145,43.5,143,42], [142,46,143,50,142.5,54,142,50], // Japan, Sakhalin
+  [120,23,121.5,25,121,22], [120,16,122,18.5,122,14,124,13], [122,7,126,9.5,126,6], // Taiwan, Philippines
+  [95,5.5,100,3,106,-3,105,-6,101,-3,97,2], [105,-6,111,-6.5,115,-8,106,-7.5], [109,1.5,113,3,117,7,119,1,116,-4,111,-3], [120,1,125,1.5,122,-1,122,-5,120,-5,119,-2], // Sumatra, Java, Borneo, Sulawesi
+  [131,-1,138,-2,145,-5,151,-10,143,-9,138,-8,133,-4], // New Guinea
+  [114,-22,122,-18,129,-15,131,-12,136,-12,136,-15,140,-17,142,-11,146,-19,153,-26,153,-31,150,-37,146,-39,141,-38,137,-35,132,-32,124,-33,116,-35,115,-31], // Australia
+  [145,-41,148,-41,147,-43.5], [173,-35,178,-38,175,-41,174,-39], [172,-41,174,-42,168,-47,166,-46], // Tasmania, New Zealand
+  [-180,-90,-180,-78,-150,-76,-110,-74,-75,-72,-60,-64,-58,-66,-45,-78,-20,-75,0,-70,40,-68,70,-68,100,-66,140,-66,170,-72,180,-78,180,-90], // Antarctica
+];
+const CASPIAN = [47,45,53,46,53,40,54,37,50,37,49,41];
+
+function landMask() {
+  const c = document.createElement("canvas"); c.width = 720; c.height = 360;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  const ring = (r) => {
+    x.beginPath();
+    for (let i = 0; i < r.length; i += 2) x.lineTo((r[i] + 180) * 2, (90 - r[i + 1]) * 2);
+    x.fill();
+  };
+  x.fillStyle = "#fff"; LAND.forEach(ring);
+  x.globalCompositeOperation = "destination-out"; ring(CASPIAN);
+  const px = x.getImageData(0, 0, 720, 360).data;
+  return (lon, lat) => {
+    const u = ((lon + 540) % 360) * 2 | 0, v = Math.min(359, (90 - lat) * 2 | 0);
+    return px[(v * 720 + u) * 4 + 3] > 127;
+  };
+}
+
+// Rows of dots along the parallels: open ocean is sparse and bright, land is a dense dim grey weave
+function globePoints(step) {
+  const isLand = landMask(), pts = [];
+  const add = (lat, lon, land) => {
+    const a = lat * Math.PI / 180, b = lon * Math.PI / 180;
+    pts.push(Math.cos(a) * Math.sin(b), Math.sin(a), Math.cos(a) * Math.cos(b), land);
+  };
+  let row = 0;
+  for (let lat = -89; lat < 90; lat += step / 2, row++) {
+    const n = Math.round(360 * Math.cos(lat * Math.PI / 180) / step) || 1;
+    for (let i = 0; i < n * 2; i++) {
+      const lon = -180 + (i / 2 + (row % 4) * .25) * (360 / n), land = isLand(lon, lat);
+      const onMainGrid = row % 2 === 0 && i % 2 === 0;
+      if (land) add(lat, lon, 1); else if (onMainGrid) add(lat, lon, 0);
+    }
+  }
+  return new Float32Array(pts);
+}
+
+const AXIS_TILT = 22 * Math.PI / 180, AXIS_ROLL = -18 * Math.PI / 180;
+const TURN_ON = 2 * Math.PI / 46, TURN_OFF = 2 * Math.PI / 110;  // radians per second, slower without a subscription
+const START_TURN = -1.1;  // opens over Eurasia
+
+// rotation about the planet's axis, then the fixed tilt of that axis (column-major)
+function globeMatrix(theta) {
+  const c = Math.cos(theta), s = Math.sin(theta), ca = Math.cos(AXIS_TILT), sa = Math.sin(AXIS_TILT), cb = Math.cos(AXIS_ROLL), sb = Math.sin(AXIS_ROLL);
+  // row by row: x' = cb*x - sb*y, y' = sb*x + cb*y, after y = ca*Y - sa*Z, z = sa*Y + ca*Z, X = c*x0 + s*z0, Z = -s*x0 + c*z0
+  const m = [
+    [cb * c - sb * sa * s, -sb * ca, cb * s + sb * sa * c],
+    [sb * c + cb * sa * s, cb * ca, sb * s - cb * sa * c],
+    [-ca * s, sa, ca * c],
+  ];
+  return new Float32Array([m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]]);
+}
+
+const GLOBE_VS = `
+attribute vec4 a; uniform mat3 rot; uniform float size; uniform vec2 scale; varying float v, land;
+void main() {
+  vec3 q = rot * a.xyz;
+  land = a.w;
+  // light from the upper left, like the rim-lit reference sphere
+  float light = max(0., dot(q, normalize(vec3(-.35, .4, .85))));
+  v = (a.w > .5 ? .44 + .26 * light : .8 + .2 * light) * smoothstep(.0, .06, q.z);
+  gl_PointSize = q.z <= 0. ? 0. : size * (a.w > .5 ? .8 : 1.) * (.5 + .5 * q.z);
+  gl_Position = q.z <= 0. ? vec4(2., 2., 0., 1.) : vec4(q.xy * scale, 0., 1.);
+}`;
+const GLOBE_FS = `
+precision mediump float; varying float v, land;
+void main() {
+  float d = length(gl_PointCoord - .5);
+  gl_FragColor = vec4(vec3(land > .5 ? .78 : 1.), v * smoothstep(.5, .32, d));
+}`;
+
+function initGlobe() {
+  const canvas = $("globe"), step = 1.9, pts = globePoints(step);
+  const gl = canvas.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: false });
+  let draw;
+  if (gl) {
+    const prog = gl.createProgram();
+    [[gl.VERTEX_SHADER, GLOBE_VS], [gl.FRAGMENT_SHADER, GLOBE_FS]].forEach(([type, src]) => {
+      const sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh); gl.attachShader(prog, sh);
+    });
+    gl.linkProgram(prog); gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, pts, gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "a"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const uRot = gl.getUniformLocation(prog, "rot"), uSize = gl.getUniformLocation(prog, "size"), uScale = gl.getUniformLocation(prog, "scale");
+    draw = (theta, grow, radius) => {
+      gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniformMatrix3fv(uRot, false, globeMatrix(theta));
+      gl.uniform1f(uSize, Math.max(1.5, radius * step * Math.PI / 180 * .62));
+      gl.uniform2f(uScale, grow * radius * 2 / canvas.width, grow * radius * 2 / canvas.height);
+      gl.drawArrays(gl.POINTS, 0, pts.length / 4);
+    };
+  } else {
+    // no WebGL on this device: same picture on a 2D canvas
+    const x = canvas.getContext("2d");
+    draw = (theta, grow, radius) => {
+      x.clearRect(0, 0, canvas.width, canvas.height);
+      const m = globeMatrix(theta), d = Math.max(1, radius * step * Math.PI / 180 * .36);
+      for (let i = 0; i < pts.length; i += 4) {
+        const qz = m[2] * pts[i] + m[5] * pts[i + 1] + m[8] * pts[i + 2];
+        if (qz <= 0) continue;
+        const qx = m[0] * pts[i] + m[3] * pts[i + 1] + m[6] * pts[i + 2], qy = m[1] * pts[i] + m[4] * pts[i + 1] + m[7] * pts[i + 2];
+        x.fillStyle = pts[i + 3] ? "rgba(200,200,200,.3)" : "rgba(255,255,255,.85)";
+        const w = d * (pts[i + 3] ? .7 : 1) * (.5 + .5 * qz);
+        x.fillRect(canvas.width / 2 + qx * radius * grow, canvas.height / 2 - qy * radius * grow, w, w);
+      }
+    };
+  }
+
+  let radius = 0;
+  const size = () => {
+    const box = canvas.getBoundingClientRect();
+    if (!box.width) return;
+    const dpr = Math.min(devicePixelRatio || 1, 2.5);
+    canvas.width = box.width * dpr; canvas.height = box.height * dpr;
+    radius = Math.min(canvas.width, canvas.height) * .485;
+  };
+  size(); addEventListener("resize", size);
+
+  const t0 = performance.now();
+  let theta = START_TURN, last = t0, minGap = gl ? 0 : 66;
+  const frame = (now) => {
+    requestAnimationFrame(frame);
+    if (!$("v-home").classList.contains("active") || document.hidden || now - last < minGap) return;
+    if (!radius) size();
+    theta += (me.active ? TURN_ON : TURN_OFF) * Math.min(.1, (now - last) / 1000);
+    last = now;
+    const k = Math.min(1, (now - t0) / 900);
+    draw(theta, .9 + .1 * (1 - Math.pow(1 - k, 3)), radius);
+  };
+  if (REDUCED) draw(theta, 1, radius); else requestAnimationFrame(frame);
+}
+
+/* ---------- small dotted widgets ---------- */
+
+function buildWidgets() {
+  // subscription gauge: 64 dots around the days counter
+  const R = 56, N = 64;
+  $("ring").innerHTML = Array.from({ length: N }, (_, i) => {
+    const a = i / N * 2 * Math.PI - Math.PI / 2;
+    return `<circle cx="${(62 + R * Math.cos(a)).toFixed(2)}" cy="${(62 + R * Math.sin(a)).toFixed(2)}" r="2" style="--n:${i}"/>`;
+  }).join("");
+  $("devDots").innerHTML = Array.from({ length: 10 }, (_, i) => `<i style="--n:${i}"></i>`).join("");
+  // infinity sign as a lemniscate of dots
+  const D = 46;
+  $("inf").innerHTML = Array.from({ length: D }, (_, i) => {
+    const t = i / D * 2 * Math.PI, k = 1 + Math.sin(t) ** 2;
+    return `<circle cx="${(55 + 50 * Math.cos(t) / k).toFixed(2)}" cy="${(20 + 44 * Math.sin(t) * Math.cos(t) / k).toFixed(2)}" r="1.9" style="--t:${(i / D).toFixed(3)}"/>`;
+  }).join("");
+}
+
+function setRing(days, on) {
+  const dots = [...$("ring").children], lit = on ? Math.max(1, Math.round(Math.min(1, days / 30) * dots.length)) : 0;
+  dots.forEach((c, i) => { c.classList.toggle("lit", i < lit); c.classList.toggle("head", on && i >= lit - 3 && i < lit); });
+}
+
+/* dotted landscape per location */
 function scene(kind) {
   const s = {
-    alps: `<defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f5f9e"/><stop offset="1" stop-color="#5fa7d9"/></linearGradient>
-      <linearGradient id="a2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#a9b4bf"/></linearGradient></defs>
-      <rect width="400" height="220" fill="url(#a1)"/>
-      <path d="M-10 220 L120 120 L170 140 L250 50 L300 90 L330 80 L420 170 L420 220Z" fill="url(#a2)"/>
-      <path d="M250 50 L230 110 L200 130 L170 140 L250 50Z M250 50 L275 120 L300 90Z" fill="#6f7f8f" opacity=".55"/>
-      <path d="M-10 220 L80 170 L160 190 L260 160 L420 200 L420 220Z" fill="#41525f"/>`,
-    hills: `<defs><linearGradient id="h1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb4c4"/><stop offset="1" stop-color="#dfe5e8"/></linearGradient></defs>
-      <rect width="400" height="220" fill="url(#h1)"/>
-      <path d="M-10 150 Q90 70 200 80 T420 110 L420 220 L-10 220Z" fill="#4f7a3c"/>
-      <path d="M-10 150 Q90 70 200 80 Q150 120 120 150Z" fill="#6b9450" opacity=".7"/>
-      <path d="M-10 190 Q120 140 260 165 T420 160 L420 220 L-10 220Z" fill="#2f4f25"/>`,
-    dunes: `<defs><linearGradient id="d1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d98bb"/><stop offset="1" stop-color="#c7b7a8"/></linearGradient>
-      <linearGradient id="d2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c0602f"/><stop offset="1" stop-color="#8f3d1d"/></linearGradient></defs>
-      <rect width="400" height="220" fill="url(#d1)"/>
-      <path d="M-10 160 Q120 150 230 70 Q300 110 420 140 L420 220 L-10 220Z" fill="url(#d2)"/>
-      <path d="M230 70 Q260 130 200 220 L420 220 L420 140 Q300 110 230 70Z" fill="#6e2c14" opacity=".55"/>
-      <path d="M-10 195 Q140 160 300 200 L300 220 L-10 220Z" fill="#a8502a"/>`,
-    fjord: `<defs><linearGradient id="f1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22374c"/><stop offset="1" stop-color="#7a98ae"/></linearGradient></defs>
-      <rect width="400" height="220" fill="url(#f1)"/>
-      <path d="M-10 160 L40 70 L90 100 L150 40 L190 150 Z" fill="#1d2a33"/>
-      <path d="M200 150 L260 60 L300 90 L350 30 L420 120 L420 150Z" fill="#253540"/>
-      <rect y="150" width="400" height="70" fill="#3e5b6e"/>
-      <path d="M0 150 L190 150 L150 200 L90 175 L40 205Z M210 150 L420 150 L420 175 L350 210 L300 185 L260 205Z" fill="#2b4252" opacity=".7"/>`,
+    alps: `<circle cx="318" cy="66" r="22" fill="url(#dO)"/>
+      <path d="M-10 220 L120 120 L170 140 L250 50 L300 90 L330 80 L420 170 L420 220Z" fill="url(#dM)"/>
+      <path d="M250 50 L230 110 L200 130 L170 140 L250 50Z M250 50 L275 120 L300 90Z" fill="url(#dB)"/>
+      <path d="M-10 220 L80 170 L160 190 L260 160 L420 200 L420 220Z" fill="url(#dS)"/>`,
+    hills: `<circle cx="300" cy="58" r="20" fill="url(#dO)"/>
+      <path d="M-10 150 Q90 70 200 80 T420 110 L420 220 L-10 220Z" fill="url(#dM)"/>
+      <path d="M-10 150 Q90 70 200 80 Q150 120 120 150Z" fill="url(#dB)"/>
+      <path d="M-10 190 Q120 140 260 165 T420 160 L420 220 L-10 220Z" fill="url(#dS)"/>`,
+    dunes: `<circle cx="96" cy="62" r="22" fill="url(#dO)"/>
+      <path d="M-10 160 Q120 150 230 70 Q300 110 420 140 L420 220 L-10 220Z" fill="url(#dM)"/>
+      <path d="M230 70 Q260 130 200 220 L420 220 L420 140 Q300 110 230 70Z" fill="url(#dB)"/>
+      <path d="M-10 195 Q140 160 300 200 L300 220 L-10 220Z" fill="url(#dS)"/>`,
+    fjord: `<circle cx="222" cy="52" r="18" fill="url(#dO)"/>
+      <path d="M-10 160 L40 70 L90 100 L150 40 L190 150 Z" fill="url(#dM)"/>
+      <path d="M200 150 L260 60 L300 90 L350 30 L420 120 L420 150Z" fill="url(#dB)"/>
+      <rect y="150" width="400" height="70" fill="url(#dS)"/>`,
   };
   return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">${s[kind] || s.alps}</svg>`;
 }
 
 function renderHome() {
   const on = me.active;
-  $("statusPill").classList.toggle("on", on);
-  $("statusText").textContent = on ? "Активна" : "Не активна";
-  $("hero").classList.toggle("on", on);
+  $("app").classList.toggle("on", on);
+  $("statusText").textContent = on ? "Подписка активна" : "Подписка не активна";
+  $("liveTag").textContent = on ? "LIVE" : "OFFLINE";
+  $("liveTag").classList.toggle("hot", on);
   countTo($("daysLeft"), me.days_left, 1100);
-  $("daysCaption").textContent = on ? `${plural(me.days_left, "день", "дня", "дней")} осталось` : "подписка не активна";
-  $("heroUntil").textContent = on ? "до " + new Date(me.expires_at * 1000).toLocaleDateString("ru-RU") : "";
-  $("connectBtn").innerHTML = on ? "Подклю&shy;чить" : "Купить";
-  $("statDevices").textContent = me.device_limit;
+  $("daysCaption").textContent = plural(me.days_left, "день", "дня", "дней");
+  setRing(me.days_left, on);
+  $("subPlan").textContent = on ? (me.plan || `${me.device_limit} устр.`) : "—";
+  $("subUntil").textContent = on ? new Date(me.expires_at * 1000).toLocaleDateString("ru-RU") : "—";
+  $("subState").textContent = on ? "Активна" : "Не активна";
+  $("connectText").textContent = on ? "Подключить" : "Купить";
+  $("statDevices").textContent = on ? me.device_limit : "—";
+  [...$("devDots").children].forEach((d, i) => d.classList.toggle("lit", on && i < me.device_limit));
   $("trialCard").hidden = !me.trial_available;
   $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
   $("keyCard").hidden = !(on && (me.sub_link || STATIC));
   $("subLink").textContent = me.sub_link || "Ключ придёт сообщением в чат с ботом";
   $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
-  const loc = meta.locations[selectedLoc];
-  $("statPing").firstChild.textContent = loc && isAvail(loc) ? loc.ping : "—";
+  const loc = meta.locations[selectedLoc], ok = loc && isAvail(loc);
+  $("netLoc").textContent = ok ? loc.city : "—";
+  $("netPing").innerHTML = ok ? `${loc.ping}<small> ms</small>` : "—";
 }
 
 // a location without the flag (older bot data) counts as available
@@ -656,22 +707,18 @@ function pickAvailable() {
 }
 
 const TAPE_TEXT = Array(6).fill("НЕДОСТУПНО · СКОРО ·").join(" ");
-const LOCK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+const LOCK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
 
 function renderLocations() {
   pickAvailable();
-  const avail = meta.locations.filter(isAvail).length;
-  $("locCount").textContent = `${avail} из ${meta.locations.length} доступно`;
   $("locList").innerHTML = meta.locations.map((l, i) => {
-    const off = !isAvail(l);
+    const off = !isAvail(l), sel = i === selectedLoc;
     return `
-    <div class="loc ${i === selectedLoc ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
+    <div class="card loc ${sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
       ${scene(l.scene)}
-      <span class="chip">${l.city} · ${off ? "недоступно" : l.ping + " ms"}</span>
-      <span class="more">${off ? LOCK : i === selectedLoc
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'}</span>
-      <div class="name" style="--len:${l.name.length}">${l.name}</div>
+      <div class="h"><span class="grow">${l.city}</span>
+        <span class="tag ${sel ? "hot" : ""}">${off ? LOCK + "НЕДОСТУПНО" : sel ? '<span class="led on"></span>ВЫБРАНА' : l.ping + " MS"}</span></div>
+      <div class="name-box"><div class="name" style="--len:${l.name.length}">${l.name.toUpperCase()}</div></div>
       ${off ? `<div class="tape tape-a"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>
                <div class="tape tape-b"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>` : ""}
     </div>`;
@@ -686,29 +733,42 @@ function renderLocations() {
 }
 
 function renderPlans() {
-  const seg = $("seg");
-  // buttons are built once so the sliding indicator can animate between them
-  if (!seg.querySelector("button")) {
-    seg.innerHTML = '<span class="seg-ind"></span>' + meta.plans.map((p) =>
-      `<button data-p="${p.id}">${p.days >= 365 ? "Год" : Math.round(p.days / 30) + " мес"}</button>`).join("");
-    seg.querySelectorAll("button").forEach((b) => b.onclick = () => {
+  const tiers = $("tiers");
+  // cards are built once; only the selection changes afterwards
+  if (!tiers.children.length) {
+    tiers.innerHTML = meta.plans.map((p, i) => {
+      const top = i === meta.plans.length - 1, base = i === 0;
+      return `<button class="card tier" data-p="${p.id}" style="--i:${i}">
+        <span class="h"><span class="grow">Тариф</span><span class="led"></span></span>
+        <span class="digit">${p.devices}</span>
+        <span class="word">${p.title.replace(/^\d+\s*/, "")}</span>
+        <span class="cost">${p.stars} ₽</span>
+        <span class="tier-tag ${top ? "hot" : ""}">${top ? "Макс. выгода" : base ? "Базовый" : "&nbsp;"}</span>
+      </button>`;
+    }).join("");
+    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => {
       if (plan === b.dataset.p) return;
       plan = b.dataset.p; haptic(); renderPlans();
       const card = document.querySelector(".price-card");
       card.classList.remove("bump"); void card.offsetWidth; card.classList.add("bump");
     });
   }
-  seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.p === plan));
-  slideTo(seg.querySelector(".seg-ind"), seg.querySelector("button.on"));
-  const p = meta.plans.find((x) => x.id === plan);
-  const base = meta.plans[0].stars / meta.plans[0].days;
-  const save = Math.round((1 - p.stars / p.days / base) * 100);
+  tiers.querySelectorAll(".tier").forEach((b) => {
+    const on = b.dataset.p === plan;
+    b.classList.toggle("on", on);
+    b.querySelector(".led").classList.toggle("on", on);
+  });
+  const p = meta.plans.find((x) => x.id === plan) || meta.plans[0];
+  plan = p.id;
   $("planTitle").textContent = p.title;
+  $("planDays").textContent = `${p.days} ДНЕЙ`;
   countTo($("planPrice"), p.stars, 500);
-  $("planPer").textContent = `≈ ${(p.stars / p.days).toFixed(1)} ⭐ в день`;
-  $("planBadge").hidden = save < 5;
-  $("planBadge").textContent = `−${save}%`;
-  $("featDevices").textContent = `До ${me.device_limit} устройств`;
+  $("planPer").textContent = `≈ ${p.stars} ⭐ · ${Math.round(p.stars / p.devices)} ₽ за устройство`;
+  const top = p.id === meta.plans[meta.plans.length - 1].id;
+  $("planNote").hidden = !top;
+  $("planNote").textContent = "Максимальная выгода для совместного использования";
+  $("featDevices").textContent = `До ${p.devices} устройств`;
+  $("buyBtn").textContent = `Оплатить ${p.stars} ₽`;
 }
 
 function renderProfile() {
@@ -718,7 +778,7 @@ function renderProfile() {
   $("meId").textContent = u?.username ? "@" + u.username : (u ? "ID " + u.id : "демо-аккаунт");
   $("avatar").textContent = name[0]?.toUpperCase() || "H";
   countTo($("refCount"), me.referrals, 900);
-  $("refBonus").textContent = `+${me.referral_bonus_days} дней`;
+  $("refBonus").textContent = `+${me.referral_bonus_days} ДНЕЙ`;
   $("demoNote").hidden = !DEMO;
 }
 
@@ -740,7 +800,7 @@ function countTo(el, to, ms) {
   el._raf = requestAnimationFrame(step);
 }
 
-// Moves a pill indicator under the given button
+// Moves the pill indicator under the given tab
 function slideTo(ind, btn) {
   if (!ind || !btn || !btn.offsetWidth) return;
   ind.style.width = btn.offsetWidth + "px";
@@ -750,19 +810,23 @@ function slideTo(ind, btn) {
 // Stagger order for the entrance animation of each view's blocks
 document.querySelectorAll(".view").forEach((v) => [...v.children].forEach((c, i) => c.style.setProperty("--i", i)));
 
+const SUBTITLE = { home: "VPN · VLESS REALITY", locations: "ЛОКАЦИИ", plans: "ТАРИФЫ", profile: "ПРОФИЛЬ" };
+
+function setSubtitle(view) {
+  $("hdSub").textContent = SUBTITLE[view];
+  $("hdSub").classList.toggle("dm", view !== "home");
+}
+
 function go(view) {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "v-" + view));
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === view));
+  setSubtitle(view);
   $("locList").classList.remove("settled");
   slideTo($("tabInd"), document.querySelector("#tabs button.on"));
-  if (view === "plans") requestAnimationFrame(() => slideTo(document.querySelector(".seg-ind"), document.querySelector("#seg button.on")));
   if (view === "home") { $("daysLeft").textContent = 0; countTo($("daysLeft"), me.days_left, 900); }
   window.scrollTo({ top: 0 }); haptic();
 }
-addEventListener("resize", () => {
-  slideTo($("tabInd"), document.querySelector("#tabs button.on"));
-  slideTo(document.querySelector(".seg-ind"), document.querySelector("#seg button.on"));
-});
+addEventListener("resize", () => slideTo($("tabInd"), document.querySelector("#tabs button.on")));
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
 
 const refLink = () => `https://t.me/${meta.bot_username}?start=ref${me.id}`;
@@ -816,13 +880,17 @@ $("buyBtn").onclick = async () => {
 };
 
 (async () => {
+  buildWidgets();
+  setSubtitle("home");
   if (STATIC) {
     try { ({ me, meta } = decodeState(STATE)); } catch { toast("Ошибка загрузки"); }
   } else if (!DEMO) {
     try { [me, meta] = await Promise.all([api("/api/me"), api("/api/meta")]); }
     catch { toast("Ошибка загрузки"); }
   }
+  plan = meta.plans[0].id;
   render();
+  initGlobe();
   const placeTabInd = () => slideTo($("tabInd"), document.querySelector("#tabs button.on"));
   placeTabInd();
   document.fonts?.ready.then(placeTabInd);  // tab widths shift once the web font loads
