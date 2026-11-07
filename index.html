@@ -44,11 +44,13 @@
   .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
 
   .rows { display: flex; flex-direction: column; margin-top: 22px; }
-  .rows > div, .rows > button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 15px; text-align: left; }
+  .rows > div, .rows > button, .rows > a { color: inherit; text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 15px; text-align: left; }
   .rows span:first-child { color: var(--muted); }
   .rows b { font-weight: 700; text-align: right; }
   .rows button { transition: opacity .15s; }
-  .rows button:active { opacity: .55; }
+  .rows button:active, .rows > a:active { opacity: .55; }
+  .legal { margin: 10px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+  .legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .rows button span:first-child { color: var(--text); }
 
   .block { margin-top: 26px; }
@@ -364,6 +366,7 @@
       <div><span>Также</span><b>Криптовалюта</b></div>
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
+    <p class="legal">Оплачивая, вы принимаете <a data-doc="terms" href="#">пользовательское соглашение</a> и <a data-doc="privacy" href="#">политику конфиденциальности</a>.</p>
     <div class="rows block">
       <button data-go="gift"><span>Купить в подарок другу</span><b>→</b></button>
       <button data-go="promo"><span>Есть промокод</span><b>→</b></button>
@@ -468,6 +471,7 @@
     <div class="price" id="giftPriceBox"><b id="giftPrice"></b><span>₽</span></div>
     <div class="caption" id="giftPer">30 дней</div>
     <button class="btn" id="giftBuyBtn" style="margin-top:14px">Оплатить</button>
+    <p class="legal">Оплачивая, вы принимаете <a data-doc="terms" href="#">пользовательское соглашение</a> и <a data-doc="privacy" href="#">политику конфиденциальности</a>.</p>
     <div class="block" id="giftListBox" hidden>
       <h2 class="sec">Ваши подарки</h2>
       <div id="giftList" style="margin-top:12px"></div>
@@ -551,7 +555,9 @@
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
       <button data-go="gift"><span>Подарить подписку</span><b>→</b></button>
       <button data-go="promo"><span>Промокод</span><b>→</b></button>
-      <button id="supportBtn"><span>Поддержка</span><b>→</b></button>
+      <button id="supportBtn"><span>Поддержка</span><b>чат в боте →</b></button>
+      <a data-doc="terms" href="#"><span>Пользовательское соглашение</span><b>→</b></a>
+      <a data-doc="privacy" href="#"><span>Политика конфиденциальности</span><b>→</b></a>
       <button data-go="plans"><span>Продлить подписку</span><b>→</b></button>
     </div>
     <p class="demo" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
@@ -2102,6 +2108,13 @@ $("shareBtn").onclick = () => {
   const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
   tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
 };
+// Public documents; the bot keeps the same two links in config.py
+const LEGAL = { terms: "https://telegra.ph/PUBLICHNAYA-OFERTA-08-12-15", privacy: "https://telegra.ph/POLITIKA-KONFIDENCIALNOSTI-08-12-99" };
+document.querySelectorAll("[data-doc]").forEach((a) => {
+  a.href = LEGAL[a.dataset.doc]; a.target = "_blank"; a.rel = "noopener";
+  a.onclick = (e) => { if (tg?.openLink) { e.preventDefault(); haptic(); tg.openLink(a.href); } };
+});
+
 $("demoPaid").onclick = () => { go("home"); playPaid(); };
 $("supportBtn").onclick = () => DEMO ? toast("Поддержка доступна в Telegram") : toBot("support");
 $("trialBtn").onclick = async () => {
