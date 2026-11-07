@@ -25,7 +25,7 @@
   body { margin: 0; background: var(--bg); color: var(--text); font: 500 15px/1.4 "Manrope", system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
   button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .app { position: relative; max-width: 480px; min-height: 100vh; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 24px calc(112px + env(safe-area-inset-bottom)); overflow: hidden; }
+  .app { position: relative; max-width: 480px; min-height: 100vh; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 24px calc(112px + env(safe-area-inset-bottom)); overflow: hidden; overflow: clip; }
   .brand { position: relative; z-index: 1; font-weight: 800; font-size: 19px; }
 
   .view { display: none; }
@@ -151,12 +151,31 @@
   .links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; border-top: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 14px; }
   .sub-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 16px; }
 
+  /* admin: support conversations */
+  #supList { display: flex; flex-direction: column; margin-top: 22px; }
+  .sup-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; width: 100%; min-height: 64px; padding: 12px 0; border-top: 1px solid var(--line); text-align: left; transition: opacity .15s; }
+  .sup-row:active { opacity: .55; }
+  .sup-row b { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sup-row time { font-size: 12px; color: var(--muted); }
+  .sup-row span { grid-column: 1 / -1; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sup-empty { margin-top: 26px; color: var(--muted); font-size: 15px; }
+  #supMessages { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+  .bubble { max-width: 84%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface); align-self: flex-start; }
+  .bubble.mine { background: #fff; color: var(--bg); align-self: flex-end; }
+  .bubble time { display: block; margin-top: 3px; font-size: 11px; opacity: .6; }
+  .composer { position: sticky; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 2; display: flex; align-items: flex-end; gap: 8px; margin-top: 16px; padding: 8px 0; background: var(--bg); }
+  .composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .composer textarea { flex: 1; min-width: 0; min-height: 48px; max-height: 140px; padding: 13px 16px; border-radius: 24px; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 500 15px/1.35 "Manrope", sans-serif; resize: none; }
+  .composer textarea:focus { outline: none; border-color: #fff; }
+  .composer button { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; }
+  .composer button:disabled { opacity: .4; }
+
   /* tab bar: the pills melt into each other and a white drop flows to the chosen one (both layers go through a "goo" filter) */
   .tabs-fade { position: fixed; left: 0; right: 0; bottom: 0; height: calc(112px + env(safe-area-inset-bottom)); z-index: 9; pointer-events: none; background: linear-gradient(180deg, rgba(11,11,11,0), var(--bg) 46%); }
   .tabs { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); width: min(calc(100% - 24px), 456px); height: 64px; transform: translateX(-50%); z-index: 10; display: flex; gap: 6px; }
   #tabGoo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
   .tabs button { position: relative; flex: 1 1 0; min-width: 0; height: 64px; border-radius: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 700; color: var(--muted); transition: color .22s; }
-  .tabs button svg { width: 20px; height: 20px; }
+  .tabs button svg { width: 19px; height: 19px; }
   .tabs button.on { color: var(--bg); }
 
   .toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -80px); z-index: 20; white-space: nowrap; background: #fff; color: var(--bg); padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; transition: transform .45s var(--spring); }
@@ -220,7 +239,7 @@
     <div class="caption" id="planPer">за 30 дней</div>
     <p class="note" id="planNote" hidden>Максимальная выгода для совместного использования</p>
     <div class="rows">
-      <div><span>Звёздами Telegram, по курсу</span><b id="planStars">162 ⭐</b></div>
+      <div><span>Звёздами Telegram, по курсу</span><b id="planStars">162 звезды</b></div>
       <div><span>Также</span><b>Криптовалюта, подарок</b></div>
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
@@ -257,6 +276,29 @@
     </div>
     <p class="sub-label">Другие приложения для этого устройства</p>
     <div class="links" id="otherLinks" style="margin-top:4px"></div>
+  </section>
+
+  <!-- SUPPORT, admins only -->
+  <section class="view" id="v-support">
+    <div id="supListBox">
+      <h1>Обращения</h1>
+      <p class="note" id="supCount"></p>
+      <div id="supList"></div>
+      <p class="sup-empty" id="supEmpty" hidden>Открытых обращений нет.</p>
+    </div>
+    <div id="supThreadBox" hidden>
+      <button class="back" id="supBack">← К списку</button>
+      <div class="split">
+        <div style="min-width:0"><h1 id="supName" style="margin:4px 0 0;font-size:26px;overflow-wrap:anywhere"></h1><p class="note" id="supInfo"></p></div>
+        <button class="btn small ghost" id="supClose">Закрыть</button>
+      </div>
+      <div id="supMessages"></div>
+      <form class="composer" id="supForm">
+        <label for="supText">Ответ пользователю</label>
+        <textarea id="supText" rows="1" maxlength="4000" placeholder="Ответ пользователю"></textarea>
+        <button type="submit" id="supSend" aria-label="Отправить ответ"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
+      </form>
+    </div>
   </section>
 
   <!-- PROFILE -->
@@ -313,6 +355,7 @@
   <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>Главная</button>
   <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
   <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
+  <button data-go="support" id="supportTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H9l-5 4z"/></svg>Чаты</button>
   <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль</button>
 </nav>
 
@@ -348,7 +391,7 @@ const DEMO_META = {
     { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31, available: false },
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
-  bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3,
+  bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
   ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500,
 };
 
@@ -366,7 +409,7 @@ function decodeState(s) {
     meta: {
       // buttons in old chat messages still carry an old plan list, without ruble prices
       plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub]) => ({ id, title, days, stars, devices, rub })) : DEMO_META.plans,
-      locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td,
+      locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout,
     },
   };
@@ -639,6 +682,141 @@ function initLiquid() {
   document.fonts?.ready.then(placeLiquid);  // tab widths are fixed, but keep it right if the layout shifts
 }
 
+/* ---------- support conversations, admins only ---------- */
+
+// The bot's address behind the hosting's HTTPS proxy. Every call is signed with Telegram's initData and the bot checks it.
+const ADMIN_API = "https://s-25087.de-bots6.h1clayd.click";
+const SUP_POLL_MS = 6000;
+const support = { open: null, timer: 0, seen: -1 };
+
+const DEMO_THREADS = {
+  101: { user: { id: 101, username: "ivan_k", plan: "3 устройства", days_left: 12 }, open: true, messages: [
+    { from_admin: 0, body: "Здравствуйте! Не подключается на iPhone, пишет ошибку импорта", created_at: Date.now() / 1000 - 3600 },
+    { from_admin: 1, body: "Добрый день! Обновите Happ до последней версии и добавьте ключ заново", created_at: Date.now() / 1000 - 3000 },
+    { from_admin: 0, body: "Спасибо, заработало", created_at: Date.now() / 1000 - 600 },
+  ] },
+  102: { user: { id: 102, username: null, plan: "нет подписки", days_left: 0 }, open: true, messages: [
+    { from_admin: 0, body: "Можно ли оплатить подарком?", created_at: Date.now() / 1000 - 8000 },
+  ] },
+};
+
+async function adminApi(path, body) {
+  if (DEMO) return demoAdmin(path, body);
+  const res = await fetch(ADMIN_API + path, {
+    method: body ? "POST" : "GET",
+    headers: { "Content-Type": "application/json", "X-Init-Data": initData },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+function demoAdmin(path, body) {
+  const m = path.match(/threads\/(\d+)(\/\w+)?$/);
+  if (!m) return { threads: Object.values(DEMO_THREADS).filter((t) => t.open).map((t) => ({
+    user_id: t.user.id, username: t.user.username, updated_at: t.messages[t.messages.length - 1].created_at, preview: t.messages[t.messages.length - 1].body })) };
+  const t = DEMO_THREADS[m[1]];
+  if (m[2] === "/reply") t.messages.push({ from_admin: 1, body: body.text, created_at: Date.now() / 1000 });
+  if (m[2] === "/close") t.open = false;
+  return t;
+}
+
+const supWho = (u) => (u.username ? "@" + u.username : "ID " + (u.id ?? u.user_id));
+function supTime(sec) {
+  const d = new Date(sec * 1000);
+  return d.toDateString() === new Date().toDateString()
+    ? d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
+// User text goes in with textContent only: it comes from strangers and must never be read as markup
+function el(tag, className, text) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+async function loadThreads() {
+  try {
+    const { threads } = await adminApi("/api/admin/threads");
+    $("supCount").textContent = threads.length ? `Открыто: ${threads.length}` : "";
+    $("supEmpty").hidden = threads.length > 0;
+    $("supEmpty").textContent = "Открытых обращений нет.";
+    $("supList").replaceChildren(...threads.map((t) => {
+      const row = el("button", "sup-row");
+      row.append(el("b", "", supWho(t)), el("time", "", supTime(t.updated_at)), el("span", "", t.preview || ""));
+      row.onclick = () => { haptic(); openThread(t.user_id); };
+      return row;
+    }));
+  } catch {
+    $("supEmpty").hidden = false;
+    $("supEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
+  }
+}
+
+async function loadThread(userId) {
+  try {
+    const t = await adminApi(`/api/admin/threads/${userId}`);
+    if (support.open !== userId) return;  // the admin has already left this conversation
+    $("supName").textContent = supWho(t.user);
+    $("supInfo").textContent = `ID ${t.user.id}, подписка: ${t.user.plan}`;
+    $("supClose").hidden = !t.open;
+    if (t.messages.length === support.seen) return;  // don't disturb scrolling when nothing is new
+    support.seen = t.messages.length;
+    $("supMessages").replaceChildren(...t.messages.map((m) => {
+      const b = el("div", "bubble" + (m.from_admin ? " mine" : ""), m.body);
+      b.append(el("time", "", supTime(m.created_at)));
+      return b;
+    }));
+    window.scrollTo({ top: document.documentElement.scrollHeight });
+  } catch { toast("Нет связи с ботом"); }
+}
+
+function openThread(userId) {
+  support.open = userId; support.seen = -1;
+  $("supListBox").hidden = true; $("supThreadBox").hidden = false;
+  $("supMessages").replaceChildren();
+  window.scrollTo({ top: 0 });
+  loadThread(userId);
+}
+
+function closeThreadView() {
+  support.open = null;
+  $("supThreadBox").hidden = true; $("supListBox").hidden = false;
+  loadThreads();
+}
+
+function supportPoll(active) {
+  clearInterval(support.timer);
+  if (!active) return;
+  support.open ? loadThread(support.open) : loadThreads();
+  support.timer = setInterval(() => {
+    if (document.hidden) return;
+    support.open ? loadThread(support.open) : loadThreads();
+  }, SUP_POLL_MS);
+}
+
+$("supBack").onclick = closeThreadView;
+$("supClose").onclick = async () => {
+  try { await adminApi(`/api/admin/threads/${support.open}/close`, {}); haptic("medium"); toast("Обращение закрыто"); closeThreadView(); }
+  catch { toast("Не удалось закрыть"); }
+};
+$("supForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("supText").value.trim();
+  if (!text) return;
+  $("supSend").disabled = true;
+  try {
+    await adminApi(`/api/admin/threads/${support.open}/reply`, { text });
+    $("supText").value = ""; $("supText").style.height = "";
+    haptic("medium"); loadThread(support.open);
+  } catch (err) {
+    toast(String(err.message) === "409" ? "Не доставлено: пользователь заблокировал бота" : "Не удалось отправить");
+  }
+  $("supSend").disabled = false;
+};
+$("supText").oninput = () => { const t = $("supText"); t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; };
+
 /* connect screen: Happ on every device, other clients depending on the device */
 const HAPP_IOS = "https://apps.apple.com/us/app/happ-proxy-utility/id6504287215";
 const STREISAND = ["Streisand", "https://apps.apple.com/app/streisand/id6450534064"];
@@ -774,7 +952,7 @@ function renderPlans() {
   plan = p.id;
   countTo($("planPrice"), p.rub, 500);
   $("planPer").textContent = `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
-  $("planStars").textContent = `${p.stars} ⭐`;
+  $("planStars").textContent = `${p.stars} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
   $("planNote").hidden = p.id !== meta.plans[meta.plans.length - 1].id;
   $("buyBtn").textContent = `Оплатить ${p.rub} ₽`;
 }
@@ -842,6 +1020,7 @@ function go(view) {
   const tab = view === "connect" ? "home" : view;
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === tab));
   $("locList").classList.remove("settled");
+  supportPoll(view === "support");
   placeLiquid(); runLiquid();
   if (view === "home") { $("daysLeft").textContent = 0; countTo($("daysLeft"), me.days_left, 900); }
   window.scrollTo({ top: 0 }); haptic();
@@ -876,10 +1055,7 @@ $("shareBtn").onclick = () => {
   const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
   tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
 };
-$("supportBtn").onclick = () => {
-  const url = `https://t.me/${meta.support}`;
-  tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
-};
+$("supportBtn").onclick = () => DEMO ? toast("Поддержка доступна в Telegram") : toBot("support");
 $("trialBtn").onclick = async () => {
   if (STATIC) return toBot("trial");
   if (DEMO) { me = { ...me, trial_available: false }; render(); return toast("Пробный период активирован"); }
@@ -910,6 +1086,7 @@ $("buyBtn").onclick = async () => {
     catch { toast("Ошибка загрузки"); }
   }
   plan = meta.plans[0].id;
+  if (!meta.admin) $("supportTab").remove();  // before the tab bar measures its buttons
   render();
   initLiquid();
   initGlobe();
