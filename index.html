@@ -231,6 +231,62 @@
   .day-table td { text-align: right; padding: 8px 0; border-top: 1px solid var(--line); }
   .day-table th:first-child, .day-table td:first-child { text-align: left; }
 
+  /* price: each digit is a column that rolls; the monthly total gets struck through */
+  .roll { display: inline-block; height: 1em; overflow: hidden; vertical-align: top; font-style: normal; }
+  .roll i { display: block; font-style: normal; white-space: pre; line-height: 1; transition: transform .6s var(--ease-out); transition-delay: calc(var(--d) * 45ms); }
+  .price b { font-variant-numeric: tabular-nums; }
+  .was { height: 26px; margin-top: 26px; font-weight: 600; font-size: 18px; color: var(--muted); opacity: 0; transition: opacity .25s; }
+  .was.show { opacity: 1; }
+  .was s { position: relative; text-decoration: none; }
+  .was s::after { content: ""; position: absolute; left: -2px; right: -2px; top: 52%; height: 2px; background: #fff; transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease-out) .12s; }
+  .was.show s::after { transform: scaleX(1); }
+  .was + .price { margin-top: 0; }
+  .save-in { animation: rise .45s var(--ease-out); }
+
+  /* month/year: a white drop stretches across; text inverts over it */
+  .period { position: relative; display: inline-flex; flex-wrap: nowrap; gap: 0; padding: 3px; border: 1px solid var(--line-2); border-radius: 99px; isolation: isolate; }
+  .period[hidden] { display: none !important; }
+  .chips.period button, .chips.period button.on { position: relative; z-index: 1; min-height: 38px; padding: 0 16px; border: 0; background: none; color: #fff; mix-blend-mode: difference; white-space: nowrap; }
+  .period-drop { position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; border-radius: 99px; background: #fff; }
+
+  /* loading */
+  .skel { display: block; border-radius: 10px; background: linear-gradient(90deg, var(--surface) 25%, #2a2a2a 50%, var(--surface) 75%); background-size: 220% 100%; animation: shimmer 1.3s linear infinite; }
+  @keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+  .skel-row { padding: 14px 0; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+  .skel-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+
+  /* route on the planet */
+  .check-stage { position: relative; height: 236px; margin-top: 6px; }
+  #checkGlobe { position: absolute; right: -28px; top: 0; width: 236px; height: 236px; }
+  .check-stage .verdict-mark { position: absolute; left: 0; bottom: 0; margin: 0; background: var(--bg); }
+  .check-stage .verdict-mark.good { background: #fff; }
+  .verdict-mark svg path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawMark .5s var(--ease-out) .05s forwards; }
+  @keyframes drawMark { to { stroke-dashoffset: 0; } }
+  #checkHint { font-size: 12px; margin-top: 10px; }
+
+  /* payment */
+  .paid-fx { position: fixed; inset: 0; z-index: 30; background: var(--bg); animation: fxIn .35s ease-out; cursor: pointer; }
+  .paid-fx.out { opacity: 0; transition: opacity .4s; }
+  @keyframes fxIn { from { background: rgba(11,11,11,0); } }
+  .paid-fx canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .paid-text { position: absolute; left: 24px; right: 24px; top: 62%; text-align: center; opacity: 0; transform: translateY(12px); transition: opacity .4s, transform .5s var(--ease-out); }
+  .paid-fx.done .paid-text { opacity: 1; transform: none; }
+  .paid-text b { display: block; font-weight: 800; font-size: 34px; letter-spacing: -.02em; }
+  .paid-text span { display: block; margin-top: 8px; color: var(--muted); font-size: 16px; }
+
+  /* promo */
+  #promoDays.lift { animation: lift .7s var(--spring); }
+  @keyframes lift { from { opacity: 0; transform: translateY(46px) scale(.8); } }
+  .promo-fly { position: fixed; z-index: 25; margin: 0; font-weight: 800; font-size: 112px; line-height: .95; letter-spacing: -.05em; pointer-events: none; transform-origin: left top; }
+
+  /* statistics and referral scale */
+  .bars i { animation: barUp .55s var(--ease-out) backwards; animation-delay: calc(var(--n) * 16ms); transform-origin: bottom; }
+  @keyframes barUp { from { transform: scaleY(0); } }
+  .tiers .fill { transition: width .9s var(--ease-out); }
+  .tier-node b { transition: background .3s, color .3s, border-color .3s; }
+  .tier-node.reach b { animation: reach .7s var(--spring); box-shadow: 0 0 0 5px rgba(255,255,255,.14); }
+  @keyframes reach { from { transform: scale(.72); } }
+
   /* tab bar: the pills melt into each other and a white drop flows to the chosen one (both layers go through a "goo" filter) */
   .tabs-fade { position: fixed; left: 0; right: 0; bottom: 0; height: calc(112px + env(safe-area-inset-bottom)); z-index: 9; pointer-events: none; background: linear-gradient(180deg, rgba(11,11,11,0), var(--bg) 46%); }
   .tabs { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); width: min(calc(100% - 24px), 456px); height: 64px; transform: translateX(-50%); z-index: 10; display: flex; gap: 6px; }
@@ -297,9 +353,10 @@
   <!-- PLANS -->
   <section class="view" id="v-plans">
     <h1>Сколько устройств подключить?</h1>
-    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 20%</button></div>
+    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 35%</button></div>
     <div id="tiers"></div>
-    <div class="price" id="priceBox"><b id="planPrice">199</b><span>₽</span></div>
+    <div class="was" id="planWas"><s></s></div>
+    <div class="price" id="priceBox"><b id="planPrice"></b><span>₽</span></div>
     <div class="caption" id="planPer">за 30 дней</div>
     <p class="note" id="planNote" hidden>Максимальная выгода для совместного использования</p>
     <div class="rows">
@@ -362,6 +419,7 @@
         <button class="on" data-days="30">30 дней</button>
       </div>
       <p class="sup-empty" id="statEmpty" hidden></p>
+      <div id="statSkel" hidden></div>
       <div id="statBody" hidden>
         <div class="stat-hero" id="statRevenue">0 ₽</div>
         <p class="note" id="statRevenueNote"></p>
@@ -404,9 +462,10 @@
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Подписка в подарок</h1>
     <p class="note">Вы оплачиваете и получаете ссылку. Друг открывает её в боте, и подписка включается. Ссылка работает один раз и не сгорает.</p>
-    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 20%</button></div>
+    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 35%</button></div>
     <div id="giftTiers"></div>
-    <div class="price" id="giftPriceBox"><b id="giftPrice">199</b><span>₽</span></div>
+    <div class="was" id="giftWas"><s></s></div>
+    <div class="price" id="giftPriceBox"><b id="giftPrice"></b><span>₽</span></div>
     <div class="caption" id="giftPer">30 дней</div>
     <button class="btn" id="giftBuyBtn" style="margin-top:14px">Оплатить</button>
     <div class="block" id="giftListBox" hidden>
@@ -435,9 +494,13 @@
   <!-- VPN CHECK -->
   <section class="view" id="v-check">
     <button class="back" data-back>← Назад</button>
-    <div class="verdict-mark wait" id="checkMark"></div>
+    <div class="check-stage">
+      <canvas id="checkGlobe" aria-hidden="true"></canvas>
+      <div class="verdict-mark wait" id="checkMark"></div>
+    </div>
     <h1 id="checkTitle" role="status">Проверяем</h1>
     <p class="note" id="checkNote">Смотрим, откуда вы сейчас выходите в интернет.</p>
+    <p class="note" id="checkHint" hidden>Ваша точка на карте примерная: она взята из часового пояса устройства.</p>
     <div class="rows" id="checkRows" hidden>
       <div><span>Страна</span><b id="checkCountry"></b></div>
       <div><span>IP-адрес</span><b id="checkIp"></b></div>
@@ -492,6 +555,7 @@
       <button data-go="plans"><span>Продлить подписку</span><b>→</b></button>
     </div>
     <p class="demo" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
+    <button class="btn ghost" id="demoPaid" hidden style="margin-top:12px">Показать анимацию оплаты</button>
   </section>
 </div>
 
@@ -539,10 +603,10 @@ const DEMO_META = {
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
     { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
     { id: "d10", title: "10 устройств", days: 30, rub: 555, stars: 451, devices: 10 },
-    { id: "y2", title: "2 устройства, год", days: 365, rub: 1910, stars: 1551, devices: 2 },
-    { id: "y3", title: "3 устройства, год", days: 365, rub: 2400, stars: 1948, devices: 3 },
-    { id: "y5", title: "5 устройств, год", days: 365, rub: 3360, stars: 2728, devices: 5 },
-    { id: "y10", title: "10 устройств, год", days: 365, rub: 5330, stars: 4327, devices: 10 },
+    { id: "y2", title: "2 устройства, год", days: 365, rub: 1550, stars: 1259, devices: 2 },
+    { id: "y3", title: "3 устройства, год", days: 365, rub: 1950, stars: 1583, devices: 3 },
+    { id: "y5", title: "5 устройств, год", days: 365, rub: 2730, stars: 2216, devices: 5 },
+    { id: "y10", title: "10 устройств, год", days: 365, rub: 4330, stars: 3515, devices: 10 },
   ],
   locations: [
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38, available: false },
@@ -561,7 +625,7 @@ function decodeState(s) {
   const st = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
   return {
     me: {
-      id: st.u, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
+      id: st.u, justPaid: !!st.ok, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
       sub_link: null, device_limit: st.n, plan: st.pl, referrals: st.r, referral_bonus_days: st.b,
       ref_mode: st.rm || "days", ref_balance: st.rl || 0, ref_earned: st.re || 0, ref_paying: st.rp || 0,
     },
@@ -845,7 +909,7 @@ function initLiquid() {
 
 // The bot's address behind the hosting's HTTPS proxy. Every call is signed with Telegram's initData and the bot checks it.
 const SERVER_API = "https://s-25087.de-bots6.h1clayd.click";
-const SUP_POLL_MS = 6000;
+const SUP_POLL_MS = 6000, DEMO_LATENCY = 350;
 const support = { open: null, timer: 0, seen: -1 };
 
 const DEMO_THREADS = {
@@ -860,7 +924,7 @@ const DEMO_THREADS = {
 };
 
 async function serverApi(path, body) {
-  if (DEMO) return demoApi(path, body);
+  if (DEMO) { await new Promise((wait) => setTimeout(wait, DEMO_LATENCY)); return demoApi(path, body); }
   const res = await fetch(SERVER_API + path, {
     method: body ? "POST" : "GET",
     headers: { "Content-Type": "application/json", "X-Init-Data": initData },
@@ -905,6 +969,7 @@ function el(tag, className, text) {
 }
 
 async function loadThreads() {
+  if (!$("supList").children.length && $("supEmpty").hidden) $("supList").replaceChildren(skelRow(), skelRow("38%", "64%"), skelRow("52%", "70%"));
   try {
     const { threads } = await serverApi("/api/admin/threads");
     $("supCount").textContent = threads.length ? `Открыто: ${threads.length}` : "";
@@ -917,6 +982,7 @@ async function loadThreads() {
       return row;
     }));
   } catch {
+    $("supList").replaceChildren();
     $("supEmpty").hidden = false;
     $("supEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
   }
@@ -943,7 +1009,8 @@ async function loadThread(userId) {
 function openThread(userId) {
   support.open = userId; support.seen = -1;
   $("supListBox").hidden = true; $("supThreadBox").hidden = false; $("adminSeg").hidden = true;
-  $("supMessages").replaceChildren();
+  const bubble = (width, mine) => { const b = el("div", "bubble" + (mine ? " mine" : "")); b.style.background = "none"; b.style.padding = "0"; b.append(skelLine(`${width}px`, 44)); return b; };
+  $("supMessages").replaceChildren(bubble(230), bubble(170, true), bubble(200));
   window.scrollTo({ top: 0 });
   loadThread(userId);
 }
@@ -1035,7 +1102,9 @@ function renderGift() {
   const current = () => meta.plans.find((x) => x.id === giftPlan) || meta.plans[0];
   const p = renderPicker("giftTiers", "giftPeriod", current, (id) => { giftPlan = id; renderGift(); bumpPrice($("giftPriceBox")); });
   giftPlan = p.id;
-  countTo($("giftPrice"), p.rub, 500);
+  rollTo($("giftPrice"), p.rub);
+  const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
+  showWas($("giftWas"), isYear(p) && month.rub * 12);
   $("giftPer").textContent = `${devicesWord(p.devices)}, ${isYear(p) ? "на год" : `${p.days} дней`}`;
   $("giftBuyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
@@ -1048,6 +1117,7 @@ function shareGift(code) {
 }
 
 async function loadGifts() {
+  if (!$("giftList").children.length) { $("giftListBox").hidden = false; $("giftList").replaceChildren(skelRow(), skelRow("38%", "56%")); }
   try {
     const { gifts } = await serverApi("/api/gifts");
     $("giftListBox").hidden = !gifts.length;
@@ -1067,11 +1137,221 @@ async function loadGifts() {
 
 $("giftBuyBtn").onclick = () => DEMO ? toast("Оплата доступна в Telegram") : toBot("giftbuy_" + giftPlan);
 
+/* ---------- loading placeholders ---------- */
+
+const skelLine = (width, height = 14) => { const s = el("span", "skel"); s.style.width = width; s.style.height = `${height}px`; return s; };
+const skelRow = (w1 = "46%", w2 = "72%") => { const r = el("div", "skel-row"); r.append(skelLine(w1, 15), skelLine(w2, 12)); return r; };
+
+/* ---------- the route on the planet ---------- */
+
+// Where each exit is drawn, lat/lon. A country missing here still gets its verdict, just without the line.
+const COUNTRY_AT = {
+  RU: [56, 38], NL: [52, 5], DE: [51, 10], FI: [62, 26], TR: [39, 35], US: [39, -98], CA: [56, -106], GB: [54, -2], IE: [53, -8], FR: [47, 2],
+  ES: [40, -4], PT: [39, -8], IT: [43, 12], CH: [47, 8], AT: [47, 14], BE: [51, 4], LU: [50, 6], PL: [52, 19], CZ: [50, 15], SE: [60, 15],
+  NO: [61, 9], DK: [56, 10], EE: [59, 25], LV: [57, 25], LT: [55, 24], UA: [49, 32], BY: [53, 28], MD: [47, 29], RO: [46, 25], BG: [43, 25],
+  GR: [39, 22], RS: [44, 21], HU: [47, 19], KZ: [48, 67], UZ: [41, 64], KG: [41, 75], GE: [42, 44], AM: [40, 45], AZ: [40, 48], AE: [24, 54],
+  IL: [31, 35], IN: [21, 78], CN: [35, 104], HK: [22, 114], SG: [1, 104], JP: [36, 138], KR: [36, 128], TH: [15, 101], VN: [16, 107], ID: [-2, 118],
+  AU: [-25, 134], BR: [-10, -52], AR: [-34, -64], MX: [23, -102], ZA: [-29, 24], EG: [26, 30],
+};
+const ROUTE_STEP = 3.4, ROUTE_MIN_ANGLE = .14, ROUTE_LIFT = .17;
+const route = { pts: null, theta: START_TURN, arc: null };
+const toVec = ([lat, lon]) => { const a = lat * Math.PI / 180, b = lon * Math.PI / 180; return [Math.cos(a) * Math.sin(b), Math.sin(a), Math.cos(a) * Math.cos(b)]; };
+const easeInOut = (k) => (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+// The real position is hidden while the VPN is on, so "you" is a rough point taken from the device's time zone.
+const hereLatLon = () => [50, Math.max(-170, Math.min(170, -new Date().getTimezoneOffset() / 4))];
+
+function slerp(a, b, u) {
+  const dot = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), w = Math.acos(dot) || 1e-6, s = Math.sin(w);
+  const p = Math.sin((1 - u) * w) / s, q = Math.sin(u * w) / s;
+  return [p * a[0] + q * b[0], p * a[1] + q * b[1], p * a[2] + q * b[2]];
+}
+
+function drawRoute(theta, progress = 0) {
+  const c = $("checkGlobe"), box = c.getBoundingClientRect();
+  if (!box.width) return;
+  const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.round(box.width * dpr);
+  if (c.width !== W) { c.width = W; c.height = W; }
+  route.pts = route.pts || globePoints(ROUTE_STEP);
+  const x = c.getContext("2d"), r = W * .47, mid = W / 2, m = globeMatrix(theta), pts = route.pts;
+  const dot = Math.max(1, r * ROUTE_STEP * Math.PI / 180 * .34);
+  x.clearRect(0, 0, W, W);
+  [[1, "rgba(200,200,200,.34)", .78], [0, "rgba(255,255,255,.8)", 1]].forEach(([land, color, size]) => {
+    x.fillStyle = color;
+    for (let i = 0; i < pts.length; i += 4) {
+      if (pts[i + 3] !== land) continue;
+      const z = m[2] * pts[i] + m[5] * pts[i + 1] + m[8] * pts[i + 2];
+      if (z <= 0) continue;
+      const w = dot * size * (.5 + .5 * z);
+      x.fillRect(mid + (m[0] * pts[i] + m[3] * pts[i + 1] + m[6] * pts[i + 2]) * r, mid - (m[1] * pts[i] + m[4] * pts[i + 1] + m[7] * pts[i + 2]) * r, w, w);
+    }
+  });
+  if (!route.arc) return;
+  const place = (v, lift = 1) => [mid + (m[0] * v[0] + m[3] * v[1] + m[6] * v[2]) * r * lift, mid - (m[1] * v[0] + m[4] * v[1] + m[7] * v[2]) * r * lift];
+  const mark = (v, radius, fill) => {
+    const [px, py] = place(v);
+    x.beginPath(); x.arc(px, py, radius * dpr, 0, 7);
+    x.fillStyle = "#0b0b0b"; x.fill();
+    x.lineWidth = 2 * dpr; x.strokeStyle = "#fff"; x.stroke();
+    if (fill) { x.beginPath(); x.arc(px, py, radius * .55 * dpr, 0, 7); x.fillStyle = "#fff"; x.fill(); }
+  };
+  x.beginPath();
+  const parts = 48, end = Math.ceil(parts * progress);
+  let head = null;
+  for (let i = 0; i <= end; i++) {
+    const u = Math.min(progress, i / parts);
+    head = place(slerp(route.arc.from, route.arc.to, u), 1 + ROUTE_LIFT * Math.sin(Math.PI * u));
+    i ? x.lineTo(...head) : x.moveTo(...head);
+  }
+  x.lineWidth = 2 * dpr; x.strokeStyle = "#fff"; x.lineCap = "round"; x.stroke();
+  mark(route.arc.from, 4, false);
+  if (progress >= 1) mark(route.arc.to, 5, true);
+  else if (head) { x.beginPath(); x.arc(head[0], head[1], 3.5 * dpr, 0, 7); x.fillStyle = "#fff"; x.fill(); }
+}
+
+function tween(ms, run, frame) {
+  return new Promise((done) => {
+    const t0 = performance.now();
+    const step = (now) => {
+      if (run !== checkRun) return done(false);
+      const k = Math.min(1, (now - t0) / ms);
+      frame(k);
+      if (k < 1) requestAnimationFrame(step); else done(true);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// Plays the route for this answer. False if a newer check has started meanwhile.
+async function playRoute(info, run) {
+  const here = toVec(hereLatLon()), at = info && (info.code === "RU" ? null : COUNTRY_AT[info.code]);
+  const exit = at ? toVec(at) : null;
+  const far = exit && Math.acos(Math.min(1, here[0] * exit[0] + here[1] * exit[1] + here[2] * exit[2])) > ROUTE_MIN_ANGLE;
+  const focus = far ? slerp(here, exit, .5) : exit || here;
+  const target = -Math.atan2(focus[0], focus[2]);
+  const delta = ((target - route.theta + Math.PI * 3) % (Math.PI * 2)) - Math.PI, start = route.theta;
+  route.arc = null;
+  if (REDUCED) {
+    route.theta = target; route.arc = far ? { from: here, to: exit } : null;
+    drawRoute(route.theta, 1);
+    return true;
+  }
+  if (!await tween(650, run, (k) => { route.theta = start + delta * easeInOut(k); drawRoute(route.theta); })) return false;
+  if (!far) return true;
+  route.arc = { from: here, to: exit };
+  return tween(850, run, (k) => drawRoute(route.theta, easeInOut(k)));
+}
+
+/* ---------- payment ---------- */
+
+const PAID_DOTS = 240, PAID_BURST = 420, PAID_GATHER = 720, PAID_HOLD = 2600;
+const PAID_MARK = [[-.46, .02], [-.13, .34], [.48, -.34]];
+
+function paidTargets(cx, cy, size) {
+  const [a, b, c] = PAID_MARK, first = Math.hypot(b[0] - a[0], b[1] - a[1]), second = Math.hypot(c[0] - b[0], c[1] - b[1]);
+  return Array.from({ length: PAID_DOTS }, (_, i) => {
+    const t = (i / (PAID_DOTS - 1)) * (first + second);
+    const [p, q, k] = t < first ? [a, b, t / first] : [b, c, (t - first) / second];
+    return [cx + (p[0] + (q[0] - p[0]) * k) * size + (Math.random() - .5) * 7, cy + (p[1] + (q[1] - p[1]) * k) * size + (Math.random() - .5) * 7];
+  });
+}
+
+function playPaid() {
+  if (document.querySelector(".paid-fx")) return;
+  const fx = el("div", "paid-fx"), canvas = el("canvas"), text = el("div", "paid-text");
+  const until = new Date(me.expires_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  text.append(el("b", "", "Оплата прошла"), el("span", "", `Подписка активна до ${until}`));
+  fx.append(canvas, text);
+  fx.setAttribute("role", "status");
+  document.body.append(fx);
+  let closing = false;
+  const close = () => {
+    if (closing) return;
+    closing = true;
+    fx.classList.add("out");
+    setTimeout(() => fx.remove(), 420);
+  };
+  fx.onclick = close;
+  const notify = () => tg?.HapticFeedback?.notificationOccurred("success");
+  const W = innerWidth, H = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2), cx = W / 2, cy = H * .42, size = Math.min(W, 420) * .46;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const x = canvas.getContext("2d");
+  x.scale(dpr, dpr);
+  const targets = paidTargets(cx, cy, size);
+  const dotAt = (px, py, r) => x.fillRect(px - r / 2, py - r / 2, r, r);
+  x.fillStyle = "#fff";
+  if (REDUCED) {
+    targets.forEach(([px, py]) => dotAt(px, py, 3));
+    fx.classList.add("done"); notify();
+    setTimeout(close, PAID_HOLD);
+    return;
+  }
+  // the dots leave the planet: its place on the home screen, or the top right if another screen is open
+  const planet = $("globeBox").getBoundingClientRect();
+  const ox = planet.width ? planet.left + planet.width / 2 : W * .7, oy = planet.width ? planet.top + planet.height / 2 : H * .18;
+  const dots = targets.map(([tx, ty]) => {
+    const a = Math.random() * Math.PI * 2, from = Math.random() * 130, far = 90 + Math.random() * Math.min(W, H) * .5;
+    return { sx: ox + Math.cos(a) * from, sy: oy + Math.sin(a) * from, bx: ox + Math.cos(a) * (from + far), by: oy + Math.sin(a) * (from + far), tx, ty, lag: Math.random() * .3 };
+  });
+  haptic("medium");
+  const t0 = performance.now();
+  let told = false;
+  const frame = (now) => {
+    if (closing) return;
+    const t = now - t0;
+    x.clearRect(0, 0, W, H);
+    x.fillStyle = "#fff";
+    dots.forEach((d) => {
+      if (t < PAID_BURST) {
+        const k = 1 - Math.pow(1 - t / PAID_BURST, 3);
+        dotAt(d.sx + (d.bx - d.sx) * k, d.sy + (d.by - d.sy) * k, 2.4);
+      } else {
+        const k = easeInOut(Math.min(1, Math.max(0, (t - PAID_BURST) / PAID_GATHER - d.lag) / (1 - d.lag)));
+        dotAt(d.bx + (d.tx - d.bx) * k, d.by + (d.ty - d.by) * k, 2.4 + .8 * k);
+      }
+    });
+    if (!told && t > PAID_BURST + PAID_GATHER) { told = true; fx.classList.add("done"); notify(); setTimeout(close, PAID_HOLD); }
+    if (t < PAID_BURST + PAID_GATHER + 60) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+// Plays once per paid period: the button in the chat keeps carrying the flag.
+function paidOnce() {
+  const key = `hermes_paid_${me.expires_at}`;
+  try {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+  } catch { /* no storage: it may repeat from this button, which is harmless */ }
+  playPaid();
+}
+
 /* ---------- promo code ---------- */
 
 function resetPromo() {
   $("promoForm").hidden = false; $("promoDone").hidden = true;
   $("promoCode").value = ""; $("promoMsg").textContent = "";
+}
+
+// «+7» rises, then flies to the counter on the home screen, which grows from the old number to the new one.
+const PROMO_HOLD = 1200;
+let promoTimer = 0, homeCountFrom = 0;
+
+function flyPromoSoon(before) {
+  if (REDUCED) return;
+  const big = $("promoDays");
+  big.classList.remove("lift"); void big.offsetWidth; big.classList.add("lift");
+  promoTimer = setTimeout(() => {
+    const from = big.getBoundingClientRect(), label = big.textContent;
+    homeCountFrom = before;
+    go("home");
+    const to = $("daysLeft").getBoundingClientRect(), flyer = el("div", "promo-fly", label);
+    flyer.style.left = `${from.left}px`; flyer.style.top = `${from.top}px`;
+    document.body.append(flyer);
+    flyer.animate([
+      { transform: "none", opacity: 1 },
+      { transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(.45)`, opacity: 0 },
+    ], { duration: 620, easing: "cubic-bezier(.4,0,.2,1)" }).onfinish = () => flyer.remove();
+  }, PROMO_HOLD);
 }
 
 $("promoForm").onsubmit = async (e) => {
@@ -1085,9 +1365,11 @@ $("promoForm").onsubmit = async (e) => {
       $("promoMsg").textContent = r.error;
       tg?.HapticFeedback?.notificationOccurred("error");
     } else {
+      const before = me.days_left;
       me = { ...me, ...r.me };
       render();
       $("promoDays").textContent = `+${r.days}`;
+      flyPromoSoon(before);
       $("promoCaption").textContent = `${plural(r.days, "день", "дня", "дней")} к подписке, теперь она до ${new Date(me.expires_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
       $("promoForm").hidden = true; $("promoDone").hidden = false;
       tg?.HapticFeedback?.notificationOccurred("success");
@@ -1106,10 +1388,14 @@ async function getKey() {
   return sub_link;
 }
 
+let keyLoading = false;
+
 // Fetched ahead, because browsers allow copying only right after a tap, not after waiting for the network.
 async function preloadKey() {
   if (!me.active || me.sub_link || DEMO || !initData) return;
-  try { if (await getKey()) { renderHome(); renderConnect(); } } catch { /* the buttons ask again */ }
+  keyLoading = true; renderHome();
+  try { await getKey(); } catch { /* the buttons ask again */ }
+  keyLoading = false; renderHome(); renderConnect();
 }
 
 async function copyKey() {
@@ -1138,9 +1424,9 @@ async function addToHapp() {
 /* ---------- is the VPN on? ---------- */
 
 const MARK = {
-  good: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-  bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-  unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 17v.01"/></svg>',
+  good: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path pathLength="1" d="M6 6l12 12"/><path pathLength="1" d="M18 6L6 18"/></svg>',
+  unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path pathLength="1" d="M12 7v6"/><path pathLength="1" d="M12 17v.01"/></svg>',
 };
 // The page itself asks, so the answer shows the route of this device. The second service is for when the first is blocked.
 const IP_SERVICES = [
@@ -1179,11 +1465,24 @@ async function runCheck() {
   $("checkMark").className = "verdict-mark wait"; $("checkMark").innerHTML = "";
   $("checkTitle").textContent = "Проверяем";
   $("checkNote").textContent = "Смотрим, откуда вы сейчас выходите в интернет.";
-  $("checkRows").hidden = true;
+  $("checkRows").hidden = true; $("checkHint").hidden = true;
+  route.arc = null;
+  // the planet turns while the services answer
+  let waiting = !REDUCED, last = performance.now();
+  const spin = (now) => {
+    if (!waiting || run !== checkRun) return;
+    route.theta += Math.min(.05, (now - last) / 1000) * .9; last = now;
+    drawRoute(route.theta);
+    requestAnimationFrame(spin);
+  };
+  if (waiting) requestAnimationFrame(spin); else drawRoute(route.theta);
   const info = await lookupIp();
+  waiting = false;
   const verdict = judge(info);
   lastCheck = { ...verdict, info };
   if (run !== checkRun) return;  // a newer check has started
+  if (!await playRoute(info, run) || run !== checkRun) return;
+  $("checkHint").hidden = !route.arc;
   $("checkMark").className = "verdict-mark" + (verdict.kind === "good" ? " good" : "");
   $("checkMark").innerHTML = MARK[verdict.kind];
   $("checkTitle").textContent = verdict.title;
@@ -1390,9 +1689,10 @@ function barChart(box, title, days, key, format) {
   const head = el("div", "chart-head"), bars = el("div", "bars"), axis = el("div", "chart-axis"), read = el("div", "chart-read");
   head.append(el("b", "", title), el("span", "", `максимум ${format(Math.max(...days.map((d) => d[key])))}`));
   const say = (d) => { read.textContent = `${dayLabel(d.d)}: ${format(d[key])}`; };
-  days.forEach((d) => {
+  days.forEach((d, n) => {
     const col = el("button"), bar = el("i");
     col.type = "button";
+    bar.style.setProperty("--n", n);
     col.setAttribute("aria-label", `${dayLabel(d.d)}: ${format(d[key])}`);
     if (!d[key]) bar.className = "zero";
     bar.style.height = d[key] ? `${(d[key] / max) * 100}%` : "2px";
@@ -1451,13 +1751,24 @@ function renderStats() {
   $("statTable").replaceChildren(active.length ? table : el("p", "note", "За этот период событий нет."));
 }
 
+function statSkeleton() {
+  const kpis = el("div", "skel-kpis"), box = $("statSkel");
+  kpis.append(skelLine("100%", 86), skelLine("100%", 86));
+  const hero = skelLine("72%", 60); hero.style.marginTop = "24px";
+  const note = skelLine("58%", 13); note.style.marginTop = "12px";
+  const chart = skelLine("100%", 136); chart.style.marginTop = "28px";
+  box.replaceChildren(hero, note, kpis, chart);
+  box.hidden = false;
+}
+
 async function loadStats() {
+  if (!stats.data) statSkeleton();
   try {
     stats.data = await serverApi("/api/admin/stats");
-    $("statEmpty").hidden = true; $("statBody").hidden = false;
+    $("statEmpty").hidden = true; $("statBody").hidden = false; $("statSkel").hidden = true;
     renderStats();
   } catch {
-    $("statBody").hidden = true; $("statEmpty").hidden = false;
+    $("statBody").hidden = true; $("statSkel").hidden = true; $("statEmpty").hidden = false;
     $("statEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
   }
 }
@@ -1512,7 +1823,8 @@ function renderHome() {
   $("trialCard").hidden = !me.trial_available;
   $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
   $("keyCard").hidden = !(on && (me.sub_link || STATIC));
-  $("subLink").textContent = me.sub_link || "Нажмите «Получить», и ключ появится здесь";
+  if (keyLoading) $("subLink").replaceChildren(skelLine("82%", 13));
+  else $("subLink").textContent = me.sub_link || "Нажмите «Получить», и ключ появится здесь";
   $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
   const loc = meta.locations[selectedLoc], ok = loc && isAvail(loc);
   $("netLoc").textContent = ok ? `${loc.city}, ${loc.ping} ms` : "Скоро";
@@ -1556,6 +1868,67 @@ function renderLocations() {
 }
 
 const isYear = (p) => p.days >= 365;
+
+// Rolls each digit to its place. The new number is the label; the columns are decoration.
+function rollTo(box, value) {
+  const text = String(value);
+  box.setAttribute("aria-label", text);
+  if (box.textContent && !box.querySelector(".roll")) box.textContent = "";
+  while (box.children.length > text.length) box.firstElementChild.remove();
+  while (box.children.length < text.length) {
+    const col = document.createElement("i"), digits = document.createElement("i");
+    col.className = "roll"; col.setAttribute("aria-hidden", "true");
+    digits.textContent = "0\n1\n2\n3\n4\n5\n6\n7\n8\n9";
+    col.append(digits); box.prepend(col);
+    void digits.offsetWidth;  // a new column starts from 0 and rolls too
+  }
+  [...box.children].forEach((col, i) => {
+    col.firstElementChild.style.setProperty("--d", text.length - 1 - i);
+    col.firstElementChild.style.transform = `translateY(${-Number(text[i]) * 10}%)`;
+  });
+}
+
+function showWas(box, sum) {
+  if (sum) box.firstElementChild.textContent = money(sum);
+  box.classList.toggle("show", !!sum);
+}
+
+// The month/year drop: two edges on springs of different stiffness, so it stretches as it runs and catches up.
+const EDGE_LEAD = [330, 24], EDGE_TRAIL = [150, 19];
+const periodDrops = new Map();
+
+function placeDrop(period, animate = true) {
+  const on = period.querySelector("button.on");
+  if (!on || !on.offsetWidth) return;
+  const left = on.offsetLeft, right = left + on.offsetWidth;
+  let d = periodDrops.get(period);
+  if (!d) {
+    const box = document.createElement("i");
+    box.className = "period-drop";
+    period.prepend(box);
+    d = { box, l: left, r: right, vl: 0, vr: 0, raf: 0 };
+    periodDrops.set(period, d);
+    animate = false;
+  }
+  const paint = () => { d.box.style.transform = `translateX(${d.l}px)`; d.box.style.width = `${Math.max(0, d.r - d.l)}px`; };
+  cancelAnimationFrame(d.raf);
+  if (!animate || REDUCED) { d.l = left; d.r = right; d.vl = d.vr = 0; return paint(); }
+  const toRight = right > d.r;
+  const [lk, lc] = toRight ? EDGE_TRAIL : EDGE_LEAD, [rk, rc] = toRight ? EDGE_LEAD : EDGE_TRAIL;
+  let last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(.032, (now - last) / 1000); last = now;
+    d.vl = (d.vl + (left - d.l) * lk * dt) * Math.exp(-lc * dt); d.l += d.vl * dt;
+    d.vr = (d.vr + (right - d.r) * rk * dt) * Math.exp(-rc * dt); d.r += d.vr * dt;
+    paint();
+    if (Math.abs(left - d.l) + Math.abs(right - d.r) > .4 || Math.abs(d.vl) + Math.abs(d.vr) > 4) d.raf = requestAnimationFrame(step);
+    else { d.l = left; d.r = right; paint(); }
+  };
+  d.raf = requestAnimationFrame(step);
+}
+
+function refreshDrops() { placeDrop($("planPeriod"), false); placeDrop($("giftPeriod"), false); }
+
 const devicesWord = (n) => `${n} ${plural(n, "устройство", "устройства", "устройств")}`;
 
 // Device buttons and the month/year switch; a pick is always one concrete plan.
@@ -1575,6 +1948,7 @@ function renderPicker(tiersId, periodId, current, pick) {
   const p = current();
   tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", +b.dataset.n === p.devices));
   period.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.year === "1") === isYear(p)));
+  placeDrop(period);
   return p;
 }
 
@@ -1584,15 +1958,18 @@ function renderPlans() {
   const current = () => meta.plans.find((x) => x.id === plan) || meta.plans[0];
   const p = renderPicker("tiers", "planPeriod", current, (id) => { plan = id; renderPlans(); bumpPrice($("priceBox")); });
   plan = p.id;
-  countTo($("planPrice"), p.rub, 500);
+  rollTo($("planPrice"), p.rub);
   const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
+  showWas($("planWas"), isYear(p) && month.rub * 12);
   $("planPer").textContent = isYear(p)
     ? `за год, ${Math.round(p.rub / 12)} ₽ в месяц`
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
   $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
   const biggest = Math.max(...meta.plans.map((x) => x.devices));
   $("planNote").textContent = isYear(p) ? `Экономия ${money(month.rub * 12 - p.rub)} к помесячной оплате` : "Максимальная выгода для совместного использования";
-  $("planNote").hidden = !isYear(p) && p.devices !== biggest;
+  const note = $("planNote"), noteWasHidden = note.hidden;
+  note.hidden = !isYear(p) && p.devices !== biggest;
+  if (noteWasHidden && !note.hidden) { note.classList.remove("save-in"); void note.offsetWidth; note.classList.add("save-in"); }
   $("buyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
 
@@ -1603,7 +1980,7 @@ function renderProfile() {
   $("meId").textContent = u?.username ? "@" + u.username : (u ? "ID " + u.id : "демо-аккаунт");
   $("avatar").textContent = name[0]?.toUpperCase() || "H";
   renderReferrals();
-  $("demoNote").hidden = !DEMO;
+  $("demoNote").hidden = !DEMO; $("demoPaid").hidden = !DEMO;
 }
 
 const money = (n) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
@@ -1631,6 +2008,22 @@ function renderReferrals() {
   $("refOutBtn").textContent = can ? `Вывести ${money(me.ref_balance)}` : `Вывод от ${money(meta.ref_min_payout)}`;
   $("refOutBtn").classList.toggle("ghost", !can);
 }
+
+function animateRefScale() {
+  if (REDUCED || $("refPercentPanel").hidden) return;
+  const fill = $("refTiers").querySelector(".fill"), nodes = [...$("refTiers").querySelectorAll(".tier-node")];
+  if (!fill || !nodes.length) return;
+  const width = fill.style.width, reached = nodes.filter((n) => n.classList.contains("on"));
+  refTimers.forEach(clearTimeout); refTimers = [];
+  nodes.forEach((n) => n.classList.remove("on", "reach"));
+  fill.style.transition = "none"; fill.style.width = "0"; void fill.offsetWidth; fill.style.transition = ""; fill.style.width = width;
+  reached.forEach((n, i) => refTimers.push(setTimeout(() => {
+    n.classList.add("on");
+    if (i === reached.length - 1) n.classList.add("reach");
+  }, 120 + (REF_FILL * i) / Math.max(1, reached.length - 1))));
+}
+const REF_FILL = 780;
+let refTimers = [];
 
 function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderGift(); renderProfile(); renderConnect(); }
 
@@ -1669,14 +2062,17 @@ function go(view, isBack = false) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === tab));
   $("locList").classList.remove("settled");
   supportPoll(view === "support" && admin.seg === "chats");
+  clearTimeout(promoTimer);
+  refreshDrops();
   if (view === "gift") loadGifts();
+  if (view === "profile") animateRefScale();
   if (!isBack) {
     if (view === "promo") resetPromo();
     if (view === "check") runCheck();
     if (view === "help") helpStart();
   }
   placeLiquid(); runLiquid();
-  if (view === "home") { $("daysLeft").textContent = 0; countTo($("daysLeft"), me.days_left, 900); }
+  if (view === "home") { $("daysLeft").textContent = homeCountFrom; homeCountFrom = 0; countTo($("daysLeft"), me.days_left, 900); }
   window.scrollTo({ top: 0 }); haptic();
 }
 function goBack() { go(viewStack.pop() || "home", true); }
@@ -1695,7 +2091,7 @@ $("connKeyBtn").onclick = copyKey;
 document.querySelectorAll("#refModes .mode").forEach((b) => b.onclick = () => {
   if (me.ref_mode === b.dataset.mode) return;
   haptic();
-  if (DEMO) { me = { ...me, ref_mode: b.dataset.mode }; return renderReferrals(); }
+  if (DEMO) { me = { ...me, ref_mode: b.dataset.mode }; renderReferrals(); return animateRefScale(); }
   toBot("refmode_" + b.dataset.mode);
 });
 $("refOutBtn").onclick = () => {
@@ -1706,6 +2102,7 @@ $("shareBtn").onclick = () => {
   const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
   tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
 };
+$("demoPaid").onclick = () => { go("home"); playPaid(); };
 $("supportBtn").onclick = () => DEMO ? toast("Поддержка доступна в Telegram") : toBot("support");
 $("trialBtn").onclick = async () => {
   if (STATIC) return toBot("trial");
@@ -1723,7 +2120,7 @@ $("buyBtn").onclick = async () => {
       if (status === "paid") {
         tg.HapticFeedback?.notificationOccurred("success");
         // the bot applies the payment on successful_payment; give it a moment
-        setTimeout(async () => { me = await api("/api/me"); render(); go("home"); toast("Подписка продлена"); }, 1500);
+        setTimeout(async () => { me = await api("/api/me"); render(); go("home"); playPaid(); }, 1500);
       }
     });
   } catch { toast("Не удалось создать счёт"); }
@@ -1741,7 +2138,9 @@ $("buyBtn").onclick = async () => {
   render();
   initLiquid();
   initGlobe();
+  document.fonts?.ready.then(refreshDrops);
   preloadKey();
+  if (me.justPaid && me.active) paidOnce();
 })();
 </script>
 </body>
