@@ -187,6 +187,8 @@
   .panel-rows b { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
 
   /* gift */
+  .period { margin-top: 22px; }
+  .period + #tiers, .period + #giftTiers { margin-top: 12px; }
   #giftTiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 26px; }
   .gift-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--line); }
   .gift-row b { display: block; font-weight: 700; font-size: 15px; }
@@ -295,6 +297,7 @@
   <!-- PLANS -->
   <section class="view" id="v-plans">
     <h1>Сколько устройств подключить?</h1>
+    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, 2 месяца бесплатно</button></div>
     <div id="tiers"></div>
     <div class="price" id="priceBox"><b id="planPrice">199</b><span>₽</span></div>
     <div class="caption" id="planPer">за 30 дней</div>
@@ -401,6 +404,7 @@
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Подписка в подарок</h1>
     <p class="note">Вы оплачиваете и получаете ссылку. Друг открывает её в боте, и подписка включается. Ссылка работает один раз и не сгорает.</p>
+    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, 2 месяца бесплатно</button></div>
     <div id="giftTiers"></div>
     <div class="price" id="giftPriceBox"><b id="giftPrice">199</b><span>₽</span></div>
     <div class="caption" id="giftPer">30 дней</div>
@@ -535,6 +539,10 @@ const DEMO_META = {
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
     { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
     { id: "d10", title: "10 устройств", days: 30, rub: 555, stars: 451, devices: 10 },
+    { id: "y2", title: "2 устройства, год", days: 365, rub: 1990, stars: 1616, devices: 2 },
+    { id: "y3", title: "3 устройства, год", days: 365, rub: 2500, stars: 2030, devices: 3 },
+    { id: "y5", title: "5 устройств, год", days: 365, rub: 3500, stars: 2841, devices: 5 },
+    { id: "y10", title: "10 устройств, год", days: 365, rub: 5550, stars: 4505, devices: 10 },
   ],
   locations: [
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38, available: false },
@@ -1024,17 +1032,12 @@ function renderConnect() {
 let giftPlan = "d2";
 
 function renderGift() {
-  const tiers = $("giftTiers");
-  if (!tiers.children.length) {
-    tiers.innerHTML = meta.plans.map((p) => `<button class="tier" data-p="${p.id}" aria-label="${p.title}">${p.devices}</button>`).join("");
-    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => { giftPlan = b.dataset.p; haptic(); renderGift(); });
-  }
-  tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", b.dataset.p === giftPlan));
-  const p = meta.plans.find((x) => x.id === giftPlan) || meta.plans[0];
+  const current = () => meta.plans.find((x) => x.id === giftPlan) || meta.plans[0];
+  const p = renderPicker("giftTiers", "giftPeriod", current, (id) => { giftPlan = id; renderGift(); bumpPrice($("giftPriceBox")); });
   giftPlan = p.id;
   countTo($("giftPrice"), p.rub, 500);
-  $("giftPer").textContent = `${p.title}, ${p.days} дней`;
-  $("giftBuyBtn").textContent = `Оплатить ${p.rub} ₽`;
+  $("giftPer").textContent = `${devicesWord(p.devices)}, ${isYear(p) ? "на год" : `${p.days} дней`}`;
+  $("giftBuyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
 
 const giftLink = (code) => `https://t.me/${meta.bot_username}?start=gift_${code}`;
@@ -1552,26 +1555,45 @@ function renderLocations() {
   });
 }
 
-function renderPlans() {
-  const tiers = $("tiers");
-  // buttons are built once; only the selection changes afterwards
+const isYear = (p) => p.days >= 365;
+const devicesWord = (n) => `${n} ${plural(n, "устройство", "устройства", "устройств")}`;
+
+// Device buttons and the month/year switch; a pick is always one concrete plan.
+function renderPicker(tiersId, periodId, current, pick) {
+  const tiers = $(tiersId), period = $(periodId);
+  const choose = (devices, year) => {
+    const next = meta.plans.find((p) => p.devices === devices && isYear(p) === year);
+    if (next && next.id !== current().id) { haptic(); pick(next.id); }
+  };
   if (!tiers.children.length) {
-    tiers.innerHTML = meta.plans.map((p) => `<button class="tier" data-p="${p.id}" aria-label="${p.title}">${p.devices}</button>`).join("");
-    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => {
-      if (plan === b.dataset.p) return;
-      plan = b.dataset.p; haptic(); renderPlans();
-      const box = $("priceBox");
-      box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump");
-    });
+    tiers.innerHTML = [...new Set(meta.plans.map((p) => p.devices))]
+      .map((n) => `<button class="tier" data-n="${n}" aria-label="${devicesWord(n)}">${n}</button>`).join("");
+    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => choose(+b.dataset.n, isYear(current())));
+    period.querySelectorAll("button").forEach((b) => b.onclick = () => choose(current().devices, b.dataset.year === "1"));
+    period.hidden = !meta.plans.some(isYear);  // buttons in old chat messages still carry a list without yearly plans
   }
-  tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", b.dataset.p === plan));
-  const p = meta.plans.find((x) => x.id === plan) || meta.plans[0];
+  const p = current();
+  tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", +b.dataset.n === p.devices));
+  period.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.year === "1") === isYear(p)));
+  return p;
+}
+
+function bumpPrice(box) { box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump"); }
+
+function renderPlans() {
+  const current = () => meta.plans.find((x) => x.id === plan) || meta.plans[0];
+  const p = renderPicker("tiers", "planPeriod", current, (id) => { plan = id; renderPlans(); bumpPrice($("priceBox")); });
   plan = p.id;
   countTo($("planPrice"), p.rub, 500);
-  $("planPer").textContent = `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
-  $("planStars").textContent = `${p.stars} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
-  $("planNote").hidden = p.id !== meta.plans[meta.plans.length - 1].id;
-  $("buyBtn").textContent = `Оплатить ${p.rub} ₽`;
+  const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
+  $("planPer").textContent = isYear(p)
+    ? `за год, ${Math.round(p.rub / 12)} ₽ в месяц`
+    : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
+  $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
+  const biggest = Math.max(...meta.plans.map((x) => x.devices));
+  $("planNote").textContent = isYear(p) ? `Экономия ${money(month.rub * 12 - p.rub)}: два месяца бесплатно` : "Максимальная выгода для совместного использования";
+  $("planNote").hidden = !isYear(p) && p.devices !== biggest;
+  $("buyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
 
 function renderProfile() {
