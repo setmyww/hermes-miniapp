@@ -170,6 +170,65 @@
   .composer button { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; }
   .composer button:disabled { opacity: .4; }
 
+  /* shared bits of the newer screens */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { min-height: 40px; padding: 0 16px; border-radius: 99px; border: 1px solid var(--line-2); font-weight: 600; font-size: 13px; transition: background .2s, color .2s; }
+  .chips button.on { background: #fff; color: var(--bg); border-color: #fff; }
+  .field { width: 100%; height: 58px; padding: 0 18px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 700 18px/1 "Manrope", sans-serif; letter-spacing: .05em; }
+  .field:focus { outline: none; border-color: #fff; }
+  .field::placeholder { color: var(--muted); font-weight: 500; letter-spacing: 0; }
+  textarea.field { display: block; height: auto; min-height: 96px; padding: 14px 16px; font: 500 16px/1.4 "Manrope", sans-serif; letter-spacing: 0; resize: vertical; }
+  .btn:disabled { opacity: .5; }
+  .form-msg { min-height: 20px; margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+  .stack > * + * { margin-top: 10px; }
+  .panel-rows { display: flex; flex-direction: column; gap: 8px; }
+  .panel-rows div { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
+  .panel-rows span { color: var(--muted); flex: none; }
+  .panel-rows b { font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+  /* gift */
+  #giftTiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 26px; }
+  .gift-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .gift-row b { display: block; font-weight: 700; font-size: 15px; }
+  .gift-row span { font-size: 13px; color: var(--muted); }
+
+  /* VPN check */
+  .verdict-mark { width: 72px; height: 72px; margin-top: 34px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-2); }
+  .verdict-mark svg { width: 34px; height: 34px; }
+  .verdict-mark.good { background: #fff; color: var(--bg); border-color: #fff; animation: bump .5s var(--spring); }
+  .verdict-mark.wait { border-top-color: #fff; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #v-check h1 { margin-top: 18px; }
+
+  /* admin statistics */
+  #adminSeg { margin-top: 26px; }
+  #statRange { margin-top: 14px; }
+  .stat-hero { font-weight: 800; font-size: 60px; line-height: 1; letter-spacing: -.04em; margin-top: 24px; }
+  .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+  .kpi { padding: 14px; border-radius: 16px; background: var(--surface); }
+  .kpi b { display: block; font-weight: 800; font-size: 32px; line-height: 1.1; letter-spacing: -.02em; }
+  .kpi span { font-size: 13px; color: var(--muted); }
+  .chart { margin-top: 28px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .chart-head b { font-weight: 700; font-size: 15px; }
+  .chart-head span, .chart-axis { font-size: 12px; color: var(--muted); }
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; margin-top: 12px; border-bottom: 1px solid var(--line-2); }
+  .bars button { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+  .bars i { display: block; width: 100%; min-height: 2px; border-radius: 4px 4px 0 0; background: #fff; transition: opacity .15s; }
+  .bars i.zero { background: var(--line-2); border-radius: 0; }
+  .bars.picked button:not(.on) i { opacity: .38; }
+  .chart-axis { display: flex; justify-content: space-between; margin-top: 6px; }
+  .chart-read { min-height: 22px; margin-top: 6px; font-size: 14px; font-weight: 600; }
+  details.day-table { margin-top: 22px; border-top: 1px solid var(--line); }
+  details.day-table summary { display: flex; justify-content: space-between; min-height: 52px; align-items: center; font-size: 15px; cursor: pointer; list-style: none; }
+  details.day-table summary::-webkit-details-marker { display: none; }
+  details.day-table summary::after { content: "↓"; font-weight: 700; }
+  details[open].day-table summary::after { content: "↑"; }
+  .day-table table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .day-table th { font-weight: 600; color: var(--muted); text-align: right; padding: 6px 0; }
+  .day-table td { text-align: right; padding: 8px 0; border-top: 1px solid var(--line); }
+  .day-table th:first-child, .day-table td:first-child { text-align: left; }
+
   /* tab bar: the pills melt into each other and a white drop flows to the chosen one (both layers go through a "goo" filter) */
   .tabs-fade { position: fixed; left: 0; right: 0; bottom: 0; height: calc(112px + env(safe-area-inset-bottom)); z-index: 9; pointer-events: none; background: linear-gradient(180deg, rgba(11,11,11,0), var(--bg) 46%); }
   .tabs { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); width: min(calc(100% - 24px), 456px); height: 64px; transform: translateX(-50%); z-index: 10; display: flex; gap: 6px; }
@@ -221,6 +280,8 @@
     </div>
     <div class="rows block">
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
+      <button data-go="check"><span>Проверить VPN</span><b>→</b></button>
+      <button data-go="help"><span>Не работает?</span><b>→</b></button>
     </div>
   </section>
 
@@ -243,11 +304,15 @@
       <div><span>Также</span><b>Криптовалюта</b></div>
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
+    <div class="rows block">
+      <button data-go="gift"><span>Купить в подарок другу</span><b>→</b></button>
+      <button data-go="promo"><span>Есть промокод</span><b>→</b></button>
+    </div>
   </section>
 
   <!-- CONNECT -->
   <section class="view" id="v-connect">
-    <button class="back" data-go="home">← Назад</button>
+    <button class="back" data-back>← Назад</button>
     <h1>Подключение</h1>
     <div id="platforms"></div>
     <div class="step">
@@ -262,24 +327,53 @@
     <div class="step">
       <b>2</b>
       <div>
-        <h2>Получите ключ</h2>
-        <p class="note" id="connKeyText">Бот пришлёт ссылку-подписку в чат.</p>
-        <button class="btn ghost" id="connKeyBtn">Получить ключ</button>
+        <h2>Добавьте ключ в Happ</h2>
+        <p class="note">Одна кнопка: откроется браузер, затем Happ с вашим ключом.</p>
+        <button class="btn" id="connAddBtn">Добавить в Happ</button>
+        <button class="btn ghost" id="connKeyBtn">Скопировать ключ</button>
       </div>
     </div>
     <div class="step">
       <b>3</b>
       <div>
-        <h2>Добавьте ключ и подключитесь</h2>
-        <p class="note">В Happ нажмите «+», затем «Импорт из буфера» и большую кнопку подключения.</p>
+        <h2>Включите VPN</h2>
+        <p class="note">В Happ нажмите большую кнопку подключения, затем проверьте результат.</p>
+        <button class="btn ghost" data-go="check">Проверить VPN</button>
       </div>
     </div>
+    <p class="note" style="margin-top:22px">Если Happ не открылся: скопируйте ключ и в Happ нажмите «+», затем «Импорт из буфера».</p>
     <p class="sub-label">Другие приложения для этого устройства</p>
     <div class="links" id="otherLinks" style="margin-top:4px"></div>
   </section>
 
   <!-- SUPPORT, admins only -->
   <section class="view" id="v-support">
+    <div class="chips" id="adminSeg">
+      <button class="on" data-seg="chats">Чаты</button>
+      <button data-seg="stats">Статистика</button>
+    </div>
+    <div id="adminStats" hidden>
+      <h1 style="margin-top:22px">Статистика</h1>
+      <div class="chips" id="statRange">
+        <button data-days="7">7 дней</button>
+        <button class="on" data-days="30">30 дней</button>
+      </div>
+      <p class="sup-empty" id="statEmpty" hidden></p>
+      <div id="statBody" hidden>
+        <div class="stat-hero" id="statRevenue">0 ₽</div>
+        <p class="note" id="statRevenueNote"></p>
+        <div class="kpis">
+          <div class="kpi"><b id="statNew">0</b><span>новых пользователей</span></div>
+          <div class="kpi"><b id="statPays">0</b><span>оплат</span></div>
+        </div>
+        <div class="chart" id="chartRevenue"></div>
+        <div class="chart" id="chartUsers"></div>
+        <div class="rows block" id="statFunnel"></div>
+        <details class="day-table" id="statDays"><summary>По дням</summary><div id="statTable"></div></details>
+        <p class="note" style="margin-top:14px">Звёзды пересчитаны в рубли по цене покупки и сегодняшнему курсу, доля Telegram не вычтена. Оплаты с реферального баланса не считаются.</p>
+      </div>
+    </div>
+    <div id="adminChats">
     <div id="supListBox">
       <h1>Обращения</h1>
       <p class="note" id="supCount"></p>
@@ -299,6 +393,61 @@
         <button type="submit" id="supSend" aria-label="Отправить ответ"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
       </form>
     </div>
+    </div>
+  </section>
+
+  <!-- SUBSCRIPTION FOR A FRIEND -->
+  <section class="view" id="v-gift">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Подписка в подарок</h1>
+    <p class="note">Вы оплачиваете и получаете ссылку. Друг открывает её в боте, и подписка включается. Ссылка работает один раз и не сгорает.</p>
+    <div id="giftTiers"></div>
+    <div class="price" id="giftPriceBox"><b id="giftPrice">199</b><span>₽</span></div>
+    <div class="caption" id="giftPer">30 дней</div>
+    <button class="btn" id="giftBuyBtn" style="margin-top:14px">Оплатить</button>
+    <div class="block" id="giftListBox" hidden>
+      <h2 class="sec">Ваши подарки</h2>
+      <div id="giftList" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- PROMO CODE -->
+  <section class="view" id="v-promo">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Промокод</h1>
+    <form id="promoForm" style="margin-top:22px">
+      <label class="note" for="promoCode" style="display:block;margin:0 0 10px">Промокод добавит дни к вашей подписке.</label>
+      <input class="field" id="promoCode" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Введите код">
+      <p class="form-msg" id="promoMsg" role="status"></p>
+      <button class="btn" id="promoBtn" type="submit">Активировать</button>
+    </form>
+    <div id="promoDone" hidden>
+      <div class="big" id="promoDays" style="margin-top:34px">+7</div>
+      <div class="caption" id="promoCaption"></div>
+      <button class="btn" data-go="home" style="margin-top:26px">На главную</button>
+    </div>
+  </section>
+
+  <!-- VPN CHECK -->
+  <section class="view" id="v-check">
+    <button class="back" data-back>← Назад</button>
+    <div class="verdict-mark wait" id="checkMark"></div>
+    <h1 id="checkTitle" role="status">Проверяем</h1>
+    <p class="note" id="checkNote">Смотрим, откуда вы сейчас выходите в интернет.</p>
+    <div class="rows" id="checkRows" hidden>
+      <div><span>Страна</span><b id="checkCountry"></b></div>
+      <div><span>IP-адрес</span><b id="checkIp"></b></div>
+    </div>
+    <div class="stack block">
+      <button class="btn" id="checkAgain">Проверить снова</button>
+      <button class="btn ghost" data-go="help">Не работает?</button>
+    </div>
+  </section>
+
+  <!-- HELPER -->
+  <section class="view" id="v-help">
+    <button class="back" id="helpBack">← Назад</button>
+    <div id="helpBox"></div>
   </section>
 
   <!-- PROFILE -->
@@ -333,6 +482,8 @@
     </div>
     <div class="rows block">
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
+      <button data-go="gift"><span>Подарить подписку</span><b>→</b></button>
+      <button data-go="promo"><span>Промокод</span><b>→</b></button>
       <button id="supportBtn"><span>Поддержка</span><b>→</b></button>
       <button data-go="plans"><span>Продлить подписку</span><b>→</b></button>
     </div>
@@ -355,7 +506,7 @@
   <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>Главная</button>
   <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
   <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
-  <button data-go="support" id="supportTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H9l-5 4z"/></svg>Чаты</button>
+  <button data-go="support" id="supportTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H9l-5 4z"/></svg>Админ</button>
   <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль</button>
 </nav>
 
@@ -392,7 +543,7 @@ const DEMO_META = {
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
-  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500,
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: [],
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -410,7 +561,7 @@ function decodeState(s) {
       // buttons in old chat messages still carry an old plan list, without ruble prices
       plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub]) => ({ id, title, days, stars, devices, rub })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
-      ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout,
+      ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
     },
   };
 }
@@ -685,7 +836,7 @@ function initLiquid() {
 /* ---------- support conversations, admins only ---------- */
 
 // The bot's address behind the hosting's HTTPS proxy. Every call is signed with Telegram's initData and the bot checks it.
-const ADMIN_API = "https://s-25087.de-bots6.h1clayd.click";
+const SERVER_API = "https://s-25087.de-bots6.h1clayd.click";
 const SUP_POLL_MS = 6000;
 const support = { open: null, timer: 0, seen: -1 };
 
@@ -700,9 +851,9 @@ const DEMO_THREADS = {
   ] },
 };
 
-async function adminApi(path, body) {
-  if (DEMO) return demoAdmin(path, body);
-  const res = await fetch(ADMIN_API + path, {
+async function serverApi(path, body) {
+  if (DEMO) return demoApi(path, body);
+  const res = await fetch(SERVER_API + path, {
     method: body ? "POST" : "GET",
     headers: { "Content-Type": "application/json", "X-Init-Data": initData },
     body: body ? JSON.stringify(body) : undefined,
@@ -711,7 +862,16 @@ async function adminApi(path, body) {
   return res.json();
 }
 
-function demoAdmin(path, body) {
+function demoApi(path, body) {
+  if (path === "/api/key") return { sub_link: me.sub_link };
+  if (path === "/api/support") return { ok: true };
+  if (path === "/api/promo") return body.code.toUpperCase() === "HERMES7"
+    ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
+  if (path === "/api/gifts") return { gifts: [
+    { code: "demo1", title: "3 устройства", created_at: Date.now() / 1000 - 3600, redeemed: false },
+    { code: "demo2", title: "2 устройства", created_at: Date.now() / 1000 - 9 * 86400, redeemed: true },
+  ] };
+  if (path === "/api/admin/stats") return demoStats();
   const m = path.match(/threads\/(\d+)(\/\w+)?$/);
   if (!m) return { threads: Object.values(DEMO_THREADS).filter((t) => t.open).map((t) => ({
     user_id: t.user.id, username: t.user.username, updated_at: t.messages[t.messages.length - 1].created_at, preview: t.messages[t.messages.length - 1].body })) };
@@ -738,7 +898,7 @@ function el(tag, className, text) {
 
 async function loadThreads() {
   try {
-    const { threads } = await adminApi("/api/admin/threads");
+    const { threads } = await serverApi("/api/admin/threads");
     $("supCount").textContent = threads.length ? `Открыто: ${threads.length}` : "";
     $("supEmpty").hidden = threads.length > 0;
     $("supEmpty").textContent = "Открытых обращений нет.";
@@ -756,7 +916,7 @@ async function loadThreads() {
 
 async function loadThread(userId) {
   try {
-    const t = await adminApi(`/api/admin/threads/${userId}`);
+    const t = await serverApi(`/api/admin/threads/${userId}`);
     if (support.open !== userId) return;  // the admin has already left this conversation
     $("supName").textContent = supWho(t.user);
     $("supInfo").textContent = `ID ${t.user.id}, подписка: ${t.user.plan}`;
@@ -774,7 +934,7 @@ async function loadThread(userId) {
 
 function openThread(userId) {
   support.open = userId; support.seen = -1;
-  $("supListBox").hidden = true; $("supThreadBox").hidden = false;
+  $("supListBox").hidden = true; $("supThreadBox").hidden = false; $("adminSeg").hidden = true;
   $("supMessages").replaceChildren();
   window.scrollTo({ top: 0 });
   loadThread(userId);
@@ -782,7 +942,7 @@ function openThread(userId) {
 
 function closeThreadView() {
   support.open = null;
-  $("supThreadBox").hidden = true; $("supListBox").hidden = false;
+  $("supThreadBox").hidden = true; $("supListBox").hidden = false; $("adminSeg").hidden = false;
   loadThreads();
 }
 
@@ -798,7 +958,7 @@ function supportPoll(active) {
 
 $("supBack").onclick = closeThreadView;
 $("supClose").onclick = async () => {
-  try { await adminApi(`/api/admin/threads/${support.open}/close`, {}); haptic("medium"); toast("Обращение закрыто"); closeThreadView(); }
+  try { await serverApi(`/api/admin/threads/${support.open}/close`, {}); haptic("medium"); toast("Обращение закрыто"); closeThreadView(); }
   catch { toast("Не удалось закрыть"); }
 };
 $("supForm").onsubmit = async (e) => {
@@ -807,7 +967,7 @@ $("supForm").onsubmit = async (e) => {
   if (!text) return;
   $("supSend").disabled = true;
   try {
-    await adminApi(`/api/admin/threads/${support.open}/reply`, { text });
+    await serverApi(`/api/admin/threads/${support.open}/reply`, { text });
     $("supText").value = ""; $("supText").style.height = "";
     haptic("medium"); loadThread(support.open);
   } catch (err) {
@@ -852,11 +1012,468 @@ function renderConnect() {
   $("happBtn").textContent = `Установить: ${v.happ[0][0]}`;
   $("happLinks").innerHTML = v.happ.slice(1).map(linkRow).join("");
   $("otherLinks").innerHTML = v.other.map(linkRow).join("");
-  $("connKeyBtn").textContent = !me.active ? "Сначала выбрать тариф" : me.sub_link ? "Скопировать ключ" : "Получить ключ";
+  $("connAddBtn").textContent = me.active ? "Добавить в Happ" : "Сначала выбрать тариф";
+  $("connKeyBtn").hidden = !me.active;
   document.querySelectorAll("#v-connect a[target]").forEach((a) => a.onclick = (e) => {
     if (tg?.openLink) { e.preventDefault(); tg.openLink(a.href); }
   });
 }
+
+/* ---------- subscription for a friend ---------- */
+
+let giftPlan = "d2";
+
+function renderGift() {
+  const tiers = $("giftTiers");
+  if (!tiers.children.length) {
+    tiers.innerHTML = meta.plans.map((p) => `<button class="tier" data-p="${p.id}" aria-label="${p.title}">${p.devices}</button>`).join("");
+    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => { giftPlan = b.dataset.p; haptic(); renderGift(); });
+  }
+  tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", b.dataset.p === giftPlan));
+  const p = meta.plans.find((x) => x.id === giftPlan) || meta.plans[0];
+  giftPlan = p.id;
+  countTo($("giftPrice"), p.rub, 500);
+  $("giftPer").textContent = `${p.title}, ${p.days} дней`;
+  $("giftBuyBtn").textContent = `Оплатить ${p.rub} ₽`;
+}
+
+const giftLink = (code) => `https://t.me/${meta.bot_username}?start=gift_${code}`;
+
+function shareGift(code) {
+  const url = `https://t.me/share/url?url=${encodeURIComponent(giftLink(code))}&text=${encodeURIComponent("Дарю тебе HERMES VPN: активируй по ссылке")}`;
+  tg?.openTelegramLink ? tg.openTelegramLink(url) : toast("Отправка доступна в Telegram");
+}
+
+async function loadGifts() {
+  try {
+    const { gifts } = await serverApi("/api/gifts");
+    $("giftListBox").hidden = !gifts.length;
+    $("giftList").replaceChildren(...gifts.map((g) => {
+      const row = el("div", "gift-row"), text = el("div");
+      text.append(el("b", "", g.title), el("span", "", `${supTime(g.created_at)}, ${g.redeemed ? "активирован" : "ждёт друга"}`));
+      row.append(text);
+      if (!g.redeemed) {
+        const send = el("button", "btn small ghost", "Отправить");
+        send.onclick = () => { haptic(); shareGift(g.code); };
+        row.append(send);
+      }
+      return row;
+    }));
+  } catch { $("giftListBox").hidden = true; }  // buying works without the list: the link also comes in the chat
+}
+
+$("giftBuyBtn").onclick = () => DEMO ? toast("Оплата доступна в Telegram") : toBot("giftbuy_" + giftPlan);
+
+/* ---------- promo code ---------- */
+
+function resetPromo() {
+  $("promoForm").hidden = false; $("promoDone").hidden = true;
+  $("promoCode").value = ""; $("promoMsg").textContent = "";
+}
+
+$("promoForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const code = $("promoCode").value.trim();
+  if (!code) return $("promoCode").focus();
+  $("promoBtn").disabled = true; $("promoMsg").textContent = "";
+  try {
+    const r = await serverApi("/api/promo", { code });
+    if (r.error) {
+      $("promoMsg").textContent = r.error;
+      tg?.HapticFeedback?.notificationOccurred("error");
+    } else {
+      me = { ...me, ...r.me };
+      render();
+      $("promoDays").textContent = `+${r.days}`;
+      $("promoCaption").textContent = `${plural(r.days, "день", "дня", "дней")} к подписке, теперь она до ${new Date(me.expires_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
+      $("promoForm").hidden = true; $("promoDone").hidden = false;
+      tg?.HapticFeedback?.notificationOccurred("success");
+    }
+  } catch { $("promoMsg").textContent = "Нет связи с сервером. Попробуйте ещё раз или отправьте боту /promo и код."; }
+  $("promoBtn").disabled = false;
+};
+
+/* ---------- key and the one-button connection ---------- */
+
+// The page's address never carries the key, so it comes from the server, signed with Telegram's initData.
+async function getKey() {
+  if (me.sub_link) return me.sub_link;
+  const { sub_link } = await serverApi("/api/key", {});
+  me.sub_link = sub_link;
+  return sub_link;
+}
+
+// Fetched ahead, because browsers allow copying only right after a tap, not after waiting for the network.
+async function preloadKey() {
+  if (!me.active || me.sub_link || DEMO || !initData) return;
+  try { if (await getKey()) { renderHome(); renderConnect(); } } catch { /* the buttons ask again */ }
+}
+
+async function copyKey() {
+  if (me.sub_link) return copy(me.sub_link);
+  if (!me.active) return go("plans");
+  try {
+    if (await getKey()) { renderHome(); renderConnect(); return copy(me.sub_link); }
+  } catch { return toBot("key"); }
+  toast("Серверы подключаются, ключ скоро появится");
+}
+
+// Telegram opens only http(s) links, so happ:// goes through our small page in the browser.
+async function addToHapp() {
+  if (!me.active) return go("plans");
+  let link;
+  try { link = await getKey(); } catch { return toBot("key"); }
+  if (!link) return toast("Серверы подключаются, ключ скоро появится");
+  if (DEMO) return toast("В Telegram здесь откроется Happ с вашим ключом");
+  try { await navigator.clipboard.writeText(link); } catch { /* only a backup for adding it by hand */ }
+  const page = new URL("open.html", location.href);
+  page.search = ""; page.hash = encodeURIComponent(link);
+  haptic("medium");
+  tg?.openLink ? tg.openLink(page.href) : window.open(page.href, "_blank");
+}
+
+/* ---------- is the VPN on? ---------- */
+
+const MARK = {
+  good: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 17v.01"/></svg>',
+};
+// The page itself asks, so the answer shows the route of this device. The second service is for when the first is blocked.
+const IP_SERVICES = [
+  ["https://api.country.is/", (j) => ({ ip: j.ip, code: j.country })],
+  ["https://ipwho.is/?fields=ip,success,country_code", (j) => ({ ip: j.ip, code: j.country_code })],
+];
+const IP_TIMEOUT = 6000;
+let lastCheck = null, checkRun = 0;
+
+async function lookupIp() {
+  for (const [url, read] of IP_SERVICES) {
+    const stop = new AbortController(), timer = setTimeout(() => stop.abort(), IP_TIMEOUT);
+    try {
+      const info = read(await (await fetch(url, { signal: stop.signal, cache: "no-store" })).json());
+      if (info.ip && info.code) return info;
+    } catch { /* next service */ } finally { clearTimeout(timer); }
+  }
+  return null;
+}
+
+function countryName(code) {
+  try { return new Intl.DisplayNames(["ru"], { type: "region" }).of(code); } catch { return code; }
+}
+
+function judge(info) {
+  if (!info) return { kind: "unknown", title: "Не удалось проверить", note: "Сервисы проверки не ответили. Проверьте интернет и попробуйте ещё раз." };
+  const servers = meta.vpn_ips || [];
+  if (servers.includes(info.ip)) return { kind: "good", title: "VPN работает", note: "Интернет идёт через сервер HERMES." };
+  if (info.code === "RU") return { kind: "bad", title: "VPN не включён", note: "Вы выходите в интернет из России. Включите VPN в Happ и проверьте снова." };
+  if (servers.length) return { kind: "unknown", title: "Это не сервер HERMES", note: "Вы выходите в интернет не через наш сервер. Возможно, включён другой VPN." };
+  return { kind: "good", title: "Похоже, VPN работает", note: "Вы выходите в интернет не из России." };
+}
+
+async function runCheck() {
+  const run = ++checkRun;
+  $("checkMark").className = "verdict-mark wait"; $("checkMark").innerHTML = "";
+  $("checkTitle").textContent = "Проверяем";
+  $("checkNote").textContent = "Смотрим, откуда вы сейчас выходите в интернет.";
+  $("checkRows").hidden = true;
+  const info = await lookupIp();
+  const verdict = judge(info);
+  lastCheck = { ...verdict, info };
+  if (run !== checkRun) return;  // a newer check has started
+  $("checkMark").className = "verdict-mark" + (verdict.kind === "good" ? " good" : "");
+  $("checkMark").innerHTML = MARK[verdict.kind];
+  $("checkTitle").textContent = verdict.title;
+  $("checkNote").textContent = verdict.note;
+  if (info) {
+    $("checkCountry").textContent = countryName(info.code);
+    $("checkIp").textContent = info.ip;
+    $("checkRows").hidden = false;
+  }
+  tg?.HapticFeedback?.notificationOccurred(verdict.kind === "good" ? "success" : "warning");
+}
+
+$("checkAgain").onclick = () => { haptic(); runCheck(); };
+
+/* ---------- helper: a few questions, a ready answer, then support with the details filled in ---------- */
+
+const DESKTOP = () => ["windows", "macos", "linux"].includes(platform);
+const STEP_REOPEN = "Закройте Happ полностью и откройте снова.";
+const STEP_READD = "Удалите подписку в Happ и добавьте ключ заново кнопкой ниже.";
+const STEP_OTHER_VPN = "Выключите другие VPN и прокси: одновременно работает только один.";
+const STEP_SERVER = "Выберите в Happ другой сервер из списка.";
+const STEP_UPDATE = "Обновите Happ до последней версии.";
+const ADD_KEY = ["Добавить ключ в Happ", () => addToHapp()];
+const RUN_CHECK = ["Проверить VPN", () => go("check")];
+const HELP = {
+  start: { q: "Что случилось?", a: [
+    ["Не могу добавить ключ", "key"], ["Не подключается", "conn"], ["Подключено, но сайты не открываются", "sites"],
+    ["Работает медленно", "slow"], ["Пишет про лимит устройств", "limit"], ["Оплатил, а подписки нет", "paid"], ["Другое", "support"],
+  ] },
+  conn: { q: "Что происходит в Happ?", a: [
+    ["Список серверов пустой", "conn_empty"], ["Подключение не завершается", "conn_spin"], ["Показывает ошибку", "conn_err"],
+  ] },
+  sites: { q: "Какие сайты не открываются?", a: [["Никакие", "sites_all"], ["Только некоторые", "sites_some"]] },
+  key: { title: "Добавим ключ заново", steps: () => [
+    STEP_UPDATE,
+    ...(platform === "ios" ? ["В российском App Store приложение называется Happ Lite."] : []),
+    "Нажмите кнопку ниже: откроется Happ с вашим ключом.",
+    "Если не открылось, скопируйте ключ на главной и в Happ нажмите «+», затем «Импорт из буфера».",
+  ], action: ADD_KEY },
+  conn_empty: { title: "Обновим подписку", steps: () => ["Обновите подписку в Happ: кнопка обновления рядом с её названием.", STEP_READD], action: ADD_KEY },
+  conn_spin: { title: "Поищем рабочий маршрут", steps: () => [STEP_SERVER, "Переключитесь между Wi-Fi и мобильным интернетом.", STEP_OTHER_VPN, STEP_REOPEN] },
+  conn_err: { title: "Исправим ошибку", steps: () => [STEP_UPDATE, "Включите на устройстве автоматическую дату и время.", STEP_READD], action: ADD_KEY },
+  sites_all: { title: "Вернём интернет", steps: () => [
+    "Выключите и снова включите VPN в Happ.", STEP_SERVER, "Включите и выключите авиарежим.",
+    ...(DESKTOP() ? ["Если в настройках Happ есть режим TUN, включите его: так через VPN пойдут все приложения."] : []),
+  ], action: RUN_CHECK },
+  sites_some: { title: "Если не открывается один сайт", steps: () => [
+    "Откройте сайт в другом браузере или в режиме инкогнито.", "Выключите встроенный VPN или блокировщик в браузере.", STEP_SERVER,
+    "Некоторые сайты сами не пускают пользователей VPN.",
+  ] },
+  slow: { title: "Ускорим соединение", steps: () => [STEP_SERVER, "Сравните скорость без VPN: возможно, медленный сам интернет.", "Переключитесь между Wi-Fi и мобильным интернетом.", STEP_REOPEN] },
+  limit: { title: "Освободим устройство", steps: () => [
+    `В вашем тарифе устройств: ${me.active ? me.device_limit : "нет активной подписки"}.`,
+    "На устройстве, которым не пользуетесь, удалите подписку из Happ.",
+    "Если устройств нужно больше, выберите тариф побольше.",
+  ], action: ["Посмотреть тарифы", () => go("plans")] },
+  paid: { title: "Проверим оплату", steps: () => [
+    "Оплата звёздами проходит сразу, криптовалютой примерно за минуту.",
+    "Закройте мини-апп и откройте заново кнопкой в чате с ботом: данные обновятся.",
+    "Если вы покупали подарок, ссылка для друга пришла в чат с ботом.",
+  ] },
+};
+
+const help = { trail: [], labels: [] };
+
+function helpScreen(...children) {
+  $("helpBox").replaceChildren(...children);
+  window.scrollTo({ top: 0 });
+}
+
+function helpOpen(id) {
+  if (id === "support") return helpSupport();
+  const node = HELP[id];
+  node.q ? helpQuestion(node) : helpSolution(node);
+}
+
+function helpStart() {
+  help.trail = ["start"]; help.labels = [];
+  helpOpen("start");
+}
+
+function helpQuestion(node) {
+  const title = el("h1", "", node.q);
+  title.style.marginTop = "8px";
+  const rows = el("div", "rows");
+  node.a.forEach(([label, next]) => {
+    const row = el("button");
+    row.append(el("span", "", label), el("b", "", "→"));
+    row.onclick = () => { haptic(); help.trail.push(next); help.labels.push(label); helpOpen(next); };
+    rows.append(row);
+  });
+  const parts = [title];
+  if (help.trail.length === 1 && !me.active) {
+    const box = el("div", "ref-panel"), buy = el("button", "btn", me.trial_available ? "Попробовать бесплатно" : "Выбрать тариф");
+    box.append(el("b", "", "Подписка не активна"), el("p", "note", "Без неё VPN не подключится. Начните с этого."));
+    buy.onclick = () => (me.trial_available ? $("trialBtn").click() : go("plans"));
+    box.append(buy);
+    parts.push(box);
+  }
+  helpScreen(...parts, rows);
+}
+
+function helpSolution(node) {
+  const parts = [el("h1", "", node.title)];
+  parts[0].style.marginTop = "8px";
+  node.steps().forEach((text, i) => {
+    const step = el("div", "step"), body = el("div");
+    body.append(el("p", "note", text));
+    body.firstChild.style.cssText = "margin:6px 0 0;color:var(--text);font-size:15px";
+    step.append(el("b", "", String(i + 1)), body);
+    parts.push(step);
+  });
+  const buttons = el("div", "stack block");
+  if (node.action) {
+    const act = el("button", "btn", node.action[0]);
+    act.onclick = node.action[1];
+    buttons.append(act);
+  }
+  const pair = el("div", "ref-actions"), yes = el("button", "btn ghost", "Помогло"), no = el("button", "btn ghost", "Не помогло");
+  pair.style.marginTop = "10px";
+  yes.onclick = () => { haptic("medium"); toast("Отлично, рады помочь"); go("home"); };
+  no.onclick = () => { haptic(); help.trail.push("support"); helpSupport(); };
+  pair.append(yes, no);
+  buttons.append(pair);
+  helpScreen(...parts, buttons);
+}
+
+const checkLine = () => (lastCheck ? (lastCheck.info ? `${countryName(lastCheck.info.code)}, ${lastCheck.info.ip}` : "не удалось") : "выполняется");
+
+function helpDetails() {
+  const sub = me.active ? `${me.plan}, осталось ${me.days_left} дн.` : "не активна";
+  return [
+    ["Проблема", help.labels.map((l, i) => (i ? l[0].toLowerCase() + l.slice(1) : l)).join(": ") || "другое"],
+    ["Устройство", PLATFORMS[platform].label],
+    ["Подписка", sub],
+    ["Проверка VPN", checkLine()],
+  ];
+}
+
+function helpSupport() {
+  const title = el("h1", "", "Напишем в поддержку");
+  title.style.marginTop = "8px";
+  const panel = el("div", "ref-panel panel-rows");
+  const fill = () => panel.replaceChildren(...helpDetails().map(([k, v]) => {
+    const row = el("div"); row.append(el("span", "", k), el("b", "", v)); return row;
+  }));
+  fill();
+  if (!lastCheck) lookupIp().then((info) => { lastCheck = { ...judge(info), info }; if (panel.isConnected) fill(); });
+  const label = el("label", "note", "Эти данные мы приложим сами. Добавьте, что ещё важно:");
+  label.htmlFor = "helpText"; label.style.cssText = "display:block;margin:18px 0 10px";
+  const area = el("textarea", "field");
+  area.id = "helpText"; area.maxLength = 3000; area.placeholder = "Например, текст ошибки";
+  const msg = el("p", "form-msg"), send = el("button", "btn", "Отправить");
+  msg.setAttribute("role", "status");
+  send.onclick = async () => {
+    send.disabled = true; msg.textContent = "";
+    const device = tg ? `\nTelegram: ${tg.platform} ${tg.version}` : "";
+    const details = helpDetails().map(([k, v]) => `${k}: ${v}`).join("\n");
+    const comment = area.value.trim();
+    try {
+      await serverApi("/api/support", { text: `${details}${device}${comment ? "\n\nКомментарий: " + comment : ""}` });
+      tg?.HapticFeedback?.notificationOccurred("success");
+      const done = el("h1", "", "Обращение отправлено");
+      done.style.marginTop = "8px";
+      const home = el("button", "btn", "На главную");
+      home.style.marginTop = "26px";
+      home.onclick = () => go("home");
+      helpScreen(done, el("p", "note", "Ответим в чате с ботом. Туда же можно прислать скриншот."), home);
+    } catch {
+      msg.textContent = "Не удалось отправить. Открываем чат с поддержкой.";
+      send.disabled = false;
+      setTimeout(() => toBot("support"), 1200);
+    }
+  };
+  helpScreen(title, panel, label, area, msg, send);
+}
+
+$("helpBack").onclick = () => {
+  haptic();
+  help.trail.pop();
+  if (!help.trail.length) return goBack();
+  if (help.labels.length >= help.trail.length) help.labels.length = help.trail.length - 1;
+  helpOpen(help.trail[help.trail.length - 1]);
+};
+
+/* ---------- admin statistics ---------- */
+
+const stats = { data: null, range: 30 };
+const dayLabel = (d) => new Date(d + "T12:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+const countOf = (n, one, few, many) => `${n.toLocaleString("ru-RU")} ${plural(n, one, few, many)}`;
+
+// Fixed numbers for the demo page only; nothing here reaches the real section
+function demoStats() {
+  const now = Date.now();
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const wave = Math.sin(i / 3.1) + 1.2, pays = Math.round(wave * (1 + i / 12));
+    return { d: new Date(now - (29 - i) * 86400000).toISOString().slice(0, 10), users: Math.round(wave * 6 + i / 3), payments: pays, rub: pays * 270, stars: pays * 180 };
+  });
+  return { users: 412, active: 96, trials: 233, paid: 81, trial_paid: 58, gifts_sold: 7, gifts_redeemed: 5, revenue_total: 61240, stars_total: 21400, rub_total: 35000, days };
+}
+
+function barChart(box, title, days, key, format) {
+  const max = Math.max(...days.map((d) => d[key]), 1);
+  const head = el("div", "chart-head"), bars = el("div", "bars"), axis = el("div", "chart-axis"), read = el("div", "chart-read");
+  head.append(el("b", "", title), el("span", "", `максимум ${format(Math.max(...days.map((d) => d[key])))}`));
+  const say = (d) => { read.textContent = `${dayLabel(d.d)}: ${format(d[key])}`; };
+  days.forEach((d) => {
+    const col = el("button"), bar = el("i");
+    col.type = "button";
+    col.setAttribute("aria-label", `${dayLabel(d.d)}: ${format(d[key])}`);
+    if (!d[key]) bar.className = "zero";
+    bar.style.height = d[key] ? `${(d[key] / max) * 100}%` : "2px";
+    col.append(bar);
+    const pick = () => {
+      bars.classList.add("picked");
+      bars.querySelectorAll(".on").forEach((b) => b.classList.remove("on"));
+      col.classList.add("on");
+      say(d);
+    };
+    col.onclick = () => { haptic(); pick(); };
+    col.onpointerenter = (e) => { if (e.pointerType === "mouse") pick(); };
+    bars.append(col);
+  });
+  bars.onpointerleave = (e) => {
+    if (e.pointerType !== "mouse") return;
+    bars.classList.remove("picked");
+    bars.querySelectorAll(".on").forEach((b) => b.classList.remove("on"));
+    say(days[days.length - 1]);
+  };
+  axis.append(el("span", "", dayLabel(days[0].d)), el("span", "", "сегодня"));
+  say(days[days.length - 1]);
+  box.replaceChildren(head, bars, axis, read);
+}
+
+function renderStats() {
+  const s = stats.data, days = s.days.slice(-stats.range);
+  const sum = (key) => days.reduce((n, d) => n + d[key], 0);
+  const percent = (a, b) => (b ? ` · ${Math.round((a / b) * 100)}%` : "");
+  $("statRevenue").textContent = money(sum("rub"));
+  $("statRevenueNote").textContent = `выручка за ${countOf(stats.range, "день", "дня", "дней")}, из них ${countOf(sum("stars"), "звезда", "звезды", "звёзд")}`;
+  $("statNew").textContent = sum("users");
+  $("statPays").textContent = sum("payments");
+  barChart($("chartRevenue"), "Выручка по дням", days, "rub", money);
+  barChart($("chartUsers"), "Новые пользователи по дням", days, "users", String);
+  const rows = [
+    ["Всего пользователей", s.users],
+    ["Активные подписки", s.active],
+    ["Взяли пробный период", `${s.trials}${percent(s.trials, s.users)}`],
+    ["Оплатили после пробного", `${s.trial_paid}${percent(s.trial_paid, s.trials)}`],
+    ["Всего оплативших", `${s.paid}${percent(s.paid, s.users)}`],
+    ["Подарки: куплено и активировано", `${s.gifts_sold} и ${s.gifts_redeemed}`],
+    ["Выручка за всё время", money(s.revenue_total)],
+  ];
+  $("statFunnel").replaceChildren(...rows.map(([k, v]) => {
+    const row = el("div"); row.append(el("span", "", k), el("b", "", String(v))); return row;
+  }));
+  const active = days.filter((d) => d.users || d.payments).reverse();
+  const table = el("table"), head = el("tr");
+  ["День", "Новые", "Оплаты", "Выручка"].forEach((t) => head.append(el("th", "", t)));
+  table.append(head, ...active.map((d) => {
+    const tr = el("tr");
+    [dayLabel(d.d), d.users, d.payments, money(d.rub)].forEach((v) => tr.append(el("td", "", String(v))));
+    return tr;
+  }));
+  $("statTable").replaceChildren(active.length ? table : el("p", "note", "За этот период событий нет."));
+}
+
+async function loadStats() {
+  try {
+    stats.data = await serverApi("/api/admin/stats");
+    $("statEmpty").hidden = true; $("statBody").hidden = false;
+    renderStats();
+  } catch {
+    $("statBody").hidden = true; $("statEmpty").hidden = false;
+    $("statEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
+  }
+}
+
+function adminSegment(seg) {
+  document.querySelectorAll("#adminSeg button").forEach((b) => b.classList.toggle("on", b.dataset.seg === seg));
+  $("adminStats").hidden = seg !== "stats";
+  $("adminChats").hidden = seg !== "chats";
+  admin.seg = seg;
+  supportPoll(seg === "chats" && currentView === "support");
+  if (seg === "stats") loadStats();
+}
+const admin = { seg: "chats" };
+document.querySelectorAll("#adminSeg button").forEach((b) => b.onclick = () => { haptic(); adminSegment(b.dataset.seg); });
+document.querySelectorAll("#statRange button").forEach((b) => b.onclick = () => {
+  stats.range = +b.dataset.days; haptic();
+  document.querySelectorAll("#statRange button").forEach((x) => x.classList.toggle("on", x === b));
+  if (stats.data) renderStats();
+});
 
 /* dotted landscape per location */
 function scene(kind) {
@@ -892,7 +1509,7 @@ function renderHome() {
   $("trialCard").hidden = !me.trial_available;
   $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
   $("keyCard").hidden = !(on && (me.sub_link || STATIC));
-  $("subLink").textContent = me.sub_link || "Ключ придёт сообщением в чат с ботом";
+  $("subLink").textContent = me.sub_link || "Нажмите «Получить», и ключ появится здесь";
   $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
   const loc = meta.locations[selectedLoc], ok = loc && isAvail(loc);
   $("netLoc").textContent = ok ? `${loc.city}, ${loc.ping} ms` : "Скоро";
@@ -993,7 +1610,7 @@ function renderReferrals() {
   $("refOutBtn").classList.toggle("ghost", !can);
 }
 
-function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderProfile(); renderConnect(); }
+function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderGift(); renderProfile(); renderConnect(); }
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -1014,33 +1631,45 @@ function countTo(el, to, ms) {
 // Stagger order for the entrance animation of each view's blocks
 document.querySelectorAll(".view").forEach((v) => [...v.children].forEach((c, i) => c.style.setProperty("--i", i)));
 
-function go(view) {
+const ROOT_VIEWS = new Set(["home", "locations", "plans", "support", "profile"]);
+const viewStack = [];
+let currentView = "home";
+
+function go(view, isBack = false) {
+  if (!isBack) {
+    if (ROOT_VIEWS.has(view)) viewStack.length = 0;
+    else if (view !== currentView) viewStack.push(currentView);
+  }
+  currentView = view;
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "v-" + view));
-  // the connect screen has no tab of its own: it opens from home and keeps that tab lit
-  const tab = view === "connect" ? "home" : view;
+  // a screen without a tab of its own keeps lit the tab it was opened from
+  const tab = ROOT_VIEWS.has(view) ? view : (viewStack[0] || "home");
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === tab));
   $("locList").classList.remove("settled");
-  supportPoll(view === "support");
+  supportPoll(view === "support" && admin.seg === "chats");
+  if (view === "gift") loadGifts();
+  if (!isBack) {
+    if (view === "promo") resetPromo();
+    if (view === "check") runCheck();
+    if (view === "help") helpStart();
+  }
   placeLiquid(); runLiquid();
   if (view === "home") { $("daysLeft").textContent = 0; countTo($("daysLeft"), me.days_left, 900); }
   window.scrollTo({ top: 0 }); haptic();
 }
+function goBack() { go(viewStack.pop() || "home", true); }
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
+document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", goBack));
 
 const refLink = () => `https://t.me/${meta.bot_username}?start=ref${me.id}`;
 
 $("connectBtn").onclick = () => {
-  if (!me.active) return go("plans");
-  if (!me.sub_link) return toBot("key");
-  // Happ deep link imports the subscription in one tap; fall back to copying.
-  if (tg?.openLink) tg.openLink("happ://add/" + me.sub_link); else copy(me.sub_link);
+  addToHapp();
 };
-$("copyBtn").onclick = () => me.sub_link ? copy(me.sub_link) : toBot("key");
+$("copyBtn").onclick = copyKey;
 $("copyRefBtn").onclick = () => copy(refLink());
-$("connKeyBtn").onclick = () => {
-  if (!me.active) return go("plans");
-  me.sub_link ? copy(me.sub_link) : toBot("key");
-};
+$("connAddBtn").onclick = addToHapp;
+$("connKeyBtn").onclick = copyKey;
 document.querySelectorAll("#refModes .mode").forEach((b) => b.onclick = () => {
   if (me.ref_mode === b.dataset.mode) return;
   haptic();
@@ -1085,11 +1714,12 @@ $("buyBtn").onclick = async () => {
     try { [me, meta] = await Promise.all([api("/api/me"), api("/api/meta")]); }
     catch { toast("Ошибка загрузки"); }
   }
-  plan = meta.plans[0].id;
+  plan = giftPlan = meta.plans[0].id;
   if (!meta.admin) $("supportTab").remove();  // before the tab bar measures its buttons
   render();
   initLiquid();
   initGlobe();
+  preloadKey();
 })();
 </script>
 </body>

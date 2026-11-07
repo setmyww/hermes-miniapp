@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>HERMES: добавление ключа</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; min-height: 100vh; padding: 48px 24px; background: #0b0b0b; color: #fff; font: 500 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 420px; margin: 0 auto; }
+  .brand { font-weight: 800; font-size: 19px; }
+  h1 { margin: 40px 0 0; font-weight: 800; font-size: 32px; line-height: 1.12; letter-spacing: -.02em; }
+  p { margin: 12px 0 0; color: #a6a6a6; }
+  .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 58px; margin-top: 12px; border: 1px solid #fff; border-radius: 14px; background: #fff; color: #0b0b0b; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .btn:first-of-type { margin-top: 28px; }
+  .ghost { background: transparent; color: #fff; border-color: #3a3a3a; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Hermes</div>
+  <div id="ok">
+    <h1>Открываем Happ</h1>
+    <p>Если приложение спросит, разрешите открыть ссылку. Ключ добавится сам.</p>
+    <a class="btn" id="openBtn">Открыть Happ</a>
+    <button class="btn ghost" id="copyBtn" type="button">Скопировать ключ</button>
+    <p>Happ не открылся? Установите его по инструкции в разделе «Как подключить» в HERMES или скопируйте ключ и в Happ нажмите «+», затем «Импорт из буфера».</p>
+  </div>
+  <div id="bad" hidden>
+    <h1>Ключ не найден</h1>
+    <p>Вернитесь в HERMES и нажмите «Подключить» ещё раз.</p>
+  </div>
+</main>
+<script>
+// The key travels after the # sign: browsers don't send that part to the server, so it never reaches GitHub's logs.
+// It is then dropped from the address, so it doesn't stay in the browser's history.
+const link = decodeURIComponent(location.hash.slice(1));
+history.replaceState(null, "", location.pathname);
+if (!/^https?:\/\/\S+$/.test(link)) {
+  document.getElementById("ok").hidden = true;
+  document.getElementById("bad").hidden = false;
+} else {
+  const target = "happ://add/" + link;
+  document.getElementById("openBtn").href = target;
+  document.getElementById("copyBtn").onclick = async (e) => {
+    try { await navigator.clipboard.writeText(link); e.target.textContent = "Скопировано"; }
+    catch { e.target.textContent = "Не удалось скопировать"; }
+  };
+  location.href = target;
+}
+</script>
+</body>
+</html>
