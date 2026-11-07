@@ -6,216 +6,161 @@
 <title>HERMES</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@100,400..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --card: #131313;
-    --line: rgba(255,255,255,.1);
-    --line-2: rgba(255,255,255,.22);
-    --text: #ecebe8;
-    --muted: #8f8d89;
-    --dim: #4a4845;
-    --accent: #ff4d1f;
-    --radius: 18px;
-    /* Doto is the LED-dot face but has no Cyrillic: Russian falls through to DotGothic16 */
-    --dots: "Doto", "DotGothic16", monospace;
-    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --bg: #0b0b0b;
+    --surface: #161616;
+    --pill: #1f1f1f;
+    --line: #2a2a2a;
+    --line-2: #3a3a3a;
+    --text: #ffffff;
+    --muted: #a6a6a6;
     --ease-out: cubic-bezier(.2,.8,.2,1);
     --spring: cubic-bezier(.34,1.56,.64,1);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   [hidden] { display: none !important; }
-  html { background: #171615; }
-  body { margin: 0; color: var(--text); font: 13px/1.45 var(--mono); min-height: 100vh; overflow-x: hidden; }
-  /* a fixed layer: background-attachment: fixed doesn't work in iOS webviews */
-  body::before {
-    content: ""; position: fixed; inset: 0; z-index: -1;
-    background:
-      radial-gradient(120% 52% at 8% 0%, #f2b98a 0%, #c98c60 30%, rgba(125,104,88,0) 72%),
-      linear-gradient(180deg, #79716a 0%, #45413e 42%, #1b1a19 82%);
-  }
+  html { background: var(--bg); color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 500 15px/1.4 "Manrope", system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
-  .app { max-width: 480px; margin: 0 auto; padding: 18px 12px 112px; }
+  button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .app { position: relative; max-width: 480px; min-height: 100vh; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 24px calc(112px + env(safe-area-inset-bottom)); overflow: hidden; }
+  .brand { position: relative; z-index: 1; font-weight: 800; font-size: 19px; }
 
-  /* header */
-  .hd { padding: 6px 6px 18px; color: #fff; }
-  .hd-title { font: 800 46px/1 var(--dots); font-variation-settings: "ROND" 100; letter-spacing: .03em; }
-  .hd-sub { font: 700 24px/32px var(--dots); font-variation-settings: "ROND" 100; letter-spacing: .03em; margin-top: 2px; }
-  /* DotGothic16 is drawn on a 16-unit pixel grid: a dot mask at the size of one pixel turns its strokes into LED dots */
-  .dm { font-family: "DotGothic16", monospace; font-weight: 400; letter-spacing: 0; font-size: calc(var(--c) * 16);
-        -webkit-mask: radial-gradient(circle, #000 56%, transparent 62%) 0 0 / var(--c) var(--c); mask: radial-gradient(circle, #000 56%, transparent 62%) 0 0 / var(--c) var(--c); }
-  .hd-sub.dm { --c: 2px; }
-  .hd-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
-  .led { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
-  #app.on .hd-status .led, .led.on { background: var(--accent); box-shadow: 0 0 8px rgba(255,77,31,.8); animation: ledPulse 2.2s ease-in-out infinite; }
-  @keyframes ledPulse { 50% { opacity: .45; } }
+  .view { display: none; }
+  .view.active { display: block; }
+  /* staggered entrance: every block of a view rises in, delayed by its --i */
+  .view.active > *:not(#globeBox) { animation: rise .55s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 50ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 
-  /* card grid */
-  .view { display: none; counter-reset: card; }
-  .view.active { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .wide { grid-column: 1 / -1; }
-  .card {
-    position: relative; background: var(--card); border-radius: var(--radius); padding: 14px 15px 15px; min-width: 0;
-    box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05);
-  }
-  .h { display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; min-height: 18px; }
-  .h::before { counter-increment: card; content: counter(card, decimal-leading-zero); font-size: 12px; }
-  .h .grow { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tag { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
-  .tag.hot { color: var(--accent); }
-  .lbl { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .val { display: block; font: 900 24px/1.15 var(--dots); font-variation-settings: "ROND" 100; margin-top: 3px; }
-  .val { white-space: nowrap; }
-  .val small { font-size: 15px; }
-  .note { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+  h1 { font-weight: 800; font-size: 34px; line-height: 1.1; letter-spacing: -.02em; margin: 34px 0 0; text-wrap: balance; }
+  .caption { font-size: 17px; color: var(--muted); margin-top: 8px; }
+  .note { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
 
-  .btn {
-    height: 42px; padding: 0 18px; border-radius: 99px; background: var(--accent); color: #120602; font-size: 12px; font-weight: 700;
-    letter-spacing: .07em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none;
-    transition: transform .18s var(--ease-out);
-  }
-  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); font-weight: 500; }
-  .btn.block { width: 100%; }
-  .btn:active { transform: scale(.96); }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .btn { display: flex; align-items: center; justify-content: center; height: 58px; width: 100%; border-radius: 14px; background: #fff; color: var(--bg); font-weight: 700; font-size: 16px; transition: transform .18s var(--ease-out); }
+  .btn:active { transform: scale(.97); }
+  .btn.small { width: auto; height: 44px; padding: 0 18px; font-size: 14px; flex: none; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-2); }
 
-  /* home: planet */
-  #globeBox { position: relative; width: 100%; aspect-ratio: 1 / .94; margin: 2px 0 4px; }
-  #globe { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .net-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-  .net-stats { display: flex; gap: 14px; min-width: 0; }
-  .connect {
-    height: 40px; padding: 0 14px 0 12px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent);
-    font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; flex: none;
-    transition: transform .18s var(--ease-out), background .18s;
-  }
-  .connect svg { width: 11px; height: 11px; }
-  .connect:active { transform: scale(.95); background: rgba(255,77,31,.14); }
+  .rows { display: flex; flex-direction: column; margin-top: 22px; }
+  .rows > div, .rows > button { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 52px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 15px; text-align: left; }
+  .rows span:first-child { color: var(--muted); }
+  .rows b { font-weight: 700; text-align: right; }
+  .rows button { transition: opacity .15s; }
+  .rows button:active { opacity: .55; }
+  .rows button span:first-child { color: var(--text); }
 
-  /* home: subscription gauge */
-  .sub-body { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
-  .ring { position: relative; width: 124px; height: 124px; flex: none; }
-  .ring svg { width: 100%; height: 100%; display: block; }
-  .ring circle { fill: var(--dim); transition: fill .3s; transition-delay: calc(var(--n) * 14ms + 200ms); }
-  .ring circle.lit { fill: #fff; }
-  .ring circle.head { fill: var(--accent); }
-  .ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .ring-in b { font: 800 36px/1 var(--dots); font-variation-settings: "ROND" 100; }
-  .ring-in span { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
-  .legend { display: grid; gap: 9px; min-width: 0; flex: 1; }
-  .legend > div { min-width: 0; }
-  .legend b { display: block; font-size: 12.5px; font-weight: 500; margin-top: 1px; }
+  .block { margin-top: 26px; }
+  .split { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .split b { display: block; font-weight: 700; font-size: 17px; }
+  .link-box { margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--line-2); font-size: 13px; color: var(--muted); word-break: break-all; }
 
-  /* home: devices and traffic */
-  .big { font: 800 40px/1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; display: block; }
-  .dotbar { display: flex; gap: 5px; margin-top: 12px; }
-  .dotbar i { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); transition: background .3s; transition-delay: calc(var(--n) * 60ms + 200ms); }
-  .dotbar i.lit { background: var(--accent); }
-  .inf { display: block; width: 100%; max-width: 110px; height: 40px; margin-top: 12px; overflow: visible; }
-  /* unlimited traffic: an orange pulse runs around the dotted infinity sign */
-  .inf circle { fill: rgba(255,255,255,.3); animation: infPulse 2.6s linear infinite; animation-delay: calc(var(--t) * -2.6s); }
-  @keyframes infPulse { 0% { fill: var(--accent); } 16% { fill: #fff; } 40%, 100% { fill: rgba(255,255,255,.3); } }
+  /* home */
+  #globeBox { position: absolute; top: -92px; right: -96px; width: 360px; height: 360px; pointer-events: none; }
+  #globe { width: 100%; height: 100%; display: block; }
+  .home-gap { height: 196px; }
+  .big { font-weight: 800; font-size: 112px; line-height: .95; letter-spacing: -.05em; }
+  #connectBtn { margin-top: 26px; }
 
-  .link-box { margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--line-2); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+  /* plans */
+  #tiers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 26px; }
+  .tier { height: 64px; border-radius: 14px; border: 1px solid var(--line-2); font-weight: 700; font-size: 22px; transition: background .2s, color .2s, border-color .2s, transform .18s var(--ease-out); }
+  .tier:active { transform: scale(.95); }
+  .tier.on { background: #fff; color: var(--bg); border-color: #fff; }
+  .price { display: flex; align-items: baseline; gap: 10px; margin-top: 44px; }
+  .price b { font-weight: 800; font-size: 88px; line-height: 1; letter-spacing: -.05em; }
+  .price span { font-weight: 700; font-size: 30px; }
+  .price.bump { animation: bump .4s var(--spring); }
+  @keyframes bump { from { transform: scale(.96); } }
+  #buyBtn { margin-top: 14px; }
 
   /* locations */
-  #locList { display: grid; gap: 10px; }
-  .loc { height: 176px; padding: 0; overflow: hidden; transition: transform .2s; cursor: pointer; }
+  #locList { display: grid; gap: 10px; margin-top: 26px; }
+  .loc { position: relative; height: 168px; border-radius: 18px; background: var(--surface); overflow: hidden; cursor: pointer; transition: transform .2s; }
   .loc:active { transform: scale(.985); }
-  .loc .h { position: absolute; top: 14px; left: 15px; right: 15px; z-index: 2; }
-  .loc.sel { box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 0 0 1.5px var(--accent); }
+  .loc.sel { box-shadow: inset 0 0 0 1.5px #fff; }
   .loc svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; animation: sceneDrift 18s ease-in-out infinite alternate; transform-origin: 50% 70%; }
   @keyframes sceneDrift { from { transform: scale(1.02) translateX(-1.5%); } to { transform: scale(1.08) translateX(1.5%); } }
-  .name-box { position: absolute; left: 15px; right: 15px; bottom: 10px; z-index: 1; container-type: inline-size; }
-  .loc .name {
-    white-space: nowrap; color: #fff;
-    font: 900 min(50px, calc(100cqw / (var(--len) * .62))) / 1 var(--dots); font-variation-settings: "ROND" 100;
-    text-shadow: 0 0 14px #131313, 0 0 4px #131313;
-  }
+  .loc-top { position: absolute; top: 14px; left: 16px; right: 16px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
+  .loc-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .loc-tag.on { color: #fff; }
+  .loc .name { position: absolute; left: 16px; bottom: 10px; z-index: 1; font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: -.02em; text-shadow: 0 0 14px var(--surface), 0 0 4px var(--surface); }
   /* unavailable location: dimmed scene crossed by two hazard tapes with a running caption */
   .loc.off { cursor: default; }
-  .loc.off svg.scene { opacity: .35; }
-  .loc.off .name { opacity: .35; }
   .loc.off:active { transform: none; }
-  .tape { position: absolute; left: -12%; width: 124%; height: 28px; z-index: 3; overflow: hidden;
-          background: var(--accent); color: #120602; display: flex; align-items: center;
-          box-shadow: 0 6px 16px rgba(0,0,0,.55); transform: translateY(-50%) rotate(var(--rot));
-          animation: tapeIn .7s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 70ms + var(--d)); }
-  .tape::before, .tape::after { content: ""; position: absolute; left: 0; right: 0; height: 5px;
-          background: repeating-linear-gradient(-45deg, #120602 0 8px, var(--accent) 8px 16px); }
+  .loc.off svg.scene, .loc.off .name { opacity: .35; }
+  .tape { position: absolute; left: -12%; width: 124%; height: 28px; z-index: 3; overflow: hidden; background: #fff; color: var(--bg); display: flex; align-items: center;
+          box-shadow: 0 6px 16px rgba(0,0,0,.6); transform: translateY(-50%) rotate(var(--rot)); animation: tapeIn .7s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 70ms + var(--d)); }
+  .tape::before, .tape::after { content: ""; position: absolute; left: 0; right: 0; height: 5px; background: repeating-linear-gradient(-45deg, var(--bg) 0 8px, #fff 8px 16px); }
   .tape::before { top: 0; } .tape::after { bottom: 0; }
-  .tape-a { top: 50%; --rot: -9deg; --d: .25s; }
-  .tape-b { top: 64%; --rot: 6deg; --d: .4s; }
-  .tape span { white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: .2em; padding-left: 12px; animation: tapeRun 9s linear infinite; }
+  .tape-a { top: 52%; --rot: -9deg; --d: .25s; }
+  .tape-b { top: 66%; --rot: 6deg; --d: .4s; }
+  .tape span { white-space: nowrap; font-size: 11px; font-weight: 800; letter-spacing: .2em; padding-left: 12px; animation: tapeRun 9s linear infinite; }
   .tape-b span { animation-direction: reverse; animation-duration: 11s; }
   #locList.settled .tape { animation: none; }
   @keyframes tapeIn { from { transform: translateY(-50%) rotate(var(--rot)) scaleX(0); } }
   @keyframes tapeRun { to { transform: translateX(-50%); } }
 
-  /* plans */
-  #tiers { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tier { text-align: left; display: block; width: 100%; transition: transform .18s var(--ease-out), box-shadow .2s; }
-  .tier:active { transform: scale(.97); }
-  .tier.on { box-shadow: 0 14px 34px rgba(0,0,0,.34), inset 0 0 0 1.5px var(--accent); }
-  .tier .led { margin-left: auto; }
-  .tier .digit { display: block; font: 800 52px/1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; }
-  .tier .word { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .tier .cost { display: block; font: 900 26px/1.1 var(--dots); font-variation-settings: "ROND" 100; margin-top: 12px; }
-  .tier .tier-tag { display: block; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 4px; min-height: 15px; }
-  .tier .tier-tag.hot { color: var(--accent); }
-  .price { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; }
-  .price b { font: 800 66px/.95 var(--dots); font-variation-settings: "ROND" 100; }
-  .price span { font: 800 26px/1 var(--dots); font-variation-settings: "ROND" 100; }
-  .price-card.bump { animation: bump .4s var(--spring); }
-  @keyframes bump { from { transform: scale(.975); } }
-  .feat { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 9px; }
-  .feat li { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
-  .feat li::before { content: ""; width: 18px; height: 18px; border-radius: 50%; flex: none; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23120602' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/11px no-repeat; }
-  .pays { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .pays span { height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line-2); display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .05em; color: var(--muted); text-transform: uppercase; }
-
   /* profile */
-  .me { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
-  .avatar { width: 54px; height: 54px; border-radius: 50%; border: 2px dotted rgba(255,255,255,.55); display: grid; place-items: center; font: 800 26px/1 var(--dots); font-variation-settings: "ROND" 100; flex: none; }
-  .me b { font-size: 15px; font-weight: 500; display: block; overflow-wrap: anywhere; }
-  .me span { color: var(--muted); font-size: 12px; }
-  .list { margin-top: 8px; }
-  .list button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 0; text-align: left; border-bottom: 1px solid var(--line); font-size: 12.5px; transition: opacity .15s; }
-  .list button:last-child { border-bottom: 0; padding-bottom: 2px; }
-  .list button:active { opacity: .55; }
-  .list svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
-  .list .grow { flex: 1; }
-  .list .go { color: var(--accent); }
+  .me { display: flex; align-items: center; gap: 14px; margin-top: 34px; }
+  .avatar { width: 56px; height: 56px; flex: none; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 24px; }
+  .me b { display: block; font-weight: 800; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+  .me span { font-size: 14px; color: var(--muted); }
+  .ref-num { font-weight: 800; font-size: 72px; line-height: 1; letter-spacing: -.04em; }
+  .ref-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .demo { font-size: 12px; color: var(--muted); text-align: center; margin-top: 18px; }
 
-  .foot { --c: 1.5px; line-height: 28px; color: rgba(255,255,255,.8); padding: 20px 6px 0; }
-  .foot i { color: var(--accent); font-style: normal; animation: blink 1.1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
-  .demo { font-size: 10.5px; color: var(--muted); text-align: center; }
+  /* referrals: two rewards to choose from */
+  .sec { font-weight: 800; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; margin: 0; }
+  .modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+  .mode { position: relative; min-height: 172px; padding: 16px 14px; border-radius: 18px; border: 1px solid var(--line-2); text-align: left; display: flex; flex-direction: column; transition: background .25s, color .25s, border-color .25s, transform .18s var(--ease-out); }
+  .mode:active { transform: scale(.97); }
+  .mode b { font-weight: 800; font-size: 48px; line-height: 1; letter-spacing: -.04em; }
+  .mode strong { font-weight: 700; font-size: 15px; margin-top: 10px; }
+  .mode span { font-size: 13px; line-height: 1.35; color: var(--muted); margin-top: 4px; transition: color .25s; }
+  .mode i { position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+  .mode.on { background: #fff; color: var(--bg); border-color: #fff; }
+  .mode.on span { color: #4a4a4a; }
+  .mode.on i { border-color: var(--bg); background: var(--bg); box-shadow: inset 0 0 0 4px #fff; }
+  .ref-panel { margin-top: 18px; padding: 16px; border-radius: 18px; background: var(--surface); }
+  .balance { font-weight: 800; font-size: 44px; line-height: 1.05; letter-spacing: -.03em; margin-top: 2px; }
+  .tiers { position: relative; display: flex; justify-content: space-between; margin-top: 20px; }
+  .tiers::before, .tiers .fill { content: ""; position: absolute; left: 22px; top: 21px; height: 2px; background: var(--line-2); }
+  .tiers::before { right: 22px; }
+  .tiers .fill { background: #fff; transition: width .6s var(--ease-out); }
+  .tier-node { position: relative; display: grid; justify-items: center; gap: 6px; width: 72px; font-size: 12px; color: var(--muted); text-align: center; }
+  .tier-node:first-of-type { justify-items: start; text-align: left; }
+  .tier-node:last-of-type { justify-items: end; text-align: right; }
+  .tier-node b { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1.5px solid var(--line-2); color: var(--muted); font-weight: 800; font-size: 13px; }
+  .tier-node.on b { background: #fff; border-color: #fff; color: var(--bg); }
+  .ref-panel .btn { margin-top: 16px; }
 
-  /* tab bar */
-  .tabs {
-    position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-    display: flex; padding: 5px; border-radius: 99px; z-index: 10; background: rgba(14,14,14,.86); border: 1px solid var(--line);
-    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 14px 34px rgba(0,0,0,.5);
-  }
-  .tabs button { position: relative; z-index: 1; width: 78px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); transition: color .25s; }
-  .tabs button svg { width: 19px; height: 19px; }
-  .tabs button.on { color: #fff; }
-  .tabs button.on svg { color: var(--accent); animation: pop .4s var(--spring); }
-  @keyframes pop { from { transform: scale(.6); } }
-  .tab-ind { position: absolute; top: 5px; bottom: 5px; left: 0; width: 0; border-radius: 99px; pointer-events: none; background: rgba(255,255,255,.09); transition: transform .45s var(--spring), width .45s var(--spring); }
+  /* connect */
+  .back { min-height: 44px; margin-top: 8px; font-weight: 600; font-size: 15px; color: var(--muted); }
+  #v-connect h1 { margin-top: 8px; }
+  #platforms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+  #platforms button { min-height: 40px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line-2); font-weight: 600; font-size: 13px; transition: background .2s, color .2s; }
+  #platforms button.on { background: #fff; color: var(--bg); border-color: #fff; }
+  .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; margin-top: 24px; }
+  .step > b { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--pill); font-weight: 800; font-size: 14px; }
+  .step h2 { margin: 5px 0 0; font-weight: 700; font-size: 18px; line-height: 1.25; }
+  .step .note { margin-top: 4px; }
+  .step .btn { margin-top: 12px; }
+  .links { display: flex; flex-direction: column; margin-top: 10px; }
+  .links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; border-top: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 14px; }
+  .sub-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 16px; }
 
-  .toast {
-    position: fixed; left: 50%; top: 16px; transform: translate(-50%, -80px); z-index: 20; white-space: nowrap;
-    background: #0d0d0d; border: 1px solid var(--accent); color: var(--text); padding: 9px 16px; border-radius: 99px; font-size: 12px;
-    transition: transform .45s var(--spring);
-  }
+  /* tab bar: the pills melt into each other and a white drop flows to the chosen one (both layers go through a "goo" filter) */
+  .tabs-fade { position: fixed; left: 0; right: 0; bottom: 0; height: calc(112px + env(safe-area-inset-bottom)); z-index: 9; pointer-events: none; background: linear-gradient(180deg, rgba(11,11,11,0), var(--bg) 46%); }
+  .tabs { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); width: min(calc(100% - 24px), 456px); height: 64px; transform: translateX(-50%); z-index: 10; display: flex; gap: 6px; }
+  #tabGoo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .tabs button { position: relative; flex: 1 1 0; min-width: 0; height: 64px; border-radius: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 700; color: var(--muted); transition: color .22s; }
+  .tabs button svg { width: 20px; height: 20px; }
+  .tabs button.on { color: var(--bg); }
+
+  .toast { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -80px); z-index: 20; white-space: nowrap; background: #fff; color: var(--bg); padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; transition: transform .45s var(--spring); }
   .toast.show { transform: translate(-50%, 0); }
-
-  /* staggered entrance: every block of a view rises in, delayed by its --i */
-  .view.active > *, .view.active .loc, .view.active .tier { animation: rise .55s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 60ms); }
-  #locList.settled .loc { animation: none; }
-  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
@@ -229,147 +174,142 @@
     <pattern id="dB" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.15" fill="#fff" fill-opacity=".85"/></pattern>
     <pattern id="dM" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1" fill="#fff" fill-opacity=".42"/></pattern>
     <pattern id="dS" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".8" fill="#fff" fill-opacity=".2"/></pattern>
-    <pattern id="dO" width="4.5" height="4.5" patternUnits="userSpaceOnUse"><circle cx="2.25" cy="2.25" r="1.2" fill="#ff4d1f"/></pattern>
   </defs>
 </svg>
 
 <div class="app" id="app">
-  <header class="hd">
-    <div class="hd-title">HERMES</div>
-    <div class="hd-sub" id="hdSub">VPN</div>
-    <div class="hd-status"><span class="led"></span><span id="statusText">—</span></div>
-  </header>
+  <div class="brand">Hermes</div>
 
   <!-- HOME -->
   <section class="view active" id="v-home">
-    <div class="card wide">
-      <div class="h"><span class="grow">Сеть HERMES</span><span class="tag" id="liveTag">OFFLINE</span></div>
-      <div id="globeBox"><canvas id="globe" aria-hidden="true"></canvas></div>
-      <div class="net-row">
-        <div class="net-stats">
-          <div><span class="lbl">Локация</span><span class="val" id="netLoc">—</span></div>
-          <div><span class="lbl">Пинг</span><span class="val" id="netPing">—</span></div>
-        </div>
-        <button class="connect" id="connectBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 2l17 10L5 22z"/></svg><span id="connectText">Подключить</span></button>
-      </div>
+    <div id="globeBox"><canvas id="globe" aria-hidden="true"></canvas></div>
+    <div class="home-gap"></div>
+    <div class="big" id="daysLeft">0</div>
+    <div class="caption" id="daysCaption">дней осталось</div>
+    <button class="btn" id="connectBtn">Подключить</button>
+    <div class="rows">
+      <div><span>Устройства</span><b id="statDevices">—</b></div>
+      <div><span>Трафик</span><b>Без лимита</b></div>
+      <div><span>Локация</span><b id="netLoc">Скоро</b></div>
     </div>
-
-    <div class="card wide">
-      <div class="h"><span class="grow">Подписка</span></div>
-      <div class="sub-body">
-        <div class="ring">
-          <svg viewBox="0 0 124 124" id="ring"></svg>
-          <div class="ring-in"><b id="daysLeft">0</b><span id="daysCaption">дней</span></div>
-        </div>
-        <div class="legend">
-          <div><span class="lbl">Тариф</span><b id="subPlan">—</b></div>
-          <div><span class="lbl">Действует до</span><b id="subUntil">—</b></div>
-          <div><span class="lbl">Статус</span><b id="subState">—</b></div>
-        </div>
-      </div>
+    <div class="block split" id="trialCard" hidden>
+      <div><b>Попробуйте бесплатно</b><p class="note" id="trialText">3 дня полного доступа</p></div>
+      <button class="btn small" id="trialBtn">Начать</button>
     </div>
-
-    <div class="card">
-      <div class="h"><span class="grow">Устройства</span></div>
-      <span class="big" id="statDevices">3</span>
-      <div class="dotbar" id="devDots"></div>
-    </div>
-    <div class="card">
-      <div class="h"><span class="grow">Трафик</span></div>
-      <svg class="inf" id="inf" viewBox="0 0 110 40" role="img" aria-label="без ограничений"></svg>
-      <span class="lbl" style="margin-top:8px">Без лимита</span>
-    </div>
-
-    <div class="card wide" id="trialCard" hidden>
-      <div class="h"><span class="grow">Бесплатно</span><span class="tag hot"><span class="led on"></span>NEW</span></div>
-      <div class="row" style="margin-top:10px">
-        <span id="trialText" style="font-size:13.5px">3 дня</span>
-        <button class="btn" id="trialBtn">Начать</button>
-      </div>
-    </div>
-
-    <div class="card wide" id="keyCard" hidden>
-      <div class="row"><div class="h grow" style="flex:1"><span class="grow">Ваш ключ</span></div><button class="btn ghost" style="height:32px;padding:0 12px;font-size:10.5px" id="copyBtn">Копировать</button></div>
+    <div class="block" id="keyCard" hidden>
+      <div class="split"><b>Ваш ключ</b><button class="btn small ghost" id="copyBtn">Копировать</button></div>
       <div class="link-box" id="subLink"></div>
     </div>
-
-    <div class="card wide">
-      <div class="h"><span class="grow">Как подключить</span></div>
-      <div class="row" style="margin-top:8px">
-        <p class="note" style="margin:0">Happ, v2rayTun, Hiddify — 3 шага</p>
-        <button class="btn ghost" style="height:36px;padding:0 14px;font-size:10.5px" data-go="profile">Открыть</button>
-      </div>
+    <div class="rows block">
+      <button data-go="connect"><span>Как подключить</span><b>→</b></button>
     </div>
   </section>
 
   <!-- LOCATIONS -->
   <section class="view" id="v-locations">
-    <div id="locList" class="wide"></div>
+    <h1>Локации</h1>
+    <p class="note" id="locCount"></p>
+    <div id="locList"></div>
   </section>
 
   <!-- PLANS -->
   <section class="view" id="v-plans">
+    <h1>Сколько устройств подключить?</h1>
     <div id="tiers"></div>
-    <div class="card wide price-card">
-      <div class="h"><span class="grow" id="planTitle">2 устройства</span><span class="tag" id="planDays">30 ДНЕЙ</span></div>
-      <div class="price"><b id="planPrice">199</b><span>₽</span></div>
-      <p class="note" id="planPer">≈ 199 ⭐</p>
-      <p class="note" id="planNote" style="color:var(--accent)" hidden></p>
-      <ul class="feat">
-        <li id="featDevices">До 2 устройств</li>
-        <li>Без лимитов трафика</li>
-        <li>VLESS + Reality — обходит блокировки</li>
-        <li>Без рекламы и логов</li>
-      </ul>
-      <button class="btn block" id="buyBtn">Оплатить</button>
-      <div class="pays"><span>Звёзды</span><span>Крипта</span><span>Подарок</span></div>
+    <div class="price" id="priceBox"><b id="planPrice">199</b><span>₽</span></div>
+    <div class="caption" id="planPer">за 30 дней</div>
+    <p class="note" id="planNote" hidden>Максимальная выгода для совместного использования</p>
+    <div class="rows">
+      <div><span>Звёздами Telegram, по курсу</span><b id="planStars">162 ⭐</b></div>
+      <div><span>Также</span><b>Криптовалюта, подарок</b></div>
     </div>
+    <button class="btn" id="buyBtn">Оплатить</button>
+  </section>
+
+  <!-- CONNECT -->
+  <section class="view" id="v-connect">
+    <button class="back" data-go="home">← Назад</button>
+    <h1>Подключение</h1>
+    <div id="platforms"></div>
+    <div class="step">
+      <b>1</b>
+      <div>
+        <h2>Установите Happ</h2>
+        <p class="note">Работает на всех устройствах.</p>
+        <a class="btn" id="happBtn" target="_blank" rel="noopener" style="text-decoration:none">Установить Happ</a>
+        <div class="links" id="happLinks"></div>
+      </div>
+    </div>
+    <div class="step">
+      <b>2</b>
+      <div>
+        <h2>Получите ключ</h2>
+        <p class="note" id="connKeyText">Бот пришлёт ссылку-подписку в чат.</p>
+        <button class="btn ghost" id="connKeyBtn">Получить ключ</button>
+      </div>
+    </div>
+    <div class="step">
+      <b>3</b>
+      <div>
+        <h2>Добавьте ключ и подключитесь</h2>
+        <p class="note">В Happ нажмите «+», затем «Импорт из буфера» и большую кнопку подключения.</p>
+      </div>
+    </div>
+    <p class="sub-label">Другие приложения для этого устройства</p>
+    <div class="links" id="otherLinks" style="margin-top:4px"></div>
   </section>
 
   <!-- PROFILE -->
   <section class="view" id="v-profile">
-    <div class="card wide">
-      <div class="h"><span class="grow">Аккаунт</span></div>
-      <div class="me">
-        <div class="avatar" id="avatar">H</div>
-        <div><b id="meName">Гость</b><span id="meId"></span></div>
-      </div>
+    <div class="me">
+      <div class="avatar" id="avatar">H</div>
+      <div><b id="meName">Гость</b><span id="meId"></span></div>
     </div>
-
-    <div class="card wide">
-      <div class="h"><span class="grow">Пригласить друга</span><span class="tag hot" id="refBonus">+7 ДНЕЙ</span></div>
-      <span class="big" id="refCount">0</span>
-      <p class="note">друзей приглашено. Бонус начисляется, когда друг оплатит подписку.</p>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" style="flex:1" id="shareBtn">Поделиться</button>
+    <div class="block">
+      <h2 class="sec">Приглашайте друзей</h2>
+      <p class="note">Выберите, что получать за друзей. Награду можно сменить в любой момент.</p>
+      <div class="modes" id="refModes">
+        <button class="mode" data-mode="days"><i></i><b id="refDaysBig">+7</b><strong>дней подписки</strong><span>за каждого друга, который оплатит подписку</span></button>
+        <button class="mode" data-mode="percent"><i></i><b id="refPctBig">40%</b><strong id="refPctTitle">до 40% деньгами</strong><span>с каждой оплаты друга, навсегда</span></button>
+      </div>
+      <div class="ref-panel" id="refPercentPanel" hidden>
+        <span class="note" style="margin:0">Баланс</span>
+        <div class="balance" id="refBalance">0 ₽</div>
+        <p class="note" id="refEarned"></p>
+        <div class="tiers" id="refTiers"></div>
+        <p class="note" id="refNext" style="margin-top:12px"></p>
+        <button class="btn" id="refOutBtn">Вывести</button>
+      </div>
+      <div class="ref-panel" id="refDaysPanel">
+        <div class="split"><span class="note" style="margin:0">Приглашено</span><b id="refCount">0</b></div>
+        <div class="split" style="margin-top:8px"><span class="note" style="margin:0">Оплатили подписку</span><b id="refPaying">0</b></div>
+      </div>
+      <div class="ref-actions">
+        <button class="btn" id="shareBtn">Поделиться</button>
         <button class="btn ghost" id="copyRefBtn">Копировать</button>
       </div>
     </div>
-
-    <div class="card wide">
-      <div class="h"><span class="grow">Приложения</span></div>
-      <div class="list">
-        <button data-app="ios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg><span class="grow">iPhone / iPad — Happ</span><span class="go">→</span></button>
-        <button data-app="android"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 3l-1-2M15 3l1-2"/></svg><span class="grow">Android — v2rayTun</span><span class="go">→</span></button>
-        <button data-app="desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span class="grow">Windows / macOS — Hiddify</span><span class="go">→</span></button>
-      </div>
+    <div class="rows block">
+      <button data-go="connect"><span>Как подключить</span><b>→</b></button>
+      <button id="supportBtn"><span>Поддержка</span><b>→</b></button>
+      <button data-go="plans"><span>Продлить подписку</span><b>→</b></button>
     </div>
-
-    <div class="card wide">
-      <div class="h"><span class="grow">Помощь</span></div>
-      <div class="list">
-        <button id="supportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1116 0v5a2 2 0 01-2 2h-2v-6h4M4 13h4v6H6a2 2 0 01-2-2v-4z"/></svg><span class="grow">Поддержка</span><span class="go">→</span></button>
-        <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg><span class="grow">Продлить подписку</span><span class="go">→</span></button>
-      </div>
-    </div>
-    <p class="demo wide" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
+    <p class="demo" id="demoNote" hidden>Демо-режим: откройте через Telegram, чтобы увидеть свои данные</p>
   </section>
-
-  <div class="foot dm">БЫСТРЫЙ И<br>ПРИВАТНЫЙ VPN <i>_</i></div>
 </div>
 
+<div class="tabs-fade"></div>
 <nav class="tabs" id="tabs">
-  <span class="tab-ind" id="tabInd"></span>
+  <svg id="tabGoo" aria-hidden="true">
+    <defs>
+      <filter id="goo" x="-5%" y="-30%" width="110%" height="160%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"/>
+      </filter>
+    </defs>
+    <g id="gooPills" filter="url(#goo)" fill="#1f1f1f"></g>
+    <g id="gooDrop" filter="url(#goo)" fill="#ffffff"></g>
+  </svg>
   <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>Главная</button>
   <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
   <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
@@ -388,27 +328,28 @@ const STATIC = !!STATE;
 const DEMO = !STATIC && !initData;
 const $ = (id) => document.getElementById(id);
 
-if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#c98c60"); tg.setBackgroundColor?.("#171615"); }
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgroundColor?.("#0b0b0b"); }
 
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
   trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства",
-  referrals: 4, referral_bonus_days: 7,
+  referrals: 14, referral_bonus_days: 7, ref_mode: "percent", ref_balance: 1240, ref_earned: 3120, ref_paying: 12,
 };
 const DEMO_META = {
   plans: [
-    { id: "d2", title: "2 устройства", days: 30, stars: 199, devices: 2 },
-    { id: "d3", title: "3 устройства", days: 30, stars: 250, devices: 3 },
-    { id: "d5", title: "5 устройств", days: 30, stars: 350, devices: 5 },
-    { id: "d10", title: "10 устройств", days: 30, stars: 555, devices: 10 },
+    { id: "d2", title: "2 устройства", days: 30, rub: 199, stars: 162, devices: 2 },
+    { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
+    { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
+    { id: "d10", title: "10 устройств", days: 30, rub: 555, stars: 451, devices: 10 },
   ],
   locations: [
-    { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38 },
+    { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38, available: false },
     { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42, available: false },
     { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31, available: false },
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3,
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500,
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -420,11 +361,13 @@ function decodeState(s) {
     me: {
       id: st.u, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
       sub_link: null, device_limit: st.n, plan: st.pl, referrals: st.r, referral_bonus_days: st.b,
+      ref_mode: st.rm || "days", ref_balance: st.rl || 0, ref_earned: st.re || 0, ref_paying: st.rp || 0,
     },
     meta: {
-      // buttons in old chat messages still carry the old plan list, without device counts
-      plans: st.p.every((p) => p[4]) ? st.p.map(([id, title, days, stars, devices]) => ({ id, title, days, stars, devices })) : DEMO_META.plans,
+      // buttons in old chat messages still carry an old plan list, without ruble prices
+      plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub]) => ({ id, title, days, stars, devices, rub })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td,
+      ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout,
     },
   };
 }
@@ -626,75 +569,155 @@ function initGlobe() {
   if (REDUCED) draw(theta, 1, radius); else requestAnimationFrame(frame);
 }
 
-/* ---------- small dotted widgets ---------- */
+/* ---------- liquid tab bar ---------- */
 
-function buildWidgets() {
-  // subscription gauge: 64 dots around the days counter
-  const R = 56, N = 64;
-  $("ring").innerHTML = Array.from({ length: N }, (_, i) => {
-    const a = i / N * 2 * Math.PI - Math.PI / 2;
-    return `<circle cx="${(62 + R * Math.cos(a)).toFixed(2)}" cy="${(62 + R * Math.sin(a)).toFixed(2)}" r="2" style="--n:${i}"/>`;
-  }).join("");
-  $("devDots").innerHTML = Array.from({ length: 10 }, (_, i) => `<i style="--n:${i}"></i>`).join("");
-  // infinity sign as a lemniscate of dots
-  const D = 46;
-  $("inf").innerHTML = Array.from({ length: D }, (_, i) => {
-    const t = i / D * 2 * Math.PI, k = 1 + Math.sin(t) ** 2;
-    return `<circle cx="${(55 + 50 * Math.cos(t) / k).toFixed(2)}" cy="${(20 + 44 * Math.sin(t) * Math.cos(t) / k).toFixed(2)}" r="1.9" style="--t:${(i / D).toFixed(3)}"/>`;
-  }).join("");
+// The drop is three rounded shapes on springs of different stiffness: the first runs ahead, the others catch up,
+// and the goo filter melts them into one stretched blob that settles with a small wobble.
+const DROP_SPRINGS = [[300, 22], [190, 21], [110, 18]];
+const DROP_INSET = 4, SVG_NS = "http://www.w3.org/2000/svg";
+const liquid = { pills: [], drops: [], x: [], v: [], target: 0, width: 0, raf: 0 };
+
+function placeLiquid() {
+  const buttons = [...document.querySelectorAll("#tabs button")];
+  const on = buttons.find((b) => b.classList.contains("on"));
+  if (!on || !on.offsetWidth) return;
+  liquid.width = on.offsetWidth;
+  buttons.forEach((b, i) => {
+    const r = liquid.pills[i];
+    r.setAttribute("x", b.offsetLeft); r.setAttribute("width", b.offsetWidth);
+  });
+  liquid.target = on.offsetLeft + on.offsetWidth / 2;
+  if (!liquid.x.length) { liquid.x = DROP_SPRINGS.map(() => liquid.target); liquid.v = DROP_SPRINGS.map(() => 0); }
+  drawDrop();
 }
 
-function setRing(days, on) {
-  const dots = [...$("ring").children], lit = on ? Math.max(1, Math.round(Math.min(1, days / 30) * dots.length)) : 0;
-  dots.forEach((c, i) => { c.classList.toggle("lit", i < lit); c.classList.toggle("head", on && i >= lit - 3 && i < lit); });
+function drawDrop() {
+  const h = 64 - DROP_INSET * 2;
+  liquid.drops.forEach((r, i) => {
+    // the faster it moves, the thinner it gets, as a stretched liquid would
+    const thin = Math.min(16, Math.abs(liquid.v[i]) / 90), height = h - thin;
+    r.setAttribute("x", (liquid.x[i] - liquid.width / 2 + DROP_INSET).toFixed(2));
+    r.setAttribute("width", (liquid.width - DROP_INSET * 2).toFixed(2));
+    r.setAttribute("y", ((64 - height) / 2).toFixed(2));
+    r.setAttribute("height", height.toFixed(2));
+    r.setAttribute("rx", (height / 2).toFixed(2));
+  });
+}
+
+function runLiquid() {
+  cancelAnimationFrame(liquid.raf);
+  if (REDUCED) { liquid.x = liquid.x.map(() => liquid.target); liquid.v = liquid.v.map(() => 0); return drawDrop(); }
+  let last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(.032, (now - last) / 1000); last = now;
+    let moving = false;
+    DROP_SPRINGS.forEach(([k, c], i) => {
+      liquid.v[i] += (liquid.target - liquid.x[i]) * k * dt;
+      liquid.v[i] *= Math.exp(-c * dt);
+      liquid.x[i] += liquid.v[i] * dt;
+      if (Math.abs(liquid.target - liquid.x[i]) > .3 || Math.abs(liquid.v[i]) > 3) moving = true;
+    });
+    drawDrop();
+    if (moving) liquid.raf = requestAnimationFrame(step);
+  };
+  liquid.raf = requestAnimationFrame(step);
+}
+
+function initLiquid() {
+  const make = (parent) => {
+    const r = document.createElementNS(SVG_NS, "rect");
+    parent.appendChild(r); return r;
+  };
+  document.querySelectorAll("#tabs button").forEach(() => {
+    const r = make($("gooPills"));
+    r.setAttribute("y", 0); r.setAttribute("height", 64); r.setAttribute("rx", 32);
+    liquid.pills.push(r);
+  });
+  liquid.drops = DROP_SPRINGS.map(() => make($("gooDrop")));
+  placeLiquid();
+  addEventListener("resize", placeLiquid);
+  document.fonts?.ready.then(placeLiquid);  // tab widths are fixed, but keep it right if the layout shifts
+}
+
+/* connect screen: Happ on every device, other clients depending on the device */
+const HAPP_IOS = "https://apps.apple.com/us/app/happ-proxy-utility/id6504287215";
+const STREISAND = ["Streisand", "https://apps.apple.com/app/streisand/id6450534064"];
+const HIDDIFY = ["Hiddify", "https://github.com/hiddify/hiddify-app/releases"];
+const HAPP_DESKTOP = "https://github.com/Happ-proxy/happ-desktop/releases/latest/download/";
+const PLATFORMS = {
+  ios: { label: "iPhone и iPad", happ: [["App Store, Россия", "https://apps.apple.com/ru/app/happ-lite/id6799917773"], ["App Store, другие страны", HAPP_IOS]], other: [STREISAND] },
+  android: { label: "Android", happ: [["Google Play", "https://play.google.com/store/apps/details?id=com.happproxy"], ["APK-файл", "https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk"]],
+             other: [["v2rayTun", "https://play.google.com/store/apps/details?id=com.v2raytun.android"]] },
+  windows: { label: "Windows", happ: [["Windows x64", HAPP_DESKTOP + "setup-Happ.x64.exe"], ["Windows ARM64", HAPP_DESKTOP + "setup-Happ.arm64.exe"]], other: [HIDDIFY] },
+  macos: { label: "Mac", happ: [["App Store, Россия", "https://apps.apple.com/ru/app/happ-proxy-utility/id6783623643"], ["App Store, другие страны", HAPP_IOS], ["Файл DMG", HAPP_DESKTOP + "Happ.macOS.universal.dmg"]], other: [STREISAND, HIDDIFY] },
+  linux: { label: "Linux", happ: [["Пакет .deb, x64", HAPP_DESKTOP + "Happ.linux.x64.deb"], ["Пакет .rpm, x64", HAPP_DESKTOP + "Happ.linux.x64.rpm"]], other: [HIDDIFY] },
+};
+
+function detectPlatform() {
+  const p = tg?.platform || "", ua = navigator.userAgent;
+  if (p === "ios" || /iPhone|iPad|iPod/.test(ua)) return "ios";
+  if (p.startsWith("android") || /Android/.test(ua)) return "android";
+  if (p === "macos" || /Mac OS/.test(ua)) return "macos";
+  if (/Linux/.test(ua)) return "linux";
+  return "windows";
+}
+
+let platform = detectPlatform();
+const linkRow = ([label, url]) => `<a href="${url}" target="_blank" rel="noopener" data-ext><span>${label}</span><b>→</b></a>`;
+
+function renderConnect() {
+  $("platforms").innerHTML = Object.entries(PLATFORMS).map(([id, v]) =>
+    `<button data-p="${id}" class="${id === platform ? "on" : ""}">${v.label}</button>`).join("");
+  $("platforms").querySelectorAll("button").forEach((b) => b.onclick = () => { platform = b.dataset.p; haptic(); renderConnect(); });
+  const v = PLATFORMS[platform];
+  $("happBtn").href = v.happ[0][1];
+  $("happBtn").textContent = `Установить: ${v.happ[0][0]}`;
+  $("happLinks").innerHTML = v.happ.slice(1).map(linkRow).join("");
+  $("otherLinks").innerHTML = v.other.map(linkRow).join("");
+  $("connKeyBtn").textContent = !me.active ? "Сначала выбрать тариф" : me.sub_link ? "Скопировать ключ" : "Получить ключ";
+  document.querySelectorAll("#v-connect a[target]").forEach((a) => a.onclick = (e) => {
+    if (tg?.openLink) { e.preventDefault(); tg.openLink(a.href); }
+  });
 }
 
 /* dotted landscape per location */
 function scene(kind) {
   const s = {
-    alps: `<circle cx="318" cy="66" r="22" fill="url(#dO)"/>
+    alps: `<circle cx="318" cy="66" r="22" fill="url(#dB)"/>
       <path d="M-10 220 L120 120 L170 140 L250 50 L300 90 L330 80 L420 170 L420 220Z" fill="url(#dM)"/>
       <path d="M250 50 L230 110 L200 130 L170 140 L250 50Z M250 50 L275 120 L300 90Z" fill="url(#dB)"/>
       <path d="M-10 220 L80 170 L160 190 L260 160 L420 200 L420 220Z" fill="url(#dS)"/>`,
-    hills: `<circle cx="300" cy="58" r="20" fill="url(#dO)"/>
+    hills: `<circle cx="300" cy="58" r="20" fill="url(#dB)"/>
       <path d="M-10 150 Q90 70 200 80 T420 110 L420 220 L-10 220Z" fill="url(#dM)"/>
       <path d="M-10 150 Q90 70 200 80 Q150 120 120 150Z" fill="url(#dB)"/>
       <path d="M-10 190 Q120 140 260 165 T420 160 L420 220 L-10 220Z" fill="url(#dS)"/>`,
-    dunes: `<circle cx="96" cy="62" r="22" fill="url(#dO)"/>
+    dunes: `<circle cx="96" cy="62" r="22" fill="url(#dB)"/>
       <path d="M-10 160 Q120 150 230 70 Q300 110 420 140 L420 220 L-10 220Z" fill="url(#dM)"/>
       <path d="M230 70 Q260 130 200 220 L420 220 L420 140 Q300 110 230 70Z" fill="url(#dB)"/>
       <path d="M-10 195 Q140 160 300 200 L300 220 L-10 220Z" fill="url(#dS)"/>`,
-    fjord: `<circle cx="222" cy="52" r="18" fill="url(#dO)"/>
+    fjord: `<circle cx="222" cy="52" r="18" fill="url(#dB)"/>
       <path d="M-10 160 L40 70 L90 100 L150 40 L190 150 Z" fill="url(#dM)"/>
       <path d="M200 150 L260 60 L300 90 L350 30 L420 120 L420 150Z" fill="url(#dB)"/>
       <rect y="150" width="400" height="70" fill="url(#dS)"/>`,
   };
-  return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice">${s[kind] || s.alps}</svg>`;
+  return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${s[kind] || s.alps}</svg>`;
 }
 
 function renderHome() {
   const on = me.active;
-  $("app").classList.toggle("on", on);
-  $("statusText").textContent = on ? "Подписка активна" : "Подписка не активна";
-  $("liveTag").textContent = on ? "LIVE" : "OFFLINE";
-  $("liveTag").classList.toggle("hot", on);
   countTo($("daysLeft"), me.days_left, 1100);
-  $("daysCaption").textContent = plural(me.days_left, "день", "дня", "дней");
-  setRing(me.days_left, on);
-  $("subPlan").textContent = on ? (me.plan || `${me.device_limit} устр.`) : "—";
-  $("subUntil").textContent = on ? new Date(me.expires_at * 1000).toLocaleDateString("ru-RU") : "—";
-  $("subState").textContent = on ? "Активна" : "Не активна";
-  $("connectText").textContent = on ? "Подключить" : "Купить";
+  $("daysCaption").textContent = on
+    ? `${plural(me.days_left, "день", "дня", "дней")} ${plural(me.days_left, "остался", "осталось", "осталось")}, до ${new Date(me.expires_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`
+    : "подписка не активна";
+  $("connectBtn").textContent = on ? "Подключить" : "Купить";
   $("statDevices").textContent = on ? me.device_limit : "—";
-  [...$("devDots").children].forEach((d, i) => d.classList.toggle("lit", on && i < me.device_limit));
   $("trialCard").hidden = !me.trial_available;
   $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
   $("keyCard").hidden = !(on && (me.sub_link || STATIC));
   $("subLink").textContent = me.sub_link || "Ключ придёт сообщением в чат с ботом";
   $("copyBtn").textContent = me.sub_link ? "Копировать" : "Получить";
   const loc = meta.locations[selectedLoc], ok = loc && isAvail(loc);
-  $("netLoc").textContent = ok ? loc.city : "—";
-  $("netPing").innerHTML = ok ? `${loc.ping}<small> ms</small>` : "—";
+  $("netLoc").textContent = ok ? `${loc.city}, ${loc.ping} ms` : "Скоро";
 }
 
 // a location without the flag (older bot data) counts as available
@@ -707,18 +730,20 @@ function pickAvailable() {
 }
 
 const TAPE_TEXT = Array(6).fill("НЕДОСТУПНО · СКОРО ·").join(" ");
-const LOCK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+const LOCK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
 
 function renderLocations() {
   pickAvailable();
+  const avail = meta.locations.filter(isAvail).length;
+  $("locCount").textContent = `${avail} из ${meta.locations.length} доступно`;
   $("locList").innerHTML = meta.locations.map((l, i) => {
     const off = !isAvail(l), sel = i === selectedLoc;
     return `
-    <div class="card loc ${sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
+    <div class="loc ${sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
       ${scene(l.scene)}
-      <div class="h"><span class="grow">${l.city}</span>
-        <span class="tag ${sel ? "hot" : ""}">${off ? LOCK + "НЕДОСТУПНО" : sel ? '<span class="led on"></span>ВЫБРАНА' : l.ping + " MS"}</span></div>
-      <div class="name-box"><div class="name" style="--len:${l.name.length}">${l.name.toUpperCase()}</div></div>
+      <div class="loc-top"><span>${l.city}</span>
+        <span class="loc-tag ${sel ? "on" : ""}">${off ? LOCK + "Недоступно" : sel ? "Выбрана" : l.ping + " ms"}</span></div>
+      <div class="name">${l.name}</div>
       ${off ? `<div class="tape tape-a"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>
                <div class="tape tape-b"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>` : ""}
     </div>`;
@@ -734,41 +759,24 @@ function renderLocations() {
 
 function renderPlans() {
   const tiers = $("tiers");
-  // cards are built once; only the selection changes afterwards
+  // buttons are built once; only the selection changes afterwards
   if (!tiers.children.length) {
-    tiers.innerHTML = meta.plans.map((p, i) => {
-      const top = i === meta.plans.length - 1, base = i === 0;
-      return `<button class="card tier" data-p="${p.id}" style="--i:${i}">
-        <span class="h"><span class="grow">Тариф</span><span class="led"></span></span>
-        <span class="digit">${p.devices}</span>
-        <span class="word">${p.title.replace(/^\d+\s*/, "")}</span>
-        <span class="cost">${p.stars} ₽</span>
-        <span class="tier-tag ${top ? "hot" : ""}">${top ? "Макс. выгода" : base ? "Базовый" : "&nbsp;"}</span>
-      </button>`;
-    }).join("");
+    tiers.innerHTML = meta.plans.map((p) => `<button class="tier" data-p="${p.id}" aria-label="${p.title}">${p.devices}</button>`).join("");
     tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => {
       if (plan === b.dataset.p) return;
       plan = b.dataset.p; haptic(); renderPlans();
-      const card = document.querySelector(".price-card");
-      card.classList.remove("bump"); void card.offsetWidth; card.classList.add("bump");
+      const box = $("priceBox");
+      box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump");
     });
   }
-  tiers.querySelectorAll(".tier").forEach((b) => {
-    const on = b.dataset.p === plan;
-    b.classList.toggle("on", on);
-    b.querySelector(".led").classList.toggle("on", on);
-  });
+  tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", b.dataset.p === plan));
   const p = meta.plans.find((x) => x.id === plan) || meta.plans[0];
   plan = p.id;
-  $("planTitle").textContent = p.title;
-  $("planDays").textContent = `${p.days} ДНЕЙ`;
-  countTo($("planPrice"), p.stars, 500);
-  $("planPer").textContent = `≈ ${p.stars} ⭐ · ${Math.round(p.stars / p.devices)} ₽ за устройство`;
-  const top = p.id === meta.plans[meta.plans.length - 1].id;
-  $("planNote").hidden = !top;
-  $("planNote").textContent = "Максимальная выгода для совместного использования";
-  $("featDevices").textContent = `До ${p.devices} устройств`;
-  $("buyBtn").textContent = `Оплатить ${p.stars} ₽`;
+  countTo($("planPrice"), p.rub, 500);
+  $("planPer").textContent = `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
+  $("planStars").textContent = `${p.stars} ⭐`;
+  $("planNote").hidden = p.id !== meta.plans[meta.plans.length - 1].id;
+  $("buyBtn").textContent = `Оплатить ${p.rub} ₽`;
 }
 
 function renderProfile() {
@@ -777,12 +785,37 @@ function renderProfile() {
   $("meName").textContent = name;
   $("meId").textContent = u?.username ? "@" + u.username : (u ? "ID " + u.id : "демо-аккаунт");
   $("avatar").textContent = name[0]?.toUpperCase() || "H";
-  countTo($("refCount"), me.referrals, 900);
-  $("refBonus").textContent = `+${me.referral_bonus_days} ДНЕЙ`;
+  renderReferrals();
   $("demoNote").hidden = !DEMO;
 }
 
-function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderProfile(); }
+const money = (n) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
+
+function renderReferrals() {
+  const percentMode = me.ref_mode === "percent", tiers = meta.ref_tiers, top = tiers[tiers.length - 1][1];
+  document.querySelectorAll("#refModes .mode").forEach((b) => b.classList.toggle("on", b.dataset.mode === me.ref_mode));
+  $("refDaysBig").textContent = `+${me.referral_bonus_days}`;
+  $("refPctBig").textContent = `${top}%`;
+  $("refPctTitle").textContent = `до ${top}% деньгами`;
+  $("refPercentPanel").hidden = !percentMode;
+  $("refDaysPanel").hidden = percentMode;
+  $("refCount").textContent = me.referrals;
+  $("refPaying").textContent = me.ref_paying;
+  $("refBalance").textContent = money(me.ref_balance);
+  $("refEarned").textContent = `Заработано всего: ${money(me.ref_earned)}. Оплатили подписку: ${me.ref_paying}`;
+  const current = tiers.filter(([need]) => me.ref_paying >= need).length - 1, next = tiers[current + 1];
+  const span = next ? (me.ref_paying - tiers[current][0]) / (next[0] - tiers[current][0]) : 0;
+  $("refTiers").innerHTML = `<span class="fill" style="width:calc((100% - 44px) * ${((current + span) / (tiers.length - 1)).toFixed(3)})"></span>`
+    + tiers.map(([need, pct], i) => `<div class="tier-node ${i <= current ? "on" : ""}"><b>${pct}%</b>${need ? `от ${need} друзей` : "сразу"}</div>`).join("");
+  $("refNext").textContent = next
+    ? `Ещё ${next[0] - me.ref_paying} ${plural(next[0] - me.ref_paying, "друг", "друга", "друзей")} с оплатой, и будет ${next[1]}%`
+    : "У вас максимальный процент";
+  const can = me.ref_balance >= meta.ref_min_payout;
+  $("refOutBtn").textContent = can ? `Вывести ${money(me.ref_balance)}` : `Вывод от ${money(meta.ref_min_payout)}`;
+  $("refOutBtn").classList.toggle("ghost", !can);
+}
+
+function render() { pickAvailable(); renderHome(); renderLocations(); renderPlans(); renderProfile(); renderConnect(); }
 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -800,33 +833,19 @@ function countTo(el, to, ms) {
   el._raf = requestAnimationFrame(step);
 }
 
-// Moves the pill indicator under the given tab
-function slideTo(ind, btn) {
-  if (!ind || !btn || !btn.offsetWidth) return;
-  ind.style.width = btn.offsetWidth + "px";
-  ind.style.transform = `translateX(${btn.offsetLeft}px)`;
-}
-
 // Stagger order for the entrance animation of each view's blocks
 document.querySelectorAll(".view").forEach((v) => [...v.children].forEach((c, i) => c.style.setProperty("--i", i)));
 
-const SUBTITLE = { home: "VPN · VLESS REALITY", locations: "ЛОКАЦИИ", plans: "ТАРИФЫ", profile: "ПРОФИЛЬ" };
-
-function setSubtitle(view) {
-  $("hdSub").textContent = SUBTITLE[view];
-  $("hdSub").classList.toggle("dm", view !== "home");
-}
-
 function go(view) {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "v-" + view));
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === view));
-  setSubtitle(view);
+  // the connect screen has no tab of its own: it opens from home and keeps that tab lit
+  const tab = view === "connect" ? "home" : view;
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.go === tab));
   $("locList").classList.remove("settled");
-  slideTo($("tabInd"), document.querySelector("#tabs button.on"));
+  placeLiquid(); runLiquid();
   if (view === "home") { $("daysLeft").textContent = 0; countTo($("daysLeft"), me.days_left, 900); }
   window.scrollTo({ top: 0 }); haptic();
 }
-addEventListener("resize", () => slideTo($("tabInd"), document.querySelector("#tabs button.on")));
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
 
 const refLink = () => `https://t.me/${meta.bot_username}?start=ref${me.id}`;
@@ -839,6 +858,20 @@ $("connectBtn").onclick = () => {
 };
 $("copyBtn").onclick = () => me.sub_link ? copy(me.sub_link) : toBot("key");
 $("copyRefBtn").onclick = () => copy(refLink());
+$("connKeyBtn").onclick = () => {
+  if (!me.active) return go("plans");
+  me.sub_link ? copy(me.sub_link) : toBot("key");
+};
+document.querySelectorAll("#refModes .mode").forEach((b) => b.onclick = () => {
+  if (me.ref_mode === b.dataset.mode) return;
+  haptic();
+  if (DEMO) { me = { ...me, ref_mode: b.dataset.mode }; return renderReferrals(); }
+  toBot("refmode_" + b.dataset.mode);
+});
+$("refOutBtn").onclick = () => {
+  if (me.ref_balance < meta.ref_min_payout) return toast(`Вывод доступен от ${money(meta.ref_min_payout)}`);
+  DEMO ? toast("Вывод доступен в Telegram") : toBot("ref");
+};
 $("shareBtn").onclick = () => {
   const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
   tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
@@ -847,16 +880,6 @@ $("supportBtn").onclick = () => {
   const url = `https://t.me/${meta.support}`;
   tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
 };
-const APPS = {
-  ios: "https://apps.apple.com/app/happ-proxy-utility/id6504287215",
-  android: "https://play.google.com/store/apps/details?id=com.v2raytun.android",
-  desktop: "https://github.com/hiddify/hiddify-app/releases",
-};
-document.querySelectorAll("[data-app]").forEach((b) => b.onclick = () => {
-  const url = APPS[b.dataset.app];
-  tg?.openLink ? tg.openLink(url) : window.open(url, "_blank");
-});
-
 $("trialBtn").onclick = async () => {
   if (STATIC) return toBot("trial");
   if (DEMO) { me = { ...me, trial_available: false }; render(); return toast("Пробный период активирован"); }
@@ -880,8 +903,6 @@ $("buyBtn").onclick = async () => {
 };
 
 (async () => {
-  buildWidgets();
-  setSubtitle("home");
   if (STATIC) {
     try { ({ me, meta } = decodeState(STATE)); } catch { toast("Ошибка загрузки"); }
   } else if (!DEMO) {
@@ -890,10 +911,8 @@ $("buyBtn").onclick = async () => {
   }
   plan = meta.plans[0].id;
   render();
+  initLiquid();
   initGlobe();
-  const placeTabInd = () => slideTo($("tabInd"), document.querySelector("#tabs button.on"));
-  placeTabInd();
-  document.fonts?.ready.then(placeTabInd);  // tab widths shift once the web font loads
 })();
 </script>
 </body>
