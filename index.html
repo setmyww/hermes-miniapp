@@ -297,7 +297,7 @@
   <!-- PLANS -->
   <section class="view" id="v-plans">
     <h1>Сколько устройств подключить?</h1>
-    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, 2 месяца бесплатно</button></div>
+    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 20%</button></div>
     <div id="tiers"></div>
     <div class="price" id="priceBox"><b id="planPrice">199</b><span>₽</span></div>
     <div class="caption" id="planPer">за 30 дней</div>
@@ -404,7 +404,7 @@
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Подписка в подарок</h1>
     <p class="note">Вы оплачиваете и получаете ссылку. Друг открывает её в боте, и подписка включается. Ссылка работает один раз и не сгорает.</p>
-    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, 2 месяца бесплатно</button></div>
+    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 20%</button></div>
     <div id="giftTiers"></div>
     <div class="price" id="giftPriceBox"><b id="giftPrice">199</b><span>₽</span></div>
     <div class="caption" id="giftPer">30 дней</div>
@@ -539,10 +539,10 @@ const DEMO_META = {
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
     { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
     { id: "d10", title: "10 устройств", days: 30, rub: 555, stars: 451, devices: 10 },
-    { id: "y2", title: "2 устройства, год", days: 365, rub: 1990, stars: 1616, devices: 2 },
-    { id: "y3", title: "3 устройства, год", days: 365, rub: 2500, stars: 2030, devices: 3 },
-    { id: "y5", title: "5 устройств, год", days: 365, rub: 3500, stars: 2841, devices: 5 },
-    { id: "y10", title: "10 устройств, год", days: 365, rub: 5550, stars: 4505, devices: 10 },
+    { id: "y2", title: "2 устройства, год", days: 365, rub: 1910, stars: 1551, devices: 2 },
+    { id: "y3", title: "3 устройства, год", days: 365, rub: 2400, stars: 1948, devices: 3 },
+    { id: "y5", title: "5 устройств, год", days: 365, rub: 3360, stars: 2728, devices: 5 },
+    { id: "y10", title: "10 устройств, год", days: 365, rub: 5330, stars: 4327, devices: 10 },
   ],
   locations: [
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38, available: false },
@@ -1591,7 +1591,7 @@ function renderPlans() {
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
   $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
   const biggest = Math.max(...meta.plans.map((x) => x.devices));
-  $("planNote").textContent = isYear(p) ? `Экономия ${money(month.rub * 12 - p.rub)}: два месяца бесплатно` : "Максимальная выгода для совместного использования";
+  $("planNote").textContent = isYear(p) ? `Экономия ${money(month.rub * 12 - p.rub)} к помесячной оплате` : "Максимальная выгода для совместного использования";
   $("planNote").hidden = !isYear(p) && p.devices !== biggest;
   $("buyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
