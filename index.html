@@ -195,6 +195,8 @@
   .gift-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--line); }
   .gift-row b { display: block; font-weight: 700; font-size: 15px; }
   .gift-row span { font-size: 13px; color: var(--muted); }
+  #devList { display: flex; flex-direction: column; margin-top: 18px; }
+  #devList .gift-row b, #devList .gift-row span { overflow-wrap: anywhere; }
 
   /* VPN check */
   .verdict-mark { width: 72px; height: 72px; margin-top: 34px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-2); }
@@ -220,7 +222,8 @@
   .usr-pill.on { background: #fff; color: var(--bg); border-color: #fff; }
   .usr-body { padding: 2px 0 16px; animation: rise .25s ease both; }
   .usr-body .panel-rows { padding: 14px; border-radius: 16px; background: var(--surface); }
-  .usr-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .usr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .usr-actions .btn.wide { flex-basis: 100%; }
   .usr-actions .btn { flex: 1; height: 44px; font-size: 14px; }
   #usrMore { margin-top: 16px; }
 
@@ -520,6 +523,16 @@
   </section>
 
   <!-- PROMO CODE -->
+  <section class="view" id="v-devices">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Устройства</h1>
+    <p class="caption" id="devCount"></p>
+    <div id="devList"></div>
+    <p class="note" id="devNote" style="margin-top:16px"></p>
+    <p class="form-msg" id="devMsg" role="status"></p>
+    <button class="btn" id="devReset" hidden>Сбросить устройства</button>
+  </section>
+
   <section class="view" id="v-promo">
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Промокод</h1>
@@ -595,6 +608,7 @@
     </div>
     <div class="rows block">
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
+      <button data-go="devices"><span>Устройства</span><b>→</b></button>
       <button data-go="gift"><span>Подарить подписку</span><b>→</b></button>
       <button data-go="promo"><span>Промокод</span><b>→</b></button>
       <button id="supportBtn"><span>Поддержка</span><b>чат в боте →</b></button>
@@ -961,6 +975,10 @@ function initLiquid() {
 // The bot's address behind the hosting's HTTPS proxy. Every call is signed with Telegram's initData and the bot checks it.
 const SERVER_API = "https://s-25087.de-bots6.h1clayd.click";
 const SUP_POLL_MS = 6000, DEMO_LATENCY = 350;
+let demoDevices = { available: true, limit: 3, used: 2, reset_in: 0, list: [
+  { name: "iPhone 15", system: "iOS 18.1", app: "Happ/3.1.2", last_seen: Date.now() / 1000 - 1800 },
+  { name: "Redmi Note 12", system: "Android 14", app: "Happ/3.0.4", last_seen: Date.now() / 1000 - 26 * 3600 },
+] };
 const support = { open: null, timer: 0, seen: -1 };
 
 const DEMO_THREADS = {
@@ -994,6 +1012,9 @@ function demoApi(path, body) {
   }
   if (path === "/api/promo") return body.code.toUpperCase() === "HERMES7"
     ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
+  if (path === "/api/devices") return demoDevices;
+  if (path === "/api/devices/reset") { demoDevices = { ...demoDevices, used: 0, list: [], reset_in: 86400 }; return demoDevices; }
+  if (path.endsWith("/reset-devices")) return { ok: true };
   if (path === "/api/gifts") return { gifts: [
     { code: "demo1", title: "3 устройства", created_at: Date.now() / 1000 - 3600, redeemed: false },
     { code: "demo2", title: "2 устройства", created_at: Date.now() / 1000 - 9 * 86400, redeemed: true },
@@ -1191,6 +1212,60 @@ async function loadGifts() {
     }));
   } catch { $("giftListBox").hidden = true; }  // buying works without the list: the link also comes in the chat
 }
+
+/* ---------- devices ---------- */
+
+const devAgo = (sec) => new Date(sec * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const hoursWord = (sec) => { const h = Math.ceil(sec / 3600); return `${h} ${plural(h, "час", "часа", "часов")}`; };
+
+function renderDevices(info) {
+  $("devMsg").textContent = "";
+  if (!info.available) {
+    $("devCount").textContent = "Устройства видны при активной подписке";
+    $("devList").replaceChildren();
+    $("devNote").textContent = "Оформите подписку или пробный период, добавьте ключ в Happ, и устройства появятся здесь.";
+    $("devReset").hidden = true;
+    return;
+  }
+  $("devCount").textContent = `Подключено ${info.used} из ${info.limit}`;
+  $("devList").replaceChildren(...info.list.map((d) => {
+    const row = el("div", "gift-row"), text = el("div");
+    const bits = [d.system !== d.name && d.system, d.app].filter(Boolean).join(" · ");
+    text.append(el("b", "", d.name), el("span", "", [bits, d.last_seen && `обновлялось ${devAgo(d.last_seen)}`].filter(Boolean).join(", ")));
+    row.append(text);
+    return row;
+  }));
+  if (!info.list.length) $("devList").append(el("p", "note", "Пока ни одно устройство не загружало подписку."));
+  $("devNote").textContent = `Сменили телефон и новое устройство не подключается? Сбросьте список, и подписку снова смогут добавить ${devicesWord(info.limit)}. Сбрасывать можно раз в сутки.`;
+  $("devReset").hidden = !info.used;
+  $("devReset").disabled = info.reset_in > 0;
+  $("devReset").textContent = info.reset_in > 0 ? `Сбросить можно через ${hoursWord(info.reset_in)}` : "Сбросить устройства";
+}
+
+async function loadDevices() {
+  $("devCount").textContent = "";
+  $("devReset").hidden = true;
+  $("devList").replaceChildren(skelRow(), skelRow("38%", "56%"));
+  try { renderDevices(await serverApi("/api/devices")); }
+  catch { $("devList").replaceChildren(); $("devCount").textContent = "Нет связи с ботом. Попробуйте ещё раз чуть позже."; }
+}
+
+// Telegram's own dialog inside Telegram (6.2+); outside it the object exists but its popups do nothing
+function confirmAsk(text, yes) {
+  if (tg?.initData && tg.isVersionAtLeast?.("6.2")) tg.showConfirm(text, (ok) => ok && yes());
+  else if (window.confirm(text)) yes();
+}
+
+$("devReset").onclick = () => confirmAsk("Все устройства будут отвязаны. Те, которыми вы пользуетесь, снова займут место, когда Happ обновит подписку. Сбросить?", async () => {
+  $("devReset").disabled = true;
+  try {
+    const r = await serverApi("/api/devices/reset", {});
+    if (r.error) { $("devMsg").textContent = r.error; tg?.HapticFeedback?.notificationOccurred("error"); $("devReset").disabled = false; return; }
+    renderDevices(r);
+    $("devMsg").textContent = "Готово. Добавьте подписку на новом устройстве, а на старых обновите её в Happ.";
+    tg?.HapticFeedback?.notificationOccurred("success");
+  } catch { $("devMsg").textContent = "Нет связи с ботом. Попробуйте ещё раз."; $("devReset").disabled = false; }
+});
 
 $("giftBuyBtn").onclick = () => DEMO ? toast("Оплата доступна в Telegram") : toBot("giftbuy_" + giftPlan);
 
@@ -1883,9 +1958,17 @@ function userDetail(u) {
   add("Пригласил сам", countOf(u.invited, "человека", "человек", "человек"));
   add("Рефералка", u.ref_mode === "percent" ? `процент, баланс ${money(u.ref_balance)}` : "дни");
   const actions = el("div", "usr-actions"), write = el("button", "btn", "Написать"), id = el("button", "btn ghost", "Скопировать ID");
+  const reset = el("button", "btn ghost wide", "Сбросить устройства");
+  reset.onclick = () => confirmAsk(`Сбросить все устройства ${supWho(u)}?`, async () => {
+    reset.disabled = true;
+    try { const r = await serverApi(`/api/admin/users/${u.id}/reset-devices`, {}); toast(r.error || "Устройства сброшены"); }
+    catch { toast("Нет связи с ботом"); }
+    reset.disabled = false;
+  });
   write.onclick = () => { haptic(); support.from = "users"; adminSegment("chats"); openThread(u.id); };
   id.onclick = () => copy(String(u.id));
   actions.append(write, id);
+  if (u.days_left) actions.append(reset);
   box.append(rows, actions);
   return box;
 }
@@ -2270,6 +2353,7 @@ function go(view, isBack = false) {
   clearTimeout(promoTimer);
   refreshDrops();
   if (view === "gift") loadGifts();
+  if (view === "devices") loadDevices();
   if (view === "profile") animateRefScale();
   if (!isBack) {
     if (view === "promo") resetPromo();
