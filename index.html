@@ -208,6 +208,11 @@
   .gift-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--line); }
   .gift-row b { display: block; font-weight: 700; font-size: 15px; }
   .gift-row span { font-size: 13px; color: var(--muted); }
+  .up-link { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 48px; margin-top: 12px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line-2); font-weight: 600; font-size: 14px; text-align: left; }
+  #upList { display: flex; flex-direction: column; gap: 8px; margin-top: 22px; }
+  .up-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 64px; padding: 0 18px; border-radius: 16px; background: var(--surface); text-align: left; }
+  .up-opt b { font-weight: 700; font-size: 17px; }
+  .up-opt span { font-weight: 800; font-size: 18px; white-space: nowrap; }
   #devList { display: flex; flex-direction: column; margin-top: 18px; }
   #devList .gift-row b, #devList .gift-row span { overflow-wrap: anywhere; }
 
@@ -237,9 +242,18 @@
   .usr-body .panel-rows { padding: 14px; border-radius: 16px; background: var(--surface); }
   .usr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .usr-actions .btn.wide { flex-basis: 100%; }
+  .usr-tools { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .usr-tool { display: flex; gap: 8px; }
+  .usr-tool .field, .usr-tool select { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 600 15px/1 "Manrope", sans-serif; letter-spacing: 0; }
+  .usr-tool .btn { width: auto; flex: none; height: 44px; padding: 0 16px; font-size: 14px; }
+  .usr-pill.ban { background: transparent; color: var(--text); border-color: #fff; }
   /* four sections don't fit in a phone-wide row: a 2 x 2 grid keeps every one in sight */
   #adminSeg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #adminSeg button { padding: 0 10px; }
+  #adminSeg button:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .mail-preview { margin-top: 8px; padding: 14px; border-radius: 18px; background: var(--surface); }
+  .mail-preview .bubble { max-width: 100%; background: var(--bg); min-height: 20px; }
+  #mailText { min-height: 120px; }
   .ref-note { margin: 0 0 12px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
   .ref-link { display: flex; gap: 8px; margin-top: 10px; }
   .ref-link .field { height: 44px; font: 600 14px/1 "Manrope", sans-serif; letter-spacing: 0; }
@@ -414,6 +428,7 @@
       <div><span>Также</span><b>Криптовалюта</b></div>
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
+    <button class="up-link" data-go="upgrade" id="planUpgrade" hidden>Уже есть подписка? Добавьте устройства к ней <b>→</b></button>
     <p class="legal">Оплачивая, вы принимаете <a data-doc="terms" href="#">пользовательское соглашение</a> и <a data-doc="privacy" href="#">политику конфиденциальности</a>.</p>
     <div class="rows block">
       <button data-go="gift"><span>Купить в подарок другу</span><b>→</b></button>
@@ -464,6 +479,22 @@
       <button data-seg="stats">Статистика</button>
       <button data-seg="users">Пользователи</button>
       <button data-seg="refs">Рефералы</button>
+      <button data-seg="mail">Рассылка</button>
+    </div>
+    <div id="adminMail" hidden>
+      <h1 style="margin-top:22px">Рассылка</h1>
+      <p class="note">Кому отправить</p>
+      <div class="chips usr-filters" id="mailSeg"></div>
+      <label class="note" for="mailText" style="display:block;margin:18px 0 8px">Текст сообщения</label>
+      <textarea class="field" id="mailText" maxlength="3500" placeholder="Например: открыли новые серверы, подключение стало быстрее"></textarea>
+      <p class="note" id="mailCount"></p>
+      <p class="sub-label">Так увидят пользователи</p>
+      <div class="mail-preview"><div class="bubble" id="mailPreview"></div></div>
+      <div class="usr-actions">
+        <button class="btn ghost" id="mailTest">Отправить себе</button>
+        <button class="btn" id="mailSend">Отправить</button>
+      </div>
+      <p class="form-msg" id="mailMsg" role="status"></p>
     </div>
     <div id="adminRefs" hidden>
       <h1 style="margin-top:22px">Рефералы</h1>
@@ -602,6 +633,14 @@
     </div>
   </section>
 
+  <section class="view" id="v-upgrade">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Больше устройств</h1>
+    <p class="caption" id="upLead"></p>
+    <div id="upList"></div>
+    <p class="note" id="upNote" style="margin-top:16px"></p>
+  </section>
+
   <section class="view" id="v-devices">
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Устройства</h1>
@@ -610,6 +649,7 @@
     <p class="note" id="devNote" style="margin-top:16px"></p>
     <p class="form-msg" id="devMsg" role="status"></p>
     <button class="btn" id="devReset" hidden>Сбросить устройства</button>
+    <button class="btn ghost" data-go="upgrade" id="devMore" style="margin-top:10px">Нужно больше устройств</button>
   </section>
 
   <section class="view" id="v-promo">
@@ -1097,12 +1137,18 @@ function demoApi(path, body) {
   if (path === "/api/promo") return body.code.toUpperCase() === "HERMES7"
     ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
   if (path === "/api/devices") return demoDevices;
+  if (path === "/api/upgrade") return { devices: 3, options: [{ plan_id: "d5", devices: 5, rub: 92, stars: 75, days: 27 }, { plan_id: "d10", devices: 10, rub: 275, stars: 224, days: 27 }] };
   if (path === "/api/admin/referrals") return demoRefs;
   if (path === "/api/manager/stats") { if (!isManager()) throw new Error("managers only"); return demoManagerStats(); }
   if (path.startsWith("/api/admin/managers/")) return demoRefsAction(path, body || {});
   if (path === "/api/manager/apply") return { me: { ...me, manager: { status: "pending", slug: null } } };
   if (path === "/api/devices/reset") { demoDevices = { ...demoDevices, used: 0, list: [], reset_in: 86400 }; return demoDevices; }
   if (path.endsWith("/reset-devices")) return { ok: true };
+  if (/\/api\/admin\/users\/\d+\/days$/.test(path)) return { ok: true, days_left: 7 + (body.days || 0), expires_at: Date.now() / 1000 + 9 * 86400 };
+  if (/\/api\/admin\/users\/\d+\/discount$/.test(path)) return { ok: true, code: `HERMES${body.percent}-DEMO1`, expires_at: Date.now() / 1000 + body.hours * 3600 };
+  if (/\/api\/admin\/users\/\d+\/(ban|unban)$/.test(path)) return { ok: true };
+  if (path === "/api/admin/broadcast") return body ? demoBroadcastSend(body) : demoBroadcastInfo();
+  if (path === "/api/admin/broadcast/test") return body.text ? { ok: true } : { error: "Текст от 1 до 3500 символов." };
   if (path === "/api/gifts") return { gifts: [
     { code: "demo1", title: "3 устройства", created_at: Date.now() / 1000 - 3600, redeemed: false },
     { code: "demo2", title: "2 устройства", created_at: Date.now() / 1000 - 9 * 86400, redeemed: true },
@@ -1392,6 +1438,30 @@ $("mgrForm").onsubmit = async (e) => {
   $("mgrSend").disabled = false;
 };
 
+/* ---------- more devices for the days left ---------- */
+
+async function loadUpgrade() {
+  $("upLead").textContent = ""; $("upNote").textContent = "";
+  $("upList").replaceChildren(skelLine("100%", 64), skelLine("100%", 64));
+  try {
+    const r = await serverApi("/api/upgrade");
+    if (!r.options.length) {
+      $("upList").replaceChildren();
+      $("upLead").textContent = "Доплатить за устройства можно при активной купленной подписке, если есть тариф больше вашего.";
+      $("upNote").textContent = "Если у вас пробный период или бонусные дни, выберите тариф с нужным числом устройств во вкладке «Тарифы».";
+      return;
+    }
+    $("upLead").textContent = `Сейчас: ${devicesWord(r.devices)}, осталось ${countOf(r.options[0].days, "день", "дня", "дней")}`;
+    $("upList").replaceChildren(...r.options.map((o) => {
+      const b = el("button", "up-opt"); b.type = "button";
+      b.append(el("b", "", devicesWord(o.devices)), el("span", "", money(o.rub)));
+      b.onclick = () => { haptic(); DEMO ? toast("Оплата доступна в Telegram") : toBot("up_" + o.plan_id); };
+      return b;
+    }));
+    $("upNote").textContent = "Доплата только за оставшиеся дни, дата окончания подписки не меняется. Оплата откроется в чате с ботом.";
+  } catch { $("upList").replaceChildren(); $("upLead").textContent = "Нет связи с ботом. Попробуйте ещё раз чуть позже."; }
+}
+
 /* ---------- devices ---------- */
 
 const devAgo = (sec) => new Date(sec * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -1418,6 +1488,7 @@ function renderDevices(info) {
   if (!info.list.length) $("devList").append(el("p", "note", "Пока ни одно устройство не загружало подписку."));
   $("devNote").textContent = `Сменили телефон и новое устройство не подключается? Сбросьте список, и подписку снова смогут добавить ${devicesWord(info.limit)}. Сбрасывать можно раз в сутки.`;
   $("devReset").hidden = !info.used;
+  $("devMore").hidden = info.limit >= Math.max(...meta.plans.map((x) => x.devices));
   $("devReset").disabled = info.reset_in > 0;
   $("devReset").textContent = info.reset_in > 0 ? `Сбросить можно через ${hoursWord(info.reset_in)}` : "Сбросить устройства";
 }
@@ -2136,6 +2207,8 @@ function userDetail(u) {
   if (u.pays) add("Последняя оплата", fullDate(u.last_pay));
   add("Его пригласил", u.ref_by ? (u.ref_username ? "@" + u.ref_username : "ID " + u.ref_by) : "никто");
   add("Пригласил сам", countOf(u.invited, "человека", "человек", "человек"));
+  if (u.banned) add("Статус", "заблокирован" + (u.ban_reason ? `: ${u.ban_reason}` : ""));
+  if (u.survey) add("Опрос", { sent: "спросили, ждём ответ", ok: "всё работает", problem: "есть проблема" }[u.survey] || u.survey);
   add("Рефералка", u.manager_status === "manager" ? `менеджер, баланс ${money(u.ref_balance)}` : u.manager_status === "pending" ? "дни, подал заявку в менеджеры" : "дни");
   const actions = el("div", "usr-actions"), write = el("button", "btn", "Написать"), id = el("button", "btn ghost", "Скопировать ID");
   const reset = el("button", "btn ghost wide", "Сбросить устройства");
@@ -2149,6 +2222,44 @@ function userDetail(u) {
   id.onclick = () => copy(String(u.id));
   actions.append(write, id);
   if (u.days_left) actions.append(reset);
+  // days, a personal discount, a ban: all sent to the bot, which also tells the user
+  const tools = el("div", "usr-tools");
+  const daysRow = el("div", "usr-tool"), daysIn = el("input", "field"), daysBtn = el("button", "btn ghost", "Начислить дни");
+  daysIn.type = "number"; daysIn.inputMode = "numeric"; daysIn.placeholder = "Дней, например 7"; daysIn.setAttribute("aria-label", "Сколько дней начислить");
+  daysBtn.onclick = async () => {
+    const days = parseInt(daysIn.value, 10);
+    if (!days) return toast("Введите число дней");
+    daysBtn.disabled = true;
+    try {
+      const r = await serverApi(`/api/admin/users/${u.id}/days`, { days });
+      if (r.error) toast(r.error); else { toast(`Начислено ${days} дн.`); u.days_left = r.days_left; u.expires_at = r.expires_at; daysIn.value = ""; }
+    } catch { toast("Нет связи с ботом"); }
+    daysBtn.disabled = false;
+  };
+  daysRow.append(daysIn, daysBtn);
+  const discRow = el("div", "usr-tool"), pct = el("select"), hrs = el("select"), discBtn = el("button", "btn ghost", "Скидка");
+  [10, 15, 20, 30, 50].forEach((n) => pct.append(new Option(`${n}%`, n, n === 15, n === 15)));
+  [[24, "на сутки"], [48, "на 2 дня"], [72, "на 3 дня"], [168, "на неделю"]].forEach(([n, t]) => hrs.append(new Option(t, n, n === 48, n === 48)));
+  pct.setAttribute("aria-label", "Размер скидки"); hrs.setAttribute("aria-label", "Срок скидки");
+  discBtn.onclick = async () => {
+    discBtn.disabled = true;
+    try {
+      const r = await serverApi(`/api/admin/users/${u.id}/discount`, { percent: +pct.value, hours: +hrs.value });
+      toast(r.error || `Код ${r.code} отправлен`);
+    } catch { toast("Нет связи с ботом"); }
+    discBtn.disabled = false;
+  };
+  discRow.append(pct, hrs, discBtn);
+  const banBtn = el("button", "btn ghost wide", u.banned ? "Разблокировать" : "Заблокировать");
+  banBtn.onclick = () => confirmAsk(u.banned ? `Разблокировать ${supWho(u)}?` : `Заблокировать ${supWho(u)}? VPN у него перестанет работать, бот будет отвечать только через поддержку.`, async () => {
+    banBtn.disabled = true;
+    try {
+      const r = await serverApi(`/api/admin/users/${u.id}/${u.banned ? "unban" : "ban"}`, { reason: "через админку" });
+      if (r.error) toast(r.error); else { u.banned = !u.banned; toast(u.banned ? "Заблокирован" : "Разблокирован"); banBtn.textContent = u.banned ? "Разблокировать" : "Заблокировать"; }
+    } catch { toast("Нет связи с ботом"); }
+    banBtn.disabled = false;
+  });
+  tools.append(daysRow, discRow);
   if (u.manager_status !== "manager") {
     const make = el("button", "btn ghost wide", "Сделать менеджером");
     make.onclick = () => confirmAsk(`Сделать ${supWho(u)} менеджером? Он получит личную ссылку и процент с оплат приглашённых.`, async () => {
@@ -2158,7 +2269,8 @@ function userDetail(u) {
     });
     actions.append(make);
   }
-  box.append(rows, actions);
+  actions.append(banBtn);  // last: the heaviest action
+  box.append(rows, actions, tools);
   return box;
 }
 
@@ -2168,7 +2280,7 @@ function userRow(u) {
   head.setAttribute("aria-expanded", "false");
   const bits = [u.plan === "нет подписки" ? "без подписки" : u.plan, `с ${shortDate(u.created_at)}`];
   if (u.pays) bits.push(`${countOf(u.pays, "оплата", "оплаты", "оплат")}, ${money(u.spent)}`);
-  head.append(el("b", "", supWho(u)), el("span", "usr-pill" + (u.days_left ? " on" : ""), u.days_left ? `${u.days_left} дн.` : "нет"), el("span", "usr-sub", bits.join(" · ")));
+  head.append(el("b", "", supWho(u)), el("span", "usr-pill" + (u.banned ? " ban" : u.days_left ? " on" : ""), u.banned ? "блок" : u.days_left ? `${u.days_left} дн.` : "нет"), el("span", "usr-sub", bits.join(" · ")));
   head.onclick = () => {
     haptic();
     const opened = row.querySelector(".usr-body");
@@ -2356,17 +2468,89 @@ document.querySelectorAll("#refSeg button").forEach((b) => b.onclick = () => {
   haptic(); refsAdmin.tab = b.dataset.r; refsAdmin.open = null; if (refsAdmin.data) renderRefsAdmin();
 });
 
+/* ---------- admin: broadcasts by group ---------- */
+
+const mail = { seg: "trial_only", info: null, timer: 0 };
+let demoMail = { running: false, segment: "", total: 0, sent: 0, failed: 0 };
+function demoBroadcastInfo() {
+  if (demoMail.running) { demoMail.sent = Math.min(demoMail.total, demoMail.sent + 7); if (demoMail.sent >= demoMail.total) demoMail.running = false; }
+  return { max: 3500, status: demoMail, segments: [
+    { id: "all", title: "Все", count: 64 }, { id: "active", title: "С активной подпиской", count: 48 }, { id: "paid_active", title: "Платные активные", count: 20 },
+    { id: "trial_only", title: "Брали пробный, не купили", count: 30 }, { id: "expired", title: "Подписка закончилась", count: 12 },
+    { id: "never", title: "Ни разу не подключались", count: 4 }, { id: "managers", title: "Менеджеры", count: 2 }] };
+}
+function demoBroadcastSend(body) {
+  if (!body.text) return { error: "Текст от 1 до 3500 символов." };
+  const seg = demoBroadcastInfo().segments.find((x) => x.id === body.segment);
+  demoMail = { running: true, segment: body.segment, total: seg.count, sent: 0, failed: 0 };
+  return { ok: true, total: seg.count };
+}
+
+function renderMail() {
+  const info = mail.info, seg = info.segments.find((x) => x.id === mail.seg) || info.segments[0];
+  mail.seg = seg.id;
+  $("mailSeg").replaceChildren(...info.segments.map((x) => {
+    const b = el("button", x.id === mail.seg ? "on" : "", x.title); b.type = "button";
+    b.append(el("i", "", String(x.count)));
+    b.onclick = () => { haptic(); mail.seg = x.id; renderMail(); };
+    return b;
+  }));
+  const st = info.status;
+  $("mailSend").textContent = `Отправить: ${countOf(seg.count, "человек", "человека", "человек")}`;
+  $("mailSend").disabled = st.running || !seg.count;
+  $("mailCount").textContent = `${$("mailText").value.length} из ${info.max} символов`;
+  if (st.running) $("mailMsg").textContent = `Идёт рассылка: ${st.sent + st.failed} из ${st.total}…`;
+  else if (st.total && st.finished_at !== 0) $("mailMsg").textContent = `Последняя рассылка: доставлено ${st.sent} из ${st.total}${st.failed ? `, не доставлено ${st.failed}` : ""}.`;
+}
+
+function mailPreview() {
+  $("mailPreview").textContent = $("mailText").value.trim() || "Здесь появится ваш текст";
+  if (mail.info) renderMail();
+}
+
+async function loadMail() {
+  try {
+    mail.info = await serverApi("/api/admin/broadcast");
+    renderMail(); mailPreview();
+    clearTimeout(mail.timer);
+    if (mail.info.status.running && admin.seg === "mail") mail.timer = setTimeout(loadMail, 2000);  // progress while it runs
+  } catch { $("mailMsg").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново."; }
+}
+$("mailText").oninput = mailPreview;
+$("mailTest").onclick = async () => {
+  if (!$("mailText").value.trim()) return toast("Напишите текст");
+  $("mailTest").disabled = true;
+  try { const r = await serverApi("/api/admin/broadcast/test", { text: $("mailText").value }); toast(r.error || "Отправлено вам в бот"); }
+  catch { toast("Нет связи с ботом"); }
+  $("mailTest").disabled = false;
+};
+$("mailSend").onclick = () => {
+  const text = $("mailText").value.trim(), seg = mail.info.segments.find((x) => x.id === mail.seg);
+  if (!text) return toast("Напишите текст");
+  confirmAsk(`Отправить сообщение группе «${seg.title}» (${countOf(seg.count, "человек", "человека", "человек")})?`, async () => {
+    $("mailSend").disabled = true;
+    try {
+      const r = await serverApi("/api/admin/broadcast", { segment: mail.seg, text });
+      if (r.error) { toast(r.error); $("mailSend").disabled = false; return; }
+      toast(`Рассылка началась: ${r.total}`); haptic("heavy");
+      loadMail();
+    } catch { toast("Нет связи с ботом"); $("mailSend").disabled = false; }
+  });
+};
+
 function adminSegment(seg) {
   document.querySelectorAll("#adminSeg button").forEach((b) => b.classList.toggle("on", b.dataset.seg === seg));
   $("adminStats").hidden = seg !== "stats";
   $("adminChats").hidden = seg !== "chats";
   $("adminUsers").hidden = seg !== "users";
   $("adminRefs").hidden = seg !== "refs";
+  $("adminMail").hidden = seg !== "mail";
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
   if (seg === "stats") loadStats();
   if (seg === "users" && !users.counts) loadUsers();
   if (seg === "refs") loadRefsAdmin();
+  if (seg === "mail") loadMail();
 }
 const admin = { seg: "chats" };
 document.querySelectorAll("#adminSeg button").forEach((b) => b.onclick = () => { haptic(); adminSegment(b.dataset.seg); });
@@ -2581,6 +2765,7 @@ function renderPlans() {
   note.hidden = !isYear(p) && p.devices !== biggest;
   if (noteWasHidden && !note.hidden) { note.classList.remove("save-in"); void note.offsetWidth; note.classList.add("save-in"); }
   $("buyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
+  $("planUpgrade").hidden = !(me.active && me.device_limit < biggest && !me.trial_available && me.plan !== "пробный период");
 }
 
 function renderProfile() {
@@ -2687,6 +2872,7 @@ function go(view, isBack = false) {
   refreshDrops();
   if (view === "gift") loadGifts();
   if (view === "devices") loadDevices();
+  if (view === "upgrade") loadUpgrade();
   if (view === "manager") renderManagerView();
   if (view === "mstats") loadManagerStats();
   if (view === "profile") animateRefScale();
