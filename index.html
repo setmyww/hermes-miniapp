@@ -259,6 +259,8 @@
   .price b { font-variant-numeric: tabular-nums; }
   .was { height: 26px; margin-top: 26px; font-weight: 600; font-size: 18px; color: var(--muted); opacity: 0; transition: opacity .25s; }
   .was.show { opacity: 1; }
+  .offer { display: inline-block; margin: 22px 0 0; padding: 7px 12px; border-radius: 99px; background: #fff; color: var(--bg); font-weight: 700; font-size: 13px; }
+  .offer + .was { margin-top: 12px; }
   .was s { position: relative; text-decoration: none; }
   .was s::after { content: ""; position: absolute; left: -2px; right: -2px; top: 52%; height: 2px; background: #fff; transform: scaleX(0); transform-origin: left; transition: transform .45s var(--ease-out) .12s; }
   .was.show s::after { transform: scaleX(1); }
@@ -377,6 +379,7 @@
     <h1>Сколько устройств подключить?</h1>
     <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 35%</button></div>
     <div id="tiers"></div>
+    <p class="offer" id="planOffer" hidden></p>
     <div class="was" id="planWas"><s></s></div>
     <div class="price" id="priceBox"><b id="planPrice"></b><span>₽</span></div>
     <div class="caption" id="planPer">за 30 дней</div>
@@ -529,7 +532,8 @@
     <div id="promoDone" hidden>
       <div class="big" id="promoDays" style="margin-top:34px">+7</div>
       <div class="caption" id="promoCaption"></div>
-      <button class="btn" data-go="home" style="margin-top:26px">На главную</button>
+      <button class="btn" data-go="home" id="promoHome" style="margin-top:26px">На главную</button>
+      <button class="btn" data-go="plans" id="promoPlans" style="margin-top:26px" hidden>Выбрать тариф</button>
     </div>
   </section>
 
@@ -674,10 +678,11 @@ function decodeState(s) {
       id: st.u, justPaid: !!st.ok, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
       sub_link: null, device_limit: st.n, plan: st.pl, referrals: st.r, referral_bonus_days: st.b,
       ref_mode: st.rm || "days", ref_balance: st.rl || 0, ref_earned: st.re || 0, ref_paying: st.rp || 0,
+      discount: st.dc ? { percent: st.dc[0], expires_at: st.dc[1] } : null,
     },
     meta: {
       // buttons in old chat messages still carry an old plan list, without ruble prices
-      plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub]) => ({ id, title, days, stars, devices, rub })) : DEMO_META.plans,
+      plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub, full]) => ({ id, title, days, stars, devices, rub, ...(full && { full_rub: full }) })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
     },
@@ -983,6 +988,10 @@ async function serverApi(path, body) {
 function demoApi(path, body) {
   if (path === "/api/key") return { sub_link: me.sub_link };
   if (path === "/api/support") return { ok: true };
+  if (path === "/api/promo" && body.code.toUpperCase() === "HERMES15-DEMO") {
+    const d = { percent: 15, expires_at: Date.now() / 1000 + 47 * 3600 };
+    return { discount: d, plans: DEMO_META.plans.map((x) => ({ ...x, rub: Math.round(x.rub * .85), stars: Math.ceil(x.stars * .85), full_rub: x.rub })) };
+  }
   if (path === "/api/promo") return body.code.toUpperCase() === "HERMES7"
     ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
   if (path === "/api/gifts") return { gifts: [
@@ -1412,7 +1421,17 @@ $("promoForm").onsubmit = async (e) => {
     if (r.error) {
       $("promoMsg").textContent = r.error;
       tg?.HapticFeedback?.notificationOccurred("error");
+    } else if (r.discount) {
+      me = { ...me, discount: r.discount };
+      meta = { ...meta, plans: r.plans };
+      render();
+      $("promoDays").textContent = `−${r.discount.percent}%`;
+      $("promoCaption").textContent = `Скидка уже в ценах и действует до ${offerTime(r.discount.expires_at)}`;
+      $("promoHome").hidden = true; $("promoPlans").hidden = false;
+      $("promoForm").hidden = true; $("promoDone").hidden = false;
+      tg?.HapticFeedback?.notificationOccurred("success");
     } else {
+      $("promoHome").hidden = false; $("promoPlans").hidden = true;
       const before = me.days_left;
       me = { ...me, ...r.me };
       render();
@@ -2132,13 +2151,21 @@ function renderPicker(tiersId, periodId, current, pick) {
 
 function bumpPrice(box) { box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump"); }
 
+// The personal discount, while it lasts; the prices in meta.plans already include it
+const discountLive = () => (me.discount && me.discount.expires_at * 1000 > Date.now() ? me.discount : null);
+const offerTime = (sec) => new Date(sec * 1000).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
 function renderPlans() {
   const current = () => meta.plans.find((x) => x.id === plan) || meta.plans[0];
   const p = renderPicker("tiers", "planPeriod", current, (id) => { plan = id; renderPlans(); bumpPrice($("priceBox")); });
   plan = p.id;
   rollTo($("planPrice"), p.rub);
   const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
-  showWas($("planWas"), isYear(p) && month.rub * 12);
+  // a personal discount strikes out the full price; otherwise a year strikes out twelve months
+  showWas($("planWas"), p.full_rub || (isYear(p) && month.rub * 12));
+  const d = discountLive();
+  $("planOffer").hidden = !d;
+  if (d) $("planOffer").textContent = `Ваша скидка ${d.percent}% до ${offerTime(d.expires_at)}`;
   $("planPer").textContent = isYear(p)
     ? `за год, ${Math.round(p.rub / 12)} ₽ в месяц`
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
