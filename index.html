@@ -615,13 +615,15 @@ const DEMO_META = {
     { id: "y10", title: "10 устройств, год", days: 365, rub: 4330, stars: 3515, devices: 10 },
   ],
   locations: [
-    { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "alps", ping: 38, available: false },
+    { code: "ch", name: "Switzerland", city: "Zurich", scene: "alps", ping: 48, available: true },
+    { code: "se", name: "Sweden", city: "Stockholm", scene: "forest", ping: 34, available: true },
+    { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "polder", ping: 38, available: false },
     { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42, available: false },
     { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31, available: false },
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
-  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: [],
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"],
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -1796,6 +1798,10 @@ document.querySelectorAll("#statRange button").forEach((b) => b.onclick = () => 
 });
 
 /* dotted landscape per location */
+// [x, height, half-width] -> three stacked triangles per tree, all standing on y=150
+const pines = (trees) => trees.map(([x, h, w]) =>
+  [0, 1, 2].map((k) => { const top = 150 - h + k * h * .28, base = 150 - (2 - k) * h * .22; const hw = w * (.55 + k * .22);
+    return `M${x} ${top} L${x + hw} ${base} L${x - hw} ${base}Z`; }).join(" ")).join(" ");
 function scene(kind) {
   const s = {
     alps: `<circle cx="318" cy="66" r="22" fill="url(#dB)"/>
@@ -1814,6 +1820,17 @@ function scene(kind) {
       <path d="M-10 160 L40 70 L90 100 L150 40 L190 150 Z" fill="url(#dM)"/>
       <path d="M200 150 L260 60 L300 90 L350 30 L420 120 L420 150Z" fill="url(#dB)"/>
       <rect y="150" width="400" height="70" fill="url(#dS)"/>`,
+    // pines on a lake shore
+    forest: `<circle cx="176" cy="66" r="16" fill="url(#dB)"/>
+      <path d="M-10 150 Q100 108 210 124 T420 112 L420 160 L-10 160Z" fill="url(#dM)"/>
+      <path d="${pines([[28, 62, 24], [68, 46, 19], [244, 82, 30], [288, 108, 36], [330, 72, 27], [366, 98, 33], [404, 78, 28]])}" fill="url(#dB)"/>
+      <rect y="160" width="400" height="60" fill="url(#dS)"/>`,
+    // flat fields and a windmill
+    polder: `<circle cx="304" cy="60" r="20" fill="url(#dB)"/>
+      <path d="M-10 166 L420 156 L420 220 L-10 220Z" fill="url(#dM)"/>
+      <path d="M110 166 L117 116 L127 116 L134 166Z M113 117 L122 104 L131 117Z" fill="url(#dB)"/>
+      <g transform="rotate(24 122 111)" fill="url(#dB)"><rect x="119" y="61" width="6" height="100"/><rect x="72" y="108" width="100" height="6"/></g>
+      <path d="M-10 196 L420 184 L420 220 L-10 220Z" fill="url(#dS)"/>`,
   };
   return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${s[kind] || s.alps}</svg>`;
 }
