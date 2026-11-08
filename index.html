@@ -109,6 +109,11 @@
   .avatar { width: 56px; height: 56px; flex: none; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 24px; }
   .me b { display: block; font-weight: 800; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
   .me span { font-size: 14px; color: var(--muted); }
+  .me-badge { display: inline-block; margin-left: 8px; padding: 3px 10px; border-radius: 99px; background: #fff; color: var(--bg); font-style: normal; font-weight: 700; font-size: 12px; vertical-align: 1px; }
+  #v-mstats .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #v-mstats .kpi b { font-size: 28px; }
+  #msFriends, #msEarnings { margin-top: 10px; }
+  .ms-link { margin-top: 22px; }
   .ref-num { font-weight: 800; font-size: 72px; line-height: 1; letter-spacing: -.04em; }
   .ref-actions { display: flex; gap: 8px; margin-top: 16px; }
   .demo { font-size: 12px; color: var(--muted); text-align: center; margin-top: 18px; }
@@ -551,6 +556,34 @@
   </section>
 
   <!-- PROMO CODE -->
+  <section class="view" id="v-mstats">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Моя статистика</h1>
+    <p class="note" id="msSince"></p>
+    <div id="msSkel"></div>
+    <div id="msBody" hidden>
+      <div class="stat-hero" id="msEarned">0 ₽</div>
+      <p class="note" id="msEarnedNote"></p>
+      <div class="kpis">
+        <div class="kpi"><b id="msInvited">0</b><span id="msInvitedNote">пришло по ссылке</span></div>
+        <div class="kpi"><b id="msPaying">0</b><span>оплатили подписку</span></div>
+        <div class="kpi"><b id="msPercent">0%</b><span>ваш процент</span></div>
+        <div class="kpi"><b id="msBalance">0 ₽</b><span>на балансе</span></div>
+      </div>
+      <p class="note" id="msNext" style="margin-top:12px"></p>
+      <div class="chart" id="msChartFriends"></div>
+      <div class="chart" id="msChartEarned"></div>
+      <div class="rows block" id="msMoney"></div>
+      <h2 class="sec block">Последние приглашённые</h2>
+      <div id="msFriends"></div>
+      <h2 class="sec block">Начисления</h2>
+      <div id="msEarnings"></div>
+      <p class="sub-label ms-link">Ваша ссылка</p>
+      <div class="ref-link"><input class="field" id="msLink" readonly aria-label="Ваша ссылка"><button class="btn" id="msCopy">Копировать</button></div>
+    </div>
+    <p class="sup-empty" id="msEmpty" hidden></p>
+  </section>
+
   <section class="view" id="v-manager">
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Стать менеджером</h1>
@@ -626,7 +659,7 @@
   <section class="view" id="v-profile">
     <div class="me">
       <div class="avatar" id="avatar">H</div>
-      <div><b id="meName">Гость</b><span id="meId"></span></div>
+      <div><b id="meName">Гость</b><span id="meId"></span><em class="me-badge" id="meBadge" hidden>Менеджер</em></div>
     </div>
     <div class="block">
       <h2 class="sec">Приглашайте друзей</h2>
@@ -639,6 +672,7 @@
         <div class="tiers" id="refTiers"></div>
         <p class="note" id="refNext" style="margin-top:12px"></p>
         <button class="btn" id="refOutBtn">Вывести</button>
+        <button class="btn ghost" id="msBtn" data-go="mstats">Моя статистика</button>
       </div>
       <div class="ref-panel" id="refDaysPanel">
         <div class="split"><span class="note" style="margin:0">Приглашено</span><b id="refCount">0</b></div>
@@ -1064,6 +1098,7 @@ function demoApi(path, body) {
     ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
   if (path === "/api/devices") return demoDevices;
   if (path === "/api/admin/referrals") return demoRefs;
+  if (path === "/api/manager/stats") { if (!isManager()) throw new Error("managers only"); return demoManagerStats(); }
   if (path.startsWith("/api/admin/managers/")) return demoRefsAction(path, body || {});
   if (path === "/api/manager/apply") return { me: { ...me, manager: { status: "pending", slug: null } } };
   if (path === "/api/devices/reset") { demoDevices = { ...demoDevices, used: 0, list: [], reset_in: 86400 }; return demoDevices; }
@@ -1265,6 +1300,69 @@ async function loadGifts() {
     }));
   } catch { $("giftListBox").hidden = true; }  // buying works without the list: the link also comes in the chat
 }
+
+/* ---------- a manager's own statistics ---------- */
+
+function demoManagerStats() {
+  const now = Date.now();
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const users = [0, 1, 0, 2, 1, 0, 3][i % 7] + (i > 22 ? 1 : 0), paid = i % 4 === 1;
+    return { d: new Date(now - (29 - i) * 86400000).toISOString().slice(0, 10), users, rub: paid ? [40, 70, 117][i % 3] : 0 };
+  });
+  return { link: "https://t.me/hermes_vpn_bot?start=m_ivan", slug: "ivan", since: now / 1000 - 26 * 86400, invited: 33, invited_week: 6, paying: 12, active: 15,
+    percent: 30, next: { need: 38, percent: 40 }, earned: 2010, earned_month: 1640, balance: 810, payout_pending: 1200, paid_out: 0, min_payout: 500, days,
+    friends: [{ name: "@pe•••", created_at: now / 1000 - 3600, paid: true, active: true, brought: 117 }, { name: "Пользователь •4471", created_at: now / 1000 - 26 * 3600, paid: false, active: true, brought: 0 },
+      { name: "@ma•••", created_at: now / 1000 - 3 * 86400, paid: true, active: false, brought: 75 }],
+    earnings: [{ amount: 117, percent: 30, created_at: now / 1000 - 3000, from: "@pe•••" }, { amount: 75, percent: 30, created_at: now / 1000 - 3 * 86400, from: "@ma•••" }] };
+}
+
+function renderManagerStats(m) {
+  $("msSince").textContent = m.since ? `Менеджер с ${fullDate(m.since)}` : "";
+  $("msEarned").textContent = money(m.earned);
+  $("msEarnedNote").textContent = `заработано всего, за 30 дней ${money(m.earned_month)}`;
+  $("msInvited").textContent = m.invited;
+  $("msInvitedNote").textContent = `пришло по ссылке, за неделю ${m.invited_week}`;
+  $("msPaying").textContent = m.paying;
+  $("msPercent").textContent = `${m.percent}%`;
+  $("msBalance").textContent = money(m.balance);
+  $("msNext").textContent = m.next
+    ? `Ещё ${m.next.need} ${plural(m.next.need, "друг", "друга", "друзей")} с оплатой, и процент станет ${m.next.percent}%. Сейчас подписка активна у ${m.active}.`
+    : `У вас максимальный процент. Сейчас подписка активна у ${m.active}.`;
+  barChart($("msChartFriends"), "Новые приглашённые по дням", m.days, "users", String);
+  barChart($("msChartEarned"), "Начисления по дням", m.days, "rub", money);
+  const rows = [["Заработано всего", money(m.earned)], ["На балансе", money(m.balance)],
+    ["Ждёт выплаты", money(m.payout_pending)], ["Выплачено", money(m.paid_out)], ["Вывод", `от ${money(m.min_payout)}`]];
+  $("msMoney").replaceChildren(...rows.map(([k, v]) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); return r; }));
+  $("msFriends").replaceChildren(...(m.friends.length ? m.friends.map((f) => {
+    const r = el("div", "gift-row"), t = el("div");
+    t.append(el("b", "", f.name), el("span", "", [shortDate(f.created_at), f.paid ? `принёс ${money(f.brought)}` : "ещё не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
+    r.append(t); return r;
+  }) : [el("p", "note", "По вашей ссылке пока никто не пришёл.")]));
+  $("msEarnings").replaceChildren(...(m.earnings.length ? m.earnings.map((e) => {
+    const r = el("div", "gift-row"), t = el("div");
+    t.append(el("b", "", `+${money(e.amount)}`), el("span", "", `${e.percent}% с оплаты ${e.from} · ${shortDate(e.created_at)}`));
+    r.append(t); return r;
+  }) : [el("p", "note", "Начислений пока нет: они появятся с первой оплатой приглашённого.")]));
+  $("msLink").value = m.link;
+}
+
+async function loadManagerStats() {
+  $("msEmpty").hidden = true;
+  if ($("msBody").hidden) {
+    const kpis = el("div", "skel-kpis"); kpis.append(skelLine("100%", 86), skelLine("100%", 86));
+    const hero = skelLine("60%", 60); hero.style.marginTop = "24px";
+    const chart = skelLine("100%", 136); chart.style.marginTop = "28px";
+    $("msSkel").replaceChildren(hero, kpis, chart); $("msSkel").hidden = false;
+  }
+  try {
+    renderManagerStats(await serverApi("/api/manager/stats"));
+    $("msBody").hidden = false; $("msSkel").hidden = true;
+  } catch {
+    $("msSkel").hidden = true; $("msBody").hidden = true; $("msEmpty").hidden = false;
+    $("msEmpty").textContent = isManager() ? "Нет связи с ботом. Попробуйте ещё раз чуть позже." : "Статистика доступна менеджерам.";
+  }
+}
+$("msCopy").onclick = () => copy($("msLink").value);
 
 /* ---------- becoming a manager ---------- */
 
@@ -2493,6 +2591,7 @@ function renderProfile() {
   $("avatar").textContent = name[0]?.toUpperCase() || "H";
   renderReferrals();
   $("demoNote").hidden = !DEMO; $("demoPaid").hidden = !DEMO;
+  $("meBadge").hidden = !isManager();
 }
 
 const money = (n) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
@@ -2589,6 +2688,7 @@ function go(view, isBack = false) {
   if (view === "gift") loadGifts();
   if (view === "devices") loadDevices();
   if (view === "manager") renderManagerView();
+  if (view === "mstats") loadManagerStats();
   if (view === "profile") animateRefScale();
   if (!isBack) {
     if (view === "promo") resetPromo();
