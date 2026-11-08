@@ -307,9 +307,10 @@
   .save-in { animation: rise .45s var(--ease-out); }
 
   /* month/year: a white drop stretches across; text inverts over it */
-  .period { position: relative; display: inline-flex; flex-wrap: nowrap; gap: 0; padding: 3px; border: 1px solid var(--line-2); border-radius: 99px; isolation: isolate; }
+  .period { position: relative; display: flex; width: 100%; flex-wrap: nowrap; gap: 0; padding: 3px; border: 1px solid var(--line-2); border-radius: 99px; isolation: isolate; }
   .period[hidden] { display: none !important; }
-  .chips.period button, .chips.period button.on { position: relative; z-index: 1; min-height: 38px; padding: 0 16px; border: 0; background: none; color: #fff; mix-blend-mode: difference; white-space: nowrap; }
+  .chips.period button, .chips.period button.on { position: relative; z-index: 1; flex: 1 1 0; min-width: 0; min-height: 46px; padding: 4px 4px; border: 0; background: none; color: #fff; mix-blend-mode: difference; white-space: nowrap; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+  .chips.period button small { font-size: 11px; font-weight: 700; opacity: .72; margin-top: 1px; }
   .period-drop { position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; border-radius: 99px; background: #fff; }
 
   /* loading */
@@ -416,7 +417,7 @@
   <!-- PLANS -->
   <section class="view" id="v-plans">
     <h1>Сколько устройств подключить?</h1>
-    <div class="chips period" id="planPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 35%</button></div>
+    <div class="chips period" id="planPeriod"></div>
     <div id="tiers"></div>
     <p class="offer" id="planOffer" hidden></p>
     <div class="was" id="planWas"><s></s></div>
@@ -573,7 +574,7 @@
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Подписка в подарок</h1>
     <p class="note">Вы оплачиваете и получаете ссылку. Друг открывает её в боте, и подписка включается. Ссылка работает один раз и не сгорает.</p>
-    <div class="chips period" id="giftPeriod"><button data-year="0">Месяц</button><button data-year="1">Год, скидка 35%</button></div>
+    <div class="chips period" id="giftPeriod"></div>
     <div id="giftTiers"></div>
     <div class="was" id="giftWas"><s></s></div>
     <div class="price" id="giftPriceBox"><b id="giftPrice"></b><span>₽</span></div>
@@ -788,6 +789,14 @@ const DEMO_META = {
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
     { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
     { id: "d10", title: "10 устройств", days: 30, rub: 555, stars: 451, devices: 10 },
+    { id: "q2", title: "2 устройства, 3 месяца", days: 90, rub: 510, stars: 415, devices: 2 },
+    { id: "q3", title: "3 устройства, 3 месяца", days: 90, rub: 640, stars: 521, devices: 3 },
+    { id: "q5", title: "5 устройств, 3 месяца", days: 90, rub: 890, stars: 724, devices: 5 },
+    { id: "q10", title: "10 устройств, 3 месяца", days: 90, rub: 1420, stars: 1155, devices: 10 },
+    { id: "h2", title: "2 устройства, 6 месяцев", days: 180, rub: 900, stars: 732, devices: 2 },
+    { id: "h3", title: "3 устройства, 6 месяцев", days: 180, rub: 1130, stars: 919, devices: 3 },
+    { id: "h5", title: "5 устройств, 6 месяцев", days: 180, rub: 1580, stars: 1285, devices: 5 },
+    { id: "h10", title: "10 устройств, 6 месяцев", days: 180, rub: 2500, stars: 2033, devices: 10 },
     { id: "y2", title: "2 устройства, год", days: 365, rub: 1550, stars: 1259, devices: 2 },
     { id: "y3", title: "3 устройства, год", days: 365, rub: 1950, stars: 1583, devices: 3 },
     { id: "y5", title: "5 устройств, год", days: 365, rub: 2730, stars: 2216, devices: 5 },
@@ -1315,9 +1324,9 @@ function renderGift() {
   const p = renderPicker("giftTiers", "giftPeriod", current, (id) => { giftPlan = id; renderGift(); bumpPrice($("giftPriceBox")); });
   giftPlan = p.id;
   rollTo($("giftPrice"), p.rub);
-  const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
-  showWas($("giftWas"), isYear(p) && month.rub * 12);
-  $("giftPer").textContent = `${devicesWord(p.devices)}, ${isYear(p) ? "на год" : `${p.days} дней`}`;
+  const month = meta.plans.find((x) => x.devices === p.devices && monthsOf(x) === 1), months = monthsOf(p);
+  showWas($("giftWas"), months > 1 && month && month.rub * months);
+  $("giftPer").textContent = `${devicesWord(p.devices)}, ${months > 1 ? `на ${periodFor(months)}` : `${p.days} дней`}`;
   $("giftBuyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
 }
 
@@ -2654,6 +2663,17 @@ function renderLocations() {
 }
 
 const isYear = (p) => p.days >= 365;
+// months a plan is paid for: 30 days is one, a year is twelve
+const monthsOf = (p) => (isYear(p) ? 12 : Math.max(1, Math.round(p.days / 30)));
+const periodName = (m) => ({ 1: "Месяц", 3: "3 мес", 6: "6 мес", 12: "Год" }[m] || `${m} мес`);
+const periodFor = (m) => (m === 12 ? "год" : `${m} ${plural(m, "месяц", "месяца", "месяцев")}`);
+// percent off paying monthly for this period, from the full prices (a personal discount applies to both)
+function periodOff(days) {
+  const n = Math.min(...meta.plans.map((x) => x.devices));
+  const p = meta.plans.find((x) => x.devices === n && x.days === days), month = meta.plans.find((x) => x.devices === n && monthsOf(x) === 1);
+  if (!p || !month || monthsOf(p) === 1) return 0;
+  return Math.round((1 - (p.full_rub || p.rub) / ((month.full_rub || month.rub) * monthsOf(p))) * 100);
+}
 
 // Rolls each digit to its place. The new number is the label; the columns are decoration.
 function rollTo(box, value) {
@@ -2720,20 +2740,26 @@ const devicesWord = (n) => `${n} ${plural(n, "устройство", "устро
 // Device buttons and the month/year switch; a pick is always one concrete plan.
 function renderPicker(tiersId, periodId, current, pick) {
   const tiers = $(tiersId), period = $(periodId);
-  const choose = (devices, year) => {
-    const next = meta.plans.find((p) => p.devices === devices && isYear(p) === year);
+  const choose = (devices, days) => {
+    const next = meta.plans.find((p) => p.devices === devices && p.days === days);
     if (next && next.id !== current().id) { haptic(); pick(next.id); }
   };
   if (!tiers.children.length) {
     tiers.innerHTML = [...new Set(meta.plans.map((p) => p.devices))]
       .map((n) => `<button class="tier" data-n="${n}" aria-label="${devicesWord(n)}">${n}</button>`).join("");
-    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => choose(+b.dataset.n, isYear(current())));
-    period.querySelectorAll("button").forEach((b) => b.onclick = () => choose(current().devices, b.dataset.year === "1"));
-    period.hidden = !meta.plans.some(isYear);  // buttons in old chat messages still carry a list without yearly plans
+    tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => choose(+b.dataset.n, current().days));
+    // buttons in old chat messages may carry fewer periods: draw only those in the list (numbers only, no user text)
+    const periods = [...new Set(meta.plans.map((p) => p.days))].sort((a, b) => a - b);
+    period.innerHTML = periods.map((d) => {
+      const m = monthsOf({ days: d }), off = periodOff(d);
+      return `<button data-days="${d}" aria-label="${periodFor(m)}${off ? `, скидка ${off}%` : ""}">${periodName(m)}${off ? `<small>−${off}%</small>` : ""}</button>`;
+    }).join("");
+    period.querySelectorAll("button").forEach((b) => b.onclick = () => choose(current().devices, +b.dataset.days));
+    period.hidden = periods.length < 2;
   }
   const p = current();
   tiers.querySelectorAll(".tier").forEach((b) => b.classList.toggle("on", +b.dataset.n === p.devices));
-  period.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.year === "1") === isYear(p)));
+  period.querySelectorAll("button").forEach((b) => b.classList.toggle("on", +b.dataset.days === p.days));
   placeDrop(period);
   return p;
 }
@@ -2749,20 +2775,21 @@ function renderPlans() {
   const p = renderPicker("tiers", "planPeriod", current, (id) => { plan = id; renderPlans(); bumpPrice($("priceBox")); });
   plan = p.id;
   rollTo($("planPrice"), p.rub);
-  const month = meta.plans.find((x) => x.devices === p.devices && !isYear(x));
-  // a personal discount strikes out the full price; otherwise a year strikes out twelve months
-  showWas($("planWas"), p.full_rub || (isYear(p) && month.rub * 12));
+  const month = meta.plans.find((x) => x.devices === p.devices && monthsOf(x) === 1), months = monthsOf(p);
+  // a personal discount strikes out the full price; otherwise a longer period strikes out paying monthly
+  showWas($("planWas"), p.full_rub || (months > 1 && month && month.rub * months));
   const d = discountLive();
   $("planOffer").hidden = !d;
   if (d) $("planOffer").textContent = `Ваша скидка ${d.percent}% до ${offerTime(d.expires_at)}`;
-  $("planPer").textContent = isYear(p)
-    ? `за год, ${Math.round(p.rub / 12)} ₽ в месяц`
+  $("planPer").textContent = months > 1
+    ? `за ${periodFor(months)}, ${Math.round(p.rub / months)} ₽ в месяц`
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
   $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
   const biggest = Math.max(...meta.plans.map((x) => x.devices));
-  $("planNote").textContent = isYear(p) ? `Экономия ${money(month.rub * 12 - p.rub)} к помесячной оплате` : "Максимальная выгода для совместного использования";
+  const saved = months > 1 && month ? month.rub * months - p.rub : 0;
+  $("planNote").textContent = saved > 0 ? `Экономия ${money(saved)} к помесячной оплате` : "Максимальная выгода для совместного использования";
   const note = $("planNote"), noteWasHidden = note.hidden;
-  note.hidden = !isYear(p) && p.devices !== biggest;
+  note.hidden = !(saved > 0) && p.devices !== biggest;
   if (noteWasHidden && !note.hidden) { note.classList.remove("save-in"); void note.offsetWidth; note.classList.add("save-in"); }
   $("buyBtn").textContent = `Оплатить ${p.rub.toLocaleString("ru-RU")} ₽`;
   $("planUpgrade").hidden = !(me.active && me.device_limit < biggest && !me.trial_available && me.plan !== "пробный период");
