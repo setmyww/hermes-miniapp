@@ -115,6 +115,14 @@
 
   /* referrals: two rewards to choose from */
   .sec { font-weight: 800; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; margin: 0; }
+  .modes.single { grid-template-columns: 1fr; }
+  .modes.single .mode { min-height: 0; }
+  .mode em { position: absolute; top: 14px; right: 14px; padding: 4px 10px; border-radius: 99px; background: var(--bg); color: #fff; font-style: normal; font-weight: 700; font-size: 12px; }
+  .mgr-card { margin-top: 18px; padding: 16px; border-radius: 18px; border: 1px solid var(--line-2); }
+  .mgr-card b { font-weight: 800; font-size: 18px; }
+  .mgr-card .btn { margin-top: 12px; }
+  .mgr-perks { margin-top: 22px; }
+  #mgrNote { margin-top: 10px; }
   .modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
   .mode { position: relative; min-height: 172px; padding: 16px 14px; border-radius: 18px; border: 1px solid var(--line-2); text-align: left; display: flex; flex-direction: column; transition: background .25s, color .25s, border-color .25s, transform .18s var(--ease-out); }
   .mode:active { transform: scale(.97); }
@@ -224,6 +232,15 @@
   .usr-body .panel-rows { padding: 14px; border-radius: 16px; background: var(--surface); }
   .usr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .usr-actions .btn.wide { flex-basis: 100%; }
+  /* four sections don't fit in a phone-wide row: a 2 x 2 grid keeps every one in sight */
+  #adminSeg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #adminSeg button { padding: 0 10px; }
+  .ref-note { margin: 0 0 12px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ref-link { display: flex; gap: 8px; margin-top: 10px; }
+  .ref-link .field { height: 44px; font: 600 14px/1 "Manrope", sans-serif; letter-spacing: 0; }
+  .ref-link .btn { width: auto; flex: none; height: 44px; padding: 0 16px; font-size: 14px; }
+  .ref-people { margin-top: 12px; }
+  .ref-people .gift-row { min-height: 52px; }
   .usr-actions .btn { flex: 1; height: 44px; font-size: 14px; }
   #usrMore { margin-top: 16px; }
 
@@ -441,6 +458,17 @@
       <button class="on" data-seg="chats">Чаты</button>
       <button data-seg="stats">Статистика</button>
       <button data-seg="users">Пользователи</button>
+      <button data-seg="refs">Рефералы</button>
+    </div>
+    <div id="adminRefs" hidden>
+      <h1 style="margin-top:22px">Рефералы</h1>
+      <p class="note" id="refTotals"></p>
+      <div class="chips usr-filters" id="refSeg">
+        <button class="on" data-r="apps">Заявки</button>
+        <button data-r="managers">Менеджеры</button>
+      </div>
+      <div id="refAdminList"></div>
+      <p class="sup-empty" id="refAdminEmpty" hidden></p>
     </div>
     <div id="adminUsers" hidden>
       <h1 style="margin-top:22px">Пользователи</h1>
@@ -523,6 +551,24 @@
   </section>
 
   <!-- PROMO CODE -->
+  <section class="view" id="v-manager">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Стать менеджером</h1>
+    <p class="caption" id="mgrLead"></p>
+    <div class="rows mgr-perks" id="mgrPerks"></div>
+    <form id="mgrForm" class="block">
+      <label class="note" for="mgrNote" style="display:block;margin:0">Где и как будете рассказывать о HERMES: канал, чат, блог, друзья</label>
+      <textarea class="field" id="mgrNote" maxlength="500" placeholder="Например: веду канал о технологиях на 3 000 подписчиков"></textarea>
+      <p class="form-msg" id="mgrMsg" role="status"></p>
+      <button class="btn" id="mgrSend" type="submit">Отправить заявку</button>
+    </form>
+    <div id="mgrDone" class="block" hidden>
+      <div class="big" id="mgrDoneBig">Готово</div>
+      <p class="caption" id="mgrDoneText"></p>
+      <button class="btn" data-go="profile" style="margin-top:22px">В профиль</button>
+    </div>
+  </section>
+
   <section class="view" id="v-devices">
     <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Устройства</h1>
@@ -584,11 +630,8 @@
     </div>
     <div class="block">
       <h2 class="sec">Приглашайте друзей</h2>
-      <p class="note">Выберите, что получать за друзей. Награду можно сменить в любой момент.</p>
-      <div class="modes" id="refModes">
-        <button class="mode" data-mode="days"><i></i><b id="refDaysBig">+7</b><strong>дней подписки</strong><span>за каждого друга, который оплатит подписку</span></button>
-        <button class="mode" data-mode="percent"><i></i><b id="refPctBig">40%</b><strong id="refPctTitle">до 40% деньгами</strong><span>с каждой оплаты друга, навсегда</span></button>
-      </div>
+      <p class="note" id="refLead">Отправьте другу свою ссылку: когда он оплатит подписку, вы получите награду.</p>
+      <div class="modes single" id="refModes"></div>
       <div class="ref-panel" id="refPercentPanel" hidden>
         <span class="note" style="margin:0">Баланс</span>
         <div class="balance" id="refBalance">0 ₽</div>
@@ -604,6 +647,11 @@
       <div class="ref-actions">
         <button class="btn" id="shareBtn">Поделиться</button>
         <button class="btn ghost" id="copyRefBtn">Копировать</button>
+      </div>
+      <div class="mgr-card" id="mgrCard" hidden>
+        <b>Станьте менеджером</b>
+        <p class="note" id="mgrText"></p>
+        <button class="btn ghost" id="mgrBtn" data-go="manager">Подать заявку</button>
       </div>
     </div>
     <div class="rows block">
@@ -657,7 +705,8 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgro
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
   trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства",
-  referrals: 14, referral_bonus_days: 7, ref_mode: "percent", ref_balance: 1240, ref_earned: 3120, ref_paying: 12,
+  referrals: 14, referral_bonus_days: 7, ref_mode: "days", ref_balance: 0, ref_earned: 0, ref_paying: 3,
+  manager: { status: "", slug: null },
 };
 const DEMO_META = {
   plans: [
@@ -692,6 +741,7 @@ function decodeState(s) {
       id: st.u, justPaid: !!st.ok, active: !!st.a, days_left: st.d, expires_at: st.e, trial_available: !!st.t,
       sub_link: null, device_limit: st.n, plan: st.pl, referrals: st.r, referral_bonus_days: st.b,
       ref_mode: st.rm || "days", ref_balance: st.rl || 0, ref_earned: st.re || 0, ref_paying: st.rp || 0,
+      manager: { status: st.mg || "", slug: st.ms || null },
       discount: st.dc ? { percent: st.dc[0], expires_at: st.dc[1] } : null,
     },
     meta: {
@@ -1013,6 +1063,9 @@ function demoApi(path, body) {
   if (path === "/api/promo") return body.code.toUpperCase() === "HERMES7"
     ? { days: 7, me: { ...me, days_left: me.days_left + 7, expires_at: me.expires_at + 7 * 86400 } } : { error: "Такого промокода нет." };
   if (path === "/api/devices") return demoDevices;
+  if (path === "/api/admin/referrals") return demoRefs;
+  if (path.startsWith("/api/admin/managers/")) return demoRefsAction(path, body || {});
+  if (path === "/api/manager/apply") return { me: { ...me, manager: { status: "pending", slug: null } } };
   if (path === "/api/devices/reset") { demoDevices = { ...demoDevices, used: 0, list: [], reset_in: 86400 }; return demoDevices; }
   if (path.endsWith("/reset-devices")) return { ok: true };
   if (path === "/api/gifts") return { gifts: [
@@ -1212,6 +1265,34 @@ async function loadGifts() {
     }));
   } catch { $("giftListBox").hidden = true; }  // buying works without the list: the link also comes in the chat
 }
+
+/* ---------- becoming a manager ---------- */
+
+function renderManagerView() {
+  const tiers = meta.ref_tiers, status = me.manager?.status || "";
+  $("mgrLead").textContent = "Менеджер получает процент с каждой оплаты тех, кого пригласил: " + tiers.map(([need, pct]) => `${pct}% ${need ? `от ${need} оплативших друзей` : "сразу"}`).join(", ") + ".";
+  $("mgrPerks").replaceChildren(...[
+    ["Деньги", "на баланс, с каждой оплаты, навсегда"], ["Вывод", `от ${money(meta.ref_min_payout)}`], ["Ссылка", "личная, с вашим именем"],
+  ].map(([k, v]) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); return r; }));
+  const done = status === "pending" || status === "manager";
+  $("mgrForm").hidden = done; $("mgrDone").hidden = !done;
+  $("mgrDoneBig").textContent = status === "manager" ? "Вы менеджер" : "Готово";
+  $("mgrDoneText").textContent = status === "manager" ? "Ваша личная ссылка и баланс в профиле." : "Заявка на рассмотрении. Ответ придёт в чат с ботом.";
+  $("mgrMsg").textContent = "";
+}
+
+$("mgrForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const note = $("mgrNote").value.trim();
+  if (note.length < 10) { $("mgrMsg").textContent = "Расскажите чуть подробнее, где будете приглашать людей."; return $("mgrNote").focus(); }
+  $("mgrSend").disabled = true;
+  try {
+    const r = await serverApi("/api/manager/apply", { note });
+    if (r.error) { $("mgrMsg").textContent = r.error; tg?.HapticFeedback?.notificationOccurred("error"); }
+    else { me = { ...me, ...r.me }; render(); renderManagerView(); tg?.HapticFeedback?.notificationOccurred("success"); }
+  } catch { $("mgrMsg").textContent = "Нет связи с ботом. Попробуйте ещё раз."; }
+  $("mgrSend").disabled = false;
+};
 
 /* ---------- devices ---------- */
 
@@ -1957,7 +2038,7 @@ function userDetail(u) {
   if (u.pays) add("Последняя оплата", fullDate(u.last_pay));
   add("Его пригласил", u.ref_by ? (u.ref_username ? "@" + u.ref_username : "ID " + u.ref_by) : "никто");
   add("Пригласил сам", countOf(u.invited, "человека", "человек", "человек"));
-  add("Рефералка", u.ref_mode === "percent" ? `процент, баланс ${money(u.ref_balance)}` : "дни");
+  add("Рефералка", u.manager_status === "manager" ? `менеджер, баланс ${money(u.ref_balance)}` : u.manager_status === "pending" ? "дни, подал заявку в менеджеры" : "дни");
   const actions = el("div", "usr-actions"), write = el("button", "btn", "Написать"), id = el("button", "btn ghost", "Скопировать ID");
   const reset = el("button", "btn ghost wide", "Сбросить устройства");
   reset.onclick = () => confirmAsk(`Сбросить все устройства ${supWho(u)}?`, async () => {
@@ -1970,6 +2051,15 @@ function userDetail(u) {
   id.onclick = () => copy(String(u.id));
   actions.append(write, id);
   if (u.days_left) actions.append(reset);
+  if (u.manager_status !== "manager") {
+    const make = el("button", "btn ghost wide", "Сделать менеджером");
+    make.onclick = () => confirmAsk(`Сделать ${supWho(u)} менеджером? Он получит личную ссылку и процент с оплат приглашённых.`, async () => {
+      make.disabled = true;
+      if (await refsAct(u.id, "approve")) { toast("Теперь менеджер"); u.manager_status = "manager"; u.ref_mode = "percent"; make.remove(); }
+      make.disabled = false;
+    });
+    actions.append(make);
+  }
   box.append(rows, actions);
   return box;
 }
@@ -2037,15 +2127,148 @@ document.querySelectorAll("#usrFilters button").forEach((b) => b.onclick = () =>
 });
 $("usrMore").onclick = () => { haptic(); loadUsers(true); };
 
+/* ---------- admin: referrals and managers ---------- */
+
+const refsAdmin = { data: null, tab: "apps", open: null };
+let demoRefs = {
+  totals: { managers: 2, invited: 41, paying: 17, revenue: 9840, payout_pending: 1200 },
+  applications: [{ id: 700001, username: "kate_m", note: "Веду канал о технологиях, 3 000 подписчиков. Расскажу в обзоре и закреплю ссылку.", applied_at: Date.now() / 1000 - 5400, created_at: Date.now() / 1000 - 9 * 86400, paid: true, invited: 2 }],
+  managers: [
+    { id: 700002, username: "ivan_k", slug: "ivan", since: Date.now() / 1000 - 20 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_ivan", invited: 33, invited_week: 6, paying: 12, percent: 30, revenue: 7420, payments: 19, earned: 2010, balance: 810, payout_pending: 1200, paid_out: 0 },
+    { id: 700003, username: null, slug: "m4521", since: Date.now() / 1000 - 4 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_m4521", invited: 8, invited_week: 8, paying: 5, percent: 20, revenue: 2420, payments: 6, earned: 484, balance: 484, payout_pending: 0, paid_out: 0 },
+  ],
+};
+function demoRefsAction(path, body) {
+  const m = path.match(/managers\/(\d+)\/(\w+)$/);
+  if (!m) return { referrals: [{ id: 1, username: "petrov", created_at: Date.now() / 1000 - 3600, paid: true, active: true, pays: 2, spent: 398 }, { id: 2, username: null, created_at: Date.now() / 1000 - 2 * 86400, paid: false, active: false, pays: 0, spent: 0 }] };
+  const id = +m[1], act = m[2];
+  if (act === "approve") {
+    const a = demoRefs.applications.find((x) => x.id === id);
+    demoRefs.applications = demoRefs.applications.filter((x) => x.id !== id);
+    if (a) demoRefs.managers.push({ id, username: a.username, slug: a.username || "m" + id, since: Date.now() / 1000, link: `https://t.me/hermes_vpn_bot?start=m_${a.username}`, invited: a.invited, invited_week: 0, paying: 0, percent: 20, revenue: 0, payments: 0, earned: 0, balance: 0, payout_pending: 0, paid_out: 0 });
+  }
+  if (act === "reject") demoRefs.applications = demoRefs.applications.filter((x) => x.id !== id);
+  if (act === "revoke") demoRefs.managers = demoRefs.managers.filter((x) => x.id !== id);
+  if (act === "slug") {
+    if (!/^[a-z0-9_]{3,24}$/.test(body.slug)) return { error: "Ссылка: от 3 до 24 символов, латинские буквы, цифры и _." };
+    demoRefs.managers = demoRefs.managers.map((x) => (x.id === id ? { ...x, slug: body.slug, link: `https://t.me/hermes_vpn_bot?start=m_${body.slug}` } : x));
+  }
+  demoRefs.totals = { ...demoRefs.totals, managers: demoRefs.managers.length };
+  return { ok: true, ...demoRefs };
+}
+
+async function refsAct(id, action, body = {}) {
+  try {
+    const r = await serverApi(`/api/admin/managers/${id}/${action}`, body);
+    if (r.error) { toast(r.error); return false; }
+    refsAdmin.data = r; renderRefsAdmin(); return true;
+  } catch { toast("Нет связи с ботом"); return false; }
+}
+
+function appRow(a) {
+  const row = el("div", "usr"), head = el("div", "usr-head");
+  head.append(el("b", "", supWho(a)), el("span", "usr-pill", "заявка"),
+    el("span", "usr-sub", [`подал ${shortDate(a.applied_at)}`, a.paid ? "сам платил" : "не платил", `пригласил ${a.invited}`].join(" · ")));
+  const body = el("div", "usr-body"), note = el("p", "ref-note", a.note || "");
+  const actions = el("div", "usr-actions"), ok = el("button", "btn", "Одобрить"), no = el("button", "btn ghost", "Отклонить");
+  ok.onclick = async () => { ok.disabled = no.disabled = true; haptic(); if (await refsAct(a.id, "approve")) toast("Теперь менеджер"); ok.disabled = no.disabled = false; };
+  no.onclick = () => confirmAsk(`Отклонить заявку ${supWho(a)}?`, async () => { ok.disabled = no.disabled = true; if (await refsAct(a.id, "reject")) toast("Заявка отклонена"); ok.disabled = no.disabled = false; });
+  actions.append(ok, no);
+  body.append(note, actions);
+  row.append(head, body);
+  return row;
+}
+
+function managerBody(m) {
+  const box = el("div", "usr-body"), rows = el("div", "panel-rows");
+  const add = (k, v) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); rows.append(r); };
+  add("Менеджер с", fullDate(m.since));
+  add("Пришло по ссылке", `${m.invited}, за неделю ${m.invited_week}`);
+  add("Оплатили", `${m.paying}, процент ${m.percent}%`);
+  add("Выручка от них", `${money(m.revenue)}, оплат ${m.payments}`);
+  add("Начислено ему", money(m.earned));
+  add("Баланс", money(m.balance));
+  if (m.payout_pending) add("Ждёт выплаты", money(m.payout_pending));
+  if (m.paid_out) add("Выплачено", money(m.paid_out));
+  const link = el("div", "ref-link"), input = el("input", "field"), save = el("button", "btn ghost", "Сохранить");
+  input.value = m.slug || ""; input.maxLength = 24; input.autocomplete = "off"; input.spellcheck = false;
+  input.setAttribute("aria-label", "Имя ссылки после m_");
+  save.onclick = async () => { save.disabled = true; if (await refsAct(m.id, "slug", { slug: input.value.trim().toLowerCase() })) toast("Ссылка изменена"); save.disabled = false; };
+  link.append(input, save);
+  const linkNote = el("p", "note", m.link);
+  linkNote.style.overflowWrap = "anywhere";
+  const people = el("div", "ref-people");
+  people.append(skelRow(), skelRow("38%", "56%"));
+  serverApi(`/api/admin/managers/${m.id}`).then(({ referrals }) => {
+    people.replaceChildren(el("p", "sub-label", referrals.length ? "Последние приглашённые" : "По ссылке пока никто не пришёл"), ...referrals.map((f) => {
+      const r = el("div", "gift-row"), t = el("div");
+      t.append(el("b", "", supWho(f)), el("span", "", [shortDate(f.created_at), f.paid ? `${countOf(f.pays, "оплата", "оплаты", "оплат")}, ${money(f.spent)}` : "не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
+      r.append(t); return r;
+    }));
+  }).catch(() => people.replaceChildren());
+  const actions = el("div", "usr-actions"), copyBtn = el("button", "btn", "Скопировать ссылку"), revoke = el("button", "btn ghost", "Снять статус");
+  copyBtn.onclick = () => copy(m.link);
+  revoke.onclick = () => confirmAsk(`Снять статус менеджера с ${supWho(m)}? Заработанный баланс останется у него.`, async () => {
+    revoke.disabled = true; if (await refsAct(m.id, "revoke")) toast("Статус снят"); revoke.disabled = false;
+  });
+  actions.append(copyBtn, revoke);
+  box.append(rows, el("p", "sub-label", "Личная ссылка: t.me/…?start=m_"), link, linkNote, actions, people);
+  return box;
+}
+
+function managerRow(m) {
+  const row = el("div", "usr"), head = el("button", "usr-head");
+  head.type = "button";
+  head.append(el("b", "", supWho(m)), el("span", "usr-pill on", `${m.percent}%`),
+    el("span", "usr-sub", `пришло ${m.invited} · оплатили ${m.paying} · ${money(m.revenue)}`));
+  head.onclick = () => {
+    haptic();
+    const opened = row.querySelector(".usr-body");
+    document.querySelectorAll("#refAdminList .usr-body").forEach((b) => b.remove());
+    refsAdmin.open = opened ? null : m.id;
+    if (!opened) row.append(managerBody(m));
+  };
+  row.append(head);
+  if (refsAdmin.open === m.id) row.append(managerBody(m));
+  return row;
+}
+
+function renderRefsAdmin() {
+  const d = refsAdmin.data, t = d.totals;
+  $("refTotals").textContent = `Менеджеров ${t.managers} · пришло от них ${t.invited} · оплатили ${t.paying} · выручка ${money(t.revenue)}`
+    + (t.payout_pending ? ` · ждут выплаты ${money(t.payout_pending)}` : "");
+  document.querySelectorAll("#refSeg button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.r === refsAdmin.tab);
+    b.querySelector("i")?.remove();
+    b.append(el("i", "", String(b.dataset.r === "apps" ? d.applications.length : d.managers.length)));
+  });
+  const list = refsAdmin.tab === "apps" ? d.applications.map(appRow) : d.managers.map(managerRow);
+  $("refAdminList").replaceChildren(...list);
+  $("refAdminEmpty").hidden = list.length > 0;
+  $("refAdminEmpty").textContent = refsAdmin.tab === "apps" ? "Новых заявок нет." : "Менеджеров пока нет. Одобрите заявку или выдайте статус в карточке пользователя.";
+}
+
+async function loadRefsAdmin() {
+  if (!refsAdmin.data) { $("refAdminList").replaceChildren(skelRow(), skelRow("38%", "64%"), skelRow("52%", "70%")); $("refAdminEmpty").hidden = true; }
+  try { refsAdmin.data = await serverApi("/api/admin/referrals"); renderRefsAdmin(); }
+  catch { $("refAdminList").replaceChildren(); $("refAdminEmpty").hidden = false; $("refAdminEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново."; }
+}
+document.querySelectorAll("#refSeg button").forEach((b) => b.onclick = () => {
+  if (refsAdmin.tab === b.dataset.r) return;
+  haptic(); refsAdmin.tab = b.dataset.r; refsAdmin.open = null; if (refsAdmin.data) renderRefsAdmin();
+});
+
 function adminSegment(seg) {
   document.querySelectorAll("#adminSeg button").forEach((b) => b.classList.toggle("on", b.dataset.seg === seg));
   $("adminStats").hidden = seg !== "stats";
   $("adminChats").hidden = seg !== "chats";
   $("adminUsers").hidden = seg !== "users";
+  $("adminRefs").hidden = seg !== "refs";
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
   if (seg === "stats") loadStats();
   if (seg === "users" && !users.counts) loadUsers();
+  if (seg === "refs") loadRefsAdmin();
 }
 const admin = { seg: "chats" };
 document.querySelectorAll("#adminSeg button").forEach((b) => b.onclick = () => { haptic(); adminSegment(b.dataset.seg); });
@@ -2275,11 +2498,21 @@ function renderProfile() {
 const money = (n) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
 
 function renderReferrals() {
-  const percentMode = me.ref_mode === "percent", tiers = meta.ref_tiers, top = tiers[tiers.length - 1][1];
-  document.querySelectorAll("#refModes .mode").forEach((b) => b.classList.toggle("on", b.dataset.mode === me.ref_mode));
-  $("refDaysBig").textContent = `+${me.referral_bonus_days}`;
-  $("refPctBig").textContent = `${top}%`;
-  $("refPctTitle").textContent = `до ${top}% деньгами`;
+  const percentMode = isManager(), tiers = meta.ref_tiers, top = tiers[tiers.length - 1][1];
+  // one reward: days for everyone, a percent for managers (numbers only, no user text here)
+  $("refModes").innerHTML = percentMode
+    ? `<div class="mode on"><em>Вы менеджер</em><b>${top}%</b><strong>до ${top}% деньгами</strong><span>с каждой оплаты приглашённых, навсегда</span></div>`
+    : `<div class="mode on"><b>+${me.referral_bonus_days}</b><strong>дней подписки</strong><span>за каждого друга, который оплатит подписку</span></div>`;
+  const status = me.manager?.status || "";
+  $("mgrCard").hidden = percentMode;
+  $("refLead").textContent = percentMode
+    ? "Отправляйте свою личную ссылку: с каждой оплаты приглашённых вам начисляется процент."
+    : "Отправьте другу свою ссылку: когда он оплатит подписку, вы получите награду.";
+  $("mgrText").textContent = status === "pending" ? "Заявка на рассмотрении. Ответ придёт в чат с ботом."
+    : status === "rejected" ? "Заявку отклонили. Можно рассказать подробнее и подать снова."
+    : `До ${top}% с каждой оплаты приглашённых, деньгами на баланс, с личной ссылкой. Статус выдаёт администратор по заявке.`;
+  $("mgrBtn").hidden = status === "pending";
+  $("mgrBtn").textContent = status === "rejected" ? "Подать снова" : "Подать заявку";
   $("refPercentPanel").hidden = !percentMode;
   $("refDaysPanel").hidden = percentMode;
   $("refCount").textContent = me.referrals;
@@ -2355,6 +2588,7 @@ function go(view, isBack = false) {
   refreshDrops();
   if (view === "gift") loadGifts();
   if (view === "devices") loadDevices();
+  if (view === "manager") renderManagerView();
   if (view === "profile") animateRefScale();
   if (!isBack) {
     if (view === "promo") resetPromo();
@@ -2369,7 +2603,9 @@ function goBack() { go(viewStack.pop() || "home", true); }
 document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => go(b.dataset.go)));
 document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", goBack));
 
-const refLink = () => `https://t.me/${meta.bot_username}?start=ref${me.id}`;
+const isManager = () => me.manager?.status === "manager";
+// a manager invites with a named link, everyone else with their id
+const refLink = () => `https://t.me/${meta.bot_username}?start=${isManager() && me.manager.slug ? "m_" + me.manager.slug : "ref" + me.id}`;
 
 $("connectBtn").onclick = () => {
   addToHapp();
@@ -2378,12 +2614,6 @@ $("copyBtn").onclick = copyKey;
 $("copyRefBtn").onclick = () => copy(refLink());
 $("connAddBtn").onclick = addToHapp;
 $("connKeyBtn").onclick = copyKey;
-document.querySelectorAll("#refModes .mode").forEach((b) => b.onclick = () => {
-  if (me.ref_mode === b.dataset.mode) return;
-  haptic();
-  if (DEMO) { me = { ...me, ref_mode: b.dataset.mode }; renderReferrals(); return animateRefScale(); }
-  toBot("refmode_" + b.dataset.mode);
-});
 $("refOutBtn").onclick = () => {
   if (me.ref_balance < meta.ref_min_payout) return toast(`Вывод доступен от ${money(meta.ref_min_payout)}`);
   DEMO ? toast("Вывод доступен в Telegram") : toBot("ref");
@@ -2438,6 +2668,9 @@ $("buyBtn").onclick = async () => {
   document.fonts?.ready.then(refreshDrops);
   preloadKey();
   if (me.justPaid && me.active) paidOnce();
+  // the bot can open the app on a given screen (e.g. the application from the referral screen)
+  const startView = new URLSearchParams(location.search).get("v");
+  if (startView && /^[a-z]+$/.test(startView) && document.getElementById("v-" + startView)) go(startView);
 })();
 </script>
 </body>
