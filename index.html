@@ -204,6 +204,26 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   #v-check h1 { margin-top: 18px; }
 
+  /* admin: all users */
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .usr-search { display: block; margin-top: 16px; }
+  .usr-search .field { height: 50px; font: 600 16px/1 "Manrope", sans-serif; letter-spacing: 0; -webkit-appearance: none; appearance: none; }
+  .usr-filters { margin-top: 12px; }
+  .usr-filters button i { font-style: normal; opacity: .55; margin-left: 5px; }
+  #usrList { display: flex; flex-direction: column; margin-top: 16px; }
+  .usr { border-top: 1px solid var(--line); }
+  .usr-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px 12px; width: 100%; min-height: 64px; padding: 12px 0; text-align: left; transition: opacity .15s; }
+  .usr-head:active { opacity: .55; }
+  .usr-head b { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usr-sub { grid-column: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usr-pill { grid-row: 1 / span 2; grid-column: 2; justify-self: end; padding: 5px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; border: 1px solid var(--line-2); color: var(--muted); white-space: nowrap; }
+  .usr-pill.on { background: #fff; color: var(--bg); border-color: #fff; }
+  .usr-body { padding: 2px 0 16px; animation: rise .25s ease both; }
+  .usr-body .panel-rows { padding: 14px; border-radius: 16px; background: var(--surface); }
+  .usr-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .usr-actions .btn { flex: 1; height: 44px; font-size: 14px; }
+  #usrMore { margin-top: 16px; }
+
   /* admin statistics */
   #adminSeg { margin-top: 26px; }
   #statRange { margin-top: 14px; }
@@ -414,6 +434,24 @@
     <div class="chips" id="adminSeg">
       <button class="on" data-seg="chats">Чаты</button>
       <button data-seg="stats">Статистика</button>
+      <button data-seg="users">Пользователи</button>
+    </div>
+    <div id="adminUsers" hidden>
+      <h1 style="margin-top:22px">Пользователи</h1>
+      <p class="note" id="usrCount"></p>
+      <label class="usr-search"><span class="sr">Поиск по @username или ID</span>
+        <input class="field" id="usrQuery" type="search" inputmode="search" autocomplete="off" spellcheck="false" maxlength="64" placeholder="@username или ID">
+      </label>
+      <div class="chips usr-filters" id="usrFilters">
+        <button class="on" data-f="all">Все</button>
+        <button data-f="active">Активные</button>
+        <button data-f="paid">Оплатили</button>
+        <button data-f="trial">Только пробный</button>
+        <button data-f="none">Без подписки</button>
+      </div>
+      <div id="usrList"></div>
+      <p class="sup-empty" id="usrEmpty" hidden></p>
+      <button class="btn ghost" id="usrMore" hidden>Показать ещё</button>
     </div>
     <div id="adminStats" hidden>
       <h1 style="margin-top:22px">Статистика</h1>
@@ -952,6 +990,7 @@ function demoApi(path, body) {
     { code: "demo2", title: "2 устройства", created_at: Date.now() / 1000 - 9 * 86400, redeemed: true },
   ] };
   if (path === "/api/admin/stats") return demoStats();
+  if (path.startsWith("/api/admin/users")) return demoUsers(new URL(path, location.href).searchParams);
   const m = path.match(/threads\/(\d+)(\/\w+)?$/);
   if (!m) return { threads: Object.values(DEMO_THREADS).filter((t) => t.open).map((t) => ({
     user_id: t.user.id, username: t.user.username, updated_at: t.messages[t.messages.length - 1].created_at, preview: t.messages[t.messages.length - 1].body })) };
@@ -1026,6 +1065,7 @@ function openThread(userId) {
 function closeThreadView() {
   support.open = null;
   $("supThreadBox").hidden = true; $("supListBox").hidden = false; $("adminSeg").hidden = false;
+  if (support.from === "users") { support.from = null; adminSegment("users"); return; }  // back to the user list it was opened from
   loadThreads();
 }
 
@@ -1781,13 +1821,128 @@ async function loadStats() {
   }
 }
 
+/* ---------- admin: every user of the bot ---------- */
+
+const users = { q: "", f: "all", list: [], counts: null, page: 50, open: null, seq: 0, timer: 0 };
+// "8 ноября", with the year only when it isn't this one
+const fullDate = (sec) => { const d = new Date(sec * 1000);
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", ...(d.getFullYear() !== new Date().getFullYear() && { year: "numeric" }) }).replace(/ г\.$/, ""); };
+const shortDate = (sec) => new Date(sec * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+
+// Fixed made-up people for the demo page only
+function demoUsers(params) {
+  const now = Date.now() / 1000, names = ["ivan_k", "marina", null, "alex_dev", "olga_s", null, "petrov", "kate_m", "dima", null, "sergey_v", "nastya"];
+  const all = Array.from({ length: 64 }, (_, i) => {
+    const paid = i % 3 === 0, active = i % 4 !== 3, pays = paid ? 1 + (i % 4) : 0;
+    return { id: 700000100 + i * 7919, username: names[i % names.length] && `${names[i % names.length]}${i > 11 ? i : ""}`, created_at: now - i * 40000,
+      expires_at: active ? now + (3 + (i % 28)) * 86400 : now - 86400, days_left: active ? 3 + (i % 28) : 0,
+      plan: !active ? "нет подписки" : paid ? ["2 устройства", "3 устройства, год", "5 устройств"][i % 3] : "пробный период",
+      devices: active ? [2, 3, 5][i % 3] : 0, trial_used: i % 5 !== 4, pays, spent: pays * 250, last_pay: paid ? now - i * 30000 : null,
+      ref_by: i % 6 === 1 ? 700000100 : null, ref_username: i % 6 === 1 ? "ivan_k" : null, invited: i === 0 ? 11 : i % 9 === 0 ? 2 : 0,
+      ref_mode: i % 7 === 0 ? "percent" : "days", ref_balance: i % 7 === 0 ? 340 : 0 };
+  });
+  const q = (params.get("q") || "").replace(/^@/, "").toLowerCase();
+  const match = (u) => !q || (/^\d+$/.test(q) ? String(u.id).startsWith(q) : (u.username || "").toLowerCase().includes(q));
+  const is = { all: () => true, active: (u) => u.days_left > 0, paid: (u) => u.pays > 0, trial: (u) => u.trial_used && !u.pays, none: (u) => !u.days_left };
+  const found = all.filter(match), counts = {};
+  Object.keys(is).forEach((k) => { counts[k] = found.filter(is[k]).length; });
+  const offset = +params.get("offset") || 0;
+  return { counts, users: found.filter(is[params.get("f") || "all"]).slice(offset, offset + 50), page: 50 };
+}
+
+function userDetail(u) {
+  const box = el("div", "usr-body"), rows = el("div", "panel-rows");
+  const add = (k, v) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); rows.append(r); };
+  add("ID", String(u.id));
+  add("Пришёл", fullDate(u.created_at));
+  add("Подписка", u.days_left ? u.plan : "нет");
+  if (u.days_left) { add("Действует до", fullDate(u.expires_at)); add("Устройств", String(u.devices)); }
+  add("Пробный период", u.trial_used ? "брал" : "не брал");
+  add("Оплаты", u.pays ? `${u.pays} на ${money(u.spent)}` : "нет");
+  if (u.pays) add("Последняя оплата", fullDate(u.last_pay));
+  add("Его пригласил", u.ref_by ? (u.ref_username ? "@" + u.ref_username : "ID " + u.ref_by) : "никто");
+  add("Пригласил сам", countOf(u.invited, "человека", "человек", "человек"));
+  add("Рефералка", u.ref_mode === "percent" ? `процент, баланс ${money(u.ref_balance)}` : "дни");
+  const actions = el("div", "usr-actions"), write = el("button", "btn", "Написать"), id = el("button", "btn ghost", "Скопировать ID");
+  write.onclick = () => { haptic(); support.from = "users"; adminSegment("chats"); openThread(u.id); };
+  id.onclick = () => copy(String(u.id));
+  actions.append(write, id);
+  box.append(rows, actions);
+  return box;
+}
+
+function userRow(u) {
+  const row = el("div", "usr"), head = el("button", "usr-head");
+  head.type = "button";
+  head.setAttribute("aria-expanded", "false");
+  const bits = [u.plan === "нет подписки" ? "без подписки" : u.plan, `с ${shortDate(u.created_at)}`];
+  if (u.pays) bits.push(`${countOf(u.pays, "оплата", "оплаты", "оплат")}, ${money(u.spent)}`);
+  head.append(el("b", "", supWho(u)), el("span", "usr-pill" + (u.days_left ? " on" : ""), u.days_left ? `${u.days_left} дн.` : "нет"), el("span", "usr-sub", bits.join(" · ")));
+  head.onclick = () => {
+    haptic();
+    const opened = row.querySelector(".usr-body");
+    document.querySelectorAll("#usrList .usr-body").forEach((b) => { b.previousSibling.setAttribute("aria-expanded", "false"); b.remove(); });
+    users.open = opened ? null : u.id;
+    if (!opened) { row.append(userDetail(u)); head.setAttribute("aria-expanded", "true"); }
+  };
+  row.append(head);
+  if (users.open === u.id) { row.append(userDetail(u)); head.setAttribute("aria-expanded", "true"); }
+  return row;
+}
+
+function renderUsers() {
+  const c = users.counts;
+  $("usrCount").textContent = c ? (users.q ? `Найдено: ${c.all}` : `Всего ${countOf(c.all, "пользователь", "пользователя", "пользователей")}`) : "";
+  document.querySelectorAll("#usrFilters button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.f === users.f);
+    b.querySelector("i")?.remove();
+    if (c) b.append(el("i", "", String(c[b.dataset.f])));
+  });
+  $("usrList").replaceChildren(...users.list.map(userRow));
+  const total = c ? c[users.f] : 0;
+  $("usrEmpty").hidden = users.list.length > 0;
+  $("usrEmpty").textContent = users.q ? "Никого не нашли." : "В этом списке пока никого.";
+  $("usrMore").hidden = users.list.length >= total;
+}
+
+async function loadUsers(more = false) {
+  const seq = ++users.seq;  // a slower old answer must not overwrite a newer search
+  if (!more) { users.list = []; $("usrList").replaceChildren(skelRow(), skelRow("38%", "64%"), skelRow("52%", "70%"), skelRow("44%", "60%")); $("usrEmpty").hidden = true; $("usrMore").hidden = true; }
+  $("usrMore").disabled = true;
+  try {
+    const params = new URLSearchParams({ q: users.q, f: users.f, offset: String(more ? users.list.length : 0) });
+    const r = await serverApi(`/api/admin/users?${params}`);
+    if (seq !== users.seq) return;
+    users.counts = r.counts; users.page = r.page;
+    users.list = more ? users.list.concat(r.users) : r.users;
+    renderUsers();
+  } catch {
+    if (seq !== users.seq) return;
+    $("usrList").replaceChildren();
+    $("usrEmpty").hidden = false;
+    $("usrEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
+  } finally { $("usrMore").disabled = false; }
+}
+
+$("usrQuery").oninput = () => {
+  clearTimeout(users.timer);
+  users.timer = setTimeout(() => { users.q = $("usrQuery").value.trim(); users.open = null; loadUsers(); }, 300);
+};
+document.querySelectorAll("#usrFilters button").forEach((b) => b.onclick = () => {
+  if (users.f === b.dataset.f) return;
+  haptic(); users.f = b.dataset.f; users.open = null; loadUsers();
+});
+$("usrMore").onclick = () => { haptic(); loadUsers(true); };
+
 function adminSegment(seg) {
   document.querySelectorAll("#adminSeg button").forEach((b) => b.classList.toggle("on", b.dataset.seg === seg));
   $("adminStats").hidden = seg !== "stats";
   $("adminChats").hidden = seg !== "chats";
+  $("adminUsers").hidden = seg !== "users";
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
   if (seg === "stats") loadStats();
+  if (seg === "users" && !users.counts) loadUsers();
 }
 const admin = { seg: "chats" };
 document.querySelectorAll("#adminSeg button").forEach((b) => b.onclick = () => { haptic(); adminSegment(b.dataset.seg); });
