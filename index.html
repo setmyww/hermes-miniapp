@@ -1230,7 +1230,8 @@ function renderDevices(info) {
   $("devCount").textContent = `Подключено ${info.used} из ${info.limit}`;
   $("devList").replaceChildren(...info.list.map((d) => {
     const row = el("div", "gift-row"), text = el("div");
-    const bits = [d.system !== d.name && d.system, d.app].filter(Boolean).join(" · ");
+    const app = (d.app || "").split("/").slice(0, 2).join("/");  // the bot may still send Happ's install id after the version
+    const bits = [d.system !== d.name && d.system, app].filter(Boolean).join(" · ");
     text.append(el("b", "", d.name), el("span", "", [bits, d.last_seen && `обновлялось ${devAgo(d.last_seen)}`].filter(Boolean).join(", ")));
     row.append(text);
     return row;
