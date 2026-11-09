@@ -113,6 +113,10 @@
   #v-mstats .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #v-mstats .kpi b { font-size: 28px; }
   #msFriends, #msEarnings { margin-top: 10px; }
+  #msPayout .ref-link { margin-top: 12px; }
+  #msWithdraw { margin-top: 10px; }
+  #msPayouts { margin-top: 10px; }
+  .pay-details { overflow-wrap: anywhere; }
   .ms-link { margin-top: 22px; }
   .ref-num { font-weight: 800; font-size: 72px; line-height: 1; letter-spacing: -.04em; }
   .ref-actions { display: flex; gap: 8px; margin-top: 16px; }
@@ -530,6 +534,7 @@
       <div class="chips usr-filters" id="refSeg">
         <button class="on" data-r="apps">Заявки</button>
         <button data-r="managers">Менеджеры</button>
+        <button data-r="payouts">Выплаты</button>
       </div>
       <div id="refAdminList"></div>
       <p class="sup-empty" id="refAdminEmpty" hidden></p>
@@ -645,6 +650,14 @@
       <div class="chart" id="msChartFriends"></div>
       <div class="chart" id="msChartEarned"></div>
       <div class="rows block" id="msMoney"></div>
+      <div id="msPayout" class="block">
+        <h2 class="sec">Вывод</h2>
+        <p class="note" id="msPayNote"></p>
+        <label class="sub-label" for="msDetails" style="display:block">Реквизиты для выплаты</label>
+        <div class="ref-link"><input class="field" id="msDetails" maxlength="200" autocomplete="off" placeholder="Телефон и банк, карта или USDT"><button class="btn ghost" id="msDetailsSave" type="button">Сохранить</button></div>
+        <button class="btn" id="msWithdraw" type="button">Вывести</button>
+        <div id="msPayouts"></div>
+      </div>
       <div id="msCodesBox" hidden>
         <h2 class="sec block">Ваши промокоды</h2>
         <p class="note">Кто введёт код, получит дни в подарок и станет вашим приглашённым, как по ссылке.</p>
@@ -1192,6 +1205,23 @@ function demoApi(path, body) {
   if (path === "/api/devices") return demoDevices;
   if (path === "/api/upgrade") return { devices: 3, options: [{ plan_id: "d5", devices: 5, rub: 92, stars: 75, days: 27 }, { plan_id: "d10", devices: 10, rub: 275, stars: 224, days: 27 }] };
   if (path === "/api/admin/referrals") return demoRefs;
+  if (path === "/api/payout/details") { demoPayoutDetails = body.details; return { ok: true, details: body.details }; }
+  if (path === "/api/payout") {
+    if (me.ref_balance < 500 && demoManagerStats().balance < 500) return { error: "Вывод доступен от 500 ₽." };
+    demoPayoutDetails = body.details;
+    const x = { id: Date.now(), amount: 810, status: "pending", details: body.details, created_at: Date.now() / 1000, settled_at: 0 };
+    demoMyPayouts = [x, ...demoMyPayouts];
+    demoAdminPayouts.pending = [{ ...x, user_id: 700002, username: "ivan_k", slug: "ivan", earned: 2010 }, ...demoAdminPayouts.pending];
+    return { ok: true, payout: x };
+  }
+  if (path === "/api/admin/payouts") return demoAdminPayouts;
+  if (/\/api\/admin\/payouts\/\d+\/\w+$/.test(path)) {
+    const [, id, act] = path.match(/payouts\/(\d+)\/(\w+)$/), x = demoAdminPayouts.pending.find((p) => p.id === +id);
+    if (!x) return { error: "Заявка уже обработана." };
+    demoAdminPayouts.pending = demoAdminPayouts.pending.filter((p) => p !== x);
+    demoAdminPayouts.history = [{ ...x, status: act === "paid" ? "paid" : "returned", settled_at: Date.now() / 1000 }, ...demoAdminPayouts.history];
+    return { ok: true, ...demoAdminPayouts };
+  }
   if (path === "/api/manager/stats") { if (!isManager()) throw new Error("managers only"); return demoManagerStats(); }
   if (path.startsWith("/api/admin/managers/")) return demoRefsAction(path, body || {});
   if (path === "/api/manager/apply") return { me: { ...me, manager: { status: "pending", slug: null } } };
@@ -1407,6 +1437,8 @@ async function loadGifts() {
 
 /* ---------- a manager's own statistics ---------- */
 
+let demoPayoutDetails = "", demoMyPayouts = [{ id: 2, amount: 1200, status: "pending", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 7200, settled_at: 0 },
+  { id: 1, amount: 640, status: "paid", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 12 * 86400, settled_at: Date.now() / 1000 - 11 * 86400 }];
 function demoManagerStats() {
   const now = Date.now();
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -1418,6 +1450,7 @@ function demoManagerStats() {
     codes: [{ code: "IVAN", days: 3, max_uses: 0, used: 14, created_at: now / 1000 - 12 * 86400, brought: 11, paying: 4 }],
     friends: [{ name: "@pe•••", created_at: now / 1000 - 3600, paid: true, active: true, brought: 117, code: "IVAN" }, { name: "Пользователь •4471", created_at: now / 1000 - 26 * 3600, paid: false, active: true, brought: 0 },
       { name: "@ma•••", created_at: now / 1000 - 3 * 86400, paid: true, active: false, brought: 75 }],
+    payout_details: demoPayoutDetails, payouts: demoMyPayouts,
     earnings: [{ amount: 117, percent: 30, created_at: now / 1000 - 3000, from: "@pe•••" }, { amount: 75, percent: 30, created_at: now / 1000 - 3 * 86400, from: "@ma•••" }] };
 }
 
@@ -1458,7 +1491,47 @@ function renderManagerStats(m) {
     r.append(t); return r;
   }) : [el("p", "note", "Начислений пока нет: они появятся с первой оплатой приглашённого.")]));
   $("msLink").value = m.link;
+  renderPayoutBlock(m);
 }
+
+const PAYOUT_STATUS = { pending: "ждёт выплаты", paid: "выплачено", returned: "возвращено на баланс" };
+
+function renderPayoutBlock(m) {
+  const can = m.balance >= m.min_payout;
+  $("msPayNote").textContent = (can ? `Можно вывести весь баланс: ${money(m.balance)}.` : `Вывод от ${money(m.min_payout)}, на балансе ${money(m.balance)}.`)
+    + (m.payout_pending ? ` Ждёт выплаты ${money(m.payout_pending)}.` : "") + " Деньги приходят на реквизиты ниже, обычно в течение суток.";
+  if (document.activeElement !== $("msDetails")) $("msDetails").value = m.payout_details || "";
+  $("msWithdraw").hidden = !can;
+  $("msWithdraw").textContent = `Вывести ${money(m.balance)}`;
+  $("msPayouts").replaceChildren(...(m.payouts || []).map((x) => {
+    const r = el("div", "gift-row"), t = el("div");
+    t.append(el("b", "", money(x.amount)), el("span", "pay-details", [PAYOUT_STATUS[x.status] || x.status,
+      x.status === "pending" ? `заявка ${shortDate(x.created_at)}` : shortDate(x.settled_at || x.created_at), x.details].filter(Boolean).join(" · ")));
+    r.append(t); return r;
+  }));
+}
+
+$("msDetailsSave").onclick = async () => {
+  const details = $("msDetails").value.trim();
+  if (details.length < 5) return toast("Укажите реквизиты: телефон и банк, карту или кошелёк");
+  $("msDetailsSave").disabled = true;
+  try { const r = await serverApi("/api/payout/details", { details }); toast(r.error || "Реквизиты сохранены"); }
+  catch { toast("Нет связи с ботом"); }
+  $("msDetailsSave").disabled = false;
+};
+$("msWithdraw").onclick = () => {
+  const details = $("msDetails").value.trim();
+  if (details.length < 5) { $("msDetails").focus(); return toast("Сначала укажите реквизиты"); }
+  confirmAsk(`Вывести весь баланс на: ${details}?`, async () => {
+    $("msWithdraw").disabled = true;
+    try {
+      const r = await serverApi("/api/payout", { details });
+      if (r.error) toast(r.error);
+      else { haptic("heavy"); toast(`Заявка на ${money(r.payout.amount)} отправлена`); me = { ...me, ref_balance: 0 }; loadManagerStats(); }
+    } catch { toast("Нет связи с ботом"); }
+    $("msWithdraw").disabled = false;
+  });
+};
 
 async function loadManagerStats() {
   $("msEmpty").hidden = true;
@@ -2502,7 +2575,12 @@ $("usrMore").onclick = () => { haptic(); loadUsers(true); };
 
 /* ---------- admin: referrals and managers ---------- */
 
-const refsAdmin = { data: null, tab: "apps", open: null };
+const refsAdmin = { data: null, payouts: null, tab: "apps", open: null };
+let demoAdminPayouts = {
+  totals: { pending: 1200, paid: 640 },
+  pending: [{ id: 2, amount: 1200, status: "pending", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 7200, settled_at: 0, user_id: 700002, username: "ivan_k", slug: "ivan", earned: 2010 }],
+  history: [{ id: 1, amount: 640, status: "paid", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 12 * 86400, settled_at: Date.now() / 1000 - 11 * 86400, user_id: 700002, username: "ivan_k", slug: "ivan", earned: 2010 }],
+};
 let demoRefs = {
   totals: { managers: 2, invited: 41, paying: 17, revenue: 9840, payout_pending: 1200 },
   applications: [{ id: 700001, username: "kate_m", note: "Веду канал о технологиях, 3 000 подписчиков. Расскажу в обзоре и закреплю ссылку.", applied_at: Date.now() / 1000 - 5400, created_at: Date.now() / 1000 - 9 * 86400, paid: true, invited: 2 }],
@@ -2659,6 +2737,52 @@ function managerRow(m) {
   return row;
 }
 
+function payoutRow(x) {
+  const row = el("div", "usr"), head = el("button", "usr-head");
+  head.type = "button";
+  head.append(el("b", "", supWho({ id: x.user_id, username: x.username })), el("span", "usr-pill" + (x.status === "pending" ? " on" : ""),
+    x.status === "pending" ? "ждёт" : x.status === "paid" ? "выплачено" : "возврат"),
+    el("span", "usr-sub", `${money(x.amount)} · ${x.status === "pending" ? `заявка ${shortDate(x.created_at)}` : shortDate(x.settled_at || x.created_at)}`));
+  const body = () => {
+    const box = el("div", "usr-body"), rows = el("div", "panel-rows");
+    const add = (k, v) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); rows.append(r); };
+    add("Сумма", money(x.amount));
+    add("Реквизиты", x.details || "не указаны");
+    add("Заявка", fullDate(x.created_at));
+    if (x.settled_at) add(x.status === "paid" ? "Выплачено" : "Возвращено", fullDate(x.settled_at));
+    add("Заработал всего", money(x.earned));
+    const actions = el("div", "usr-actions"), copyBtn = el("button", "btn ghost", "Копировать");
+    copyBtn.onclick = () => copy(x.details || "");
+    actions.append(copyBtn);
+    if (x.status === "pending") {
+      const paid = el("button", "btn", "Выплачено"), back = el("button", "btn ghost", "Вернуть на баланс");
+      const act = (action, ask, done) => confirmAsk(ask, async () => {
+        paid.disabled = back.disabled = true;
+        try {
+          const r = await serverApi(`/api/admin/payouts/${x.id}/${action}`, {});
+          if (r.error) toast(r.error); else { toast(done); refsAdmin.payouts = r; refsAdmin.open = null; renderRefsAdmin(); }
+        } catch { toast("Нет связи с ботом"); }
+        paid.disabled = back.disabled = false;
+      });
+      paid.onclick = () => act("paid", `Отметить ${money(x.amount)} как выплаченные ${supWho({ id: x.user_id, username: x.username })}? Сначала переведите деньги на реквизиты.`, "Отмечено как выплачено");
+      back.onclick = () => act("return", `Вернуть ${money(x.amount)} на баланс ${supWho({ id: x.user_id, username: x.username })}?`, "Деньги возвращены на баланс");
+      actions.prepend(paid); actions.append(back);
+    }
+    box.append(rows, actions);
+    return box;
+  };
+  head.onclick = () => {
+    haptic();
+    const opened = row.querySelector(".usr-body");
+    document.querySelectorAll("#refAdminList .usr-body").forEach((b) => b.remove());
+    refsAdmin.open = opened ? null : "p" + x.id;
+    if (!opened) row.append(body());
+  };
+  row.append(head);
+  if (refsAdmin.open === "p" + x.id) row.append(body());
+  return row;
+}
+
 function renderRefsAdmin() {
   const d = refsAdmin.data, t = d.totals;
   $("refTotals").textContent = `Менеджеров ${t.managers} · пришло от них ${t.invited} · оплатили ${t.paying} · выручка ${money(t.revenue)}`
@@ -2666,17 +2790,25 @@ function renderRefsAdmin() {
   document.querySelectorAll("#refSeg button").forEach((b) => {
     b.classList.toggle("on", b.dataset.r === refsAdmin.tab);
     b.querySelector("i")?.remove();
-    b.append(el("i", "", String(b.dataset.r === "apps" ? d.applications.length : d.managers.length)));
+    b.append(el("i", "", String(b.dataset.r === "apps" ? d.applications.length : b.dataset.r === "payouts" ? (refsAdmin.payouts?.pending.length ?? 0) : d.managers.length)));
   });
-  const list = refsAdmin.tab === "apps" ? d.applications.map(appRow) : d.managers.map(managerRow);
+  const pay = refsAdmin.payouts || { pending: [], history: [], totals: { pending: 0, paid: 0 } };
+  const list = refsAdmin.tab === "apps" ? d.applications.map(appRow) : refsAdmin.tab === "payouts" ? [...pay.pending, ...pay.history].map(payoutRow) : d.managers.map(managerRow);
+  if (refsAdmin.tab === "payouts" && list.length) {
+    list.unshift(el("p", "note", `Ждут выплаты ${money(pay.totals.pending)} · выплачено всего ${money(pay.totals.paid)}. Переведите деньги на реквизиты, затем отметьте «Выплачено».`));
+  }
   $("refAdminList").replaceChildren(...list);
   $("refAdminEmpty").hidden = list.length > 0;
-  $("refAdminEmpty").textContent = refsAdmin.tab === "apps" ? "Новых заявок нет." : "Менеджеров пока нет. Одобрите заявку или выдайте статус в карточке пользователя.";
+  $("refAdminEmpty").textContent = refsAdmin.tab === "apps" ? "Новых заявок нет." : refsAdmin.tab === "payouts" ? "Заявок на вывод пока нет."
+    : "Менеджеров пока нет. Одобрите заявку или выдайте статус в карточке пользователя.";
 }
 
 async function loadRefsAdmin() {
   if (!refsAdmin.data) { $("refAdminList").replaceChildren(skelRow(), skelRow("38%", "64%"), skelRow("52%", "70%")); $("refAdminEmpty").hidden = true; }
-  try { refsAdmin.data = await serverApi("/api/admin/referrals"); renderRefsAdmin(); }
+  try {
+    [refsAdmin.data, refsAdmin.payouts] = await Promise.all([serverApi("/api/admin/referrals"), serverApi("/api/admin/payouts").catch(() => null)]);
+    renderRefsAdmin();
+  }
   catch { $("refAdminList").replaceChildren(); $("refAdminEmpty").hidden = false; $("refAdminEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново."; }
 }
 document.querySelectorAll("#refSeg button").forEach((b) => b.onclick = () => {
@@ -3137,7 +3269,9 @@ $("connAddBtn").onclick = addToHapp;
 $("connKeyBtn").onclick = copyKey;
 $("refOutBtn").onclick = () => {
   if (me.ref_balance < meta.ref_min_payout) return toast(`Вывод доступен от ${money(meta.ref_min_payout)}`);
-  DEMO ? toast("Вывод доступен в Telegram") : toBot("ref");
+  if (!isManager()) return DEMO ? toast("Вывод доступен в Telegram") : toBot("ref");
+  haptic(); go("mstats");
+  setTimeout(() => $("msPayout").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" }), 1200);
 };
 $("shareBtn").onclick = () => {
   const url = `https://t.me/share/url?url=${encodeURIComponent(refLink())}&text=${encodeURIComponent("Быстрый VPN — HERMES")}`;
