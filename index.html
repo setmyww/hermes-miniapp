@@ -246,6 +246,8 @@
   .usr-tool { display: flex; gap: 8px; }
   .usr-tool .field, .usr-tool select { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 600 15px/1 "Manrope", sans-serif; letter-spacing: 0; }
   .usr-tool .btn { width: auto; flex: none; height: 44px; padding: 0 16px; font-size: 14px; }
+  /* narrow phones: two fields side by side, the button under them */
+  @media (max-width: 374px) { .usr-tool { flex-wrap: wrap; } .usr-tool .btn { flex: 1 0 100%; } }
   .usr-pill.ban { background: transparent; color: var(--text); border-color: #fff; }
   /* four sections don't fit in a phone-wide row: a 2 x 2 grid keeps every one in sight */
   #adminSeg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -259,6 +261,12 @@
   .ref-link .field { height: 44px; font: 600 14px/1 "Manrope", sans-serif; letter-spacing: 0; }
   .ref-link .btn { width: auto; flex: none; height: 44px; padding: 0 16px; font-size: 14px; }
   .ref-people { margin-top: 12px; }
+  .ref-codes .gift-row { min-height: 56px; }
+  .ref-codes .gift-row > div:first-child { min-width: 0; }
+  .ref-codes .gift-row b { font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .02em; overflow-wrap: anywhere; }
+  .code-acts { display: flex; gap: 6px; flex: none; }
+  .code-acts button { height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); background: none; color: var(--text); font: 700 13px/1 "Manrope", sans-serif; }
+  .ms-codes .gift-row b { font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .02em; }
   .ref-people .gift-row { min-height: 52px; }
   .usr-actions .btn { flex: 1; height: 44px; font-size: 14px; }
   #usrMore { margin-top: 16px; }
@@ -606,6 +614,11 @@
       <div class="chart" id="msChartFriends"></div>
       <div class="chart" id="msChartEarned"></div>
       <div class="rows block" id="msMoney"></div>
+      <div id="msCodesBox" hidden>
+        <h2 class="sec block">Ваши промокоды</h2>
+        <p class="note">Кто введёт код, получит дни в подарок и станет вашим приглашённым, как по ссылке.</p>
+        <div class="ms-codes" id="msCodes"></div>
+      </div>
       <h2 class="sec block">Последние приглашённые</h2>
       <div id="msFriends"></div>
       <h2 class="sec block">Начисления</h2>
@@ -1153,7 +1166,11 @@ function demoApi(path, body) {
   if (path === "/api/manager/apply") return { me: { ...me, manager: { status: "pending", slug: null } } };
   if (path === "/api/devices/reset") { demoDevices = { ...demoDevices, used: 0, list: [], reset_in: 86400 }; return demoDevices; }
   if (path.endsWith("/reset-devices")) return { ok: true };
-  if (/\/api\/admin\/users\/\d+\/days$/.test(path)) return { ok: true, days_left: 7 + (body.days || 0), expires_at: Date.now() / 1000 + 9 * 86400 };
+  if (/\/api\/admin\/users\/\d+\/days$/.test(path)) {
+    if (!body.days && !body.devices) return { error: "Укажите дни или тариф." };
+    return { ok: true, days_left: 7 + (body.days || 0), expires_at: Date.now() / 1000 + (7 + (body.days || 0)) * 86400,
+      ...(body.devices ? { plan: devicesWord(body.devices), devices: body.devices } : {}) };
+  }
   if (/\/api\/admin\/users\/\d+\/discount$/.test(path)) return { ok: true, code: `HERMES${body.percent}-DEMO1`, expires_at: Date.now() / 1000 + body.hours * 3600 };
   if (/\/api\/admin\/users\/\d+\/(ban|unban)$/.test(path)) return { ok: true };
   if (path === "/api/admin/broadcast") return body ? demoBroadcastSend(body) : demoBroadcastInfo();
@@ -1366,7 +1383,8 @@ function demoManagerStats() {
   });
   return { link: "https://t.me/hermes_vpn_bot?start=m_ivan", slug: "ivan", since: now / 1000 - 26 * 86400, invited: 33, invited_week: 6, paying: 12, active: 15,
     percent: 30, next: { need: 38, percent: 40 }, earned: 2010, earned_month: 1640, balance: 810, payout_pending: 1200, paid_out: 0, min_payout: 500, days,
-    friends: [{ name: "@pe•••", created_at: now / 1000 - 3600, paid: true, active: true, brought: 117 }, { name: "Пользователь •4471", created_at: now / 1000 - 26 * 3600, paid: false, active: true, brought: 0 },
+    codes: [{ code: "IVAN", days: 3, max_uses: 0, used: 14, created_at: now / 1000 - 12 * 86400, brought: 11, paying: 4 }],
+    friends: [{ name: "@pe•••", created_at: now / 1000 - 3600, paid: true, active: true, brought: 117, code: "IVAN" }, { name: "Пользователь •4471", created_at: now / 1000 - 26 * 3600, paid: false, active: true, brought: 0 },
       { name: "@ma•••", created_at: now / 1000 - 3 * 86400, paid: true, active: false, brought: 75 }],
     earnings: [{ amount: 117, percent: 30, created_at: now / 1000 - 3000, from: "@pe•••" }, { amount: 75, percent: 30, created_at: now / 1000 - 3 * 86400, from: "@ma•••" }] };
 }
@@ -1376,7 +1394,16 @@ function renderManagerStats(m) {
   $("msEarned").textContent = money(m.earned);
   $("msEarnedNote").textContent = `заработано всего, за 30 дней ${money(m.earned_month)}`;
   $("msInvited").textContent = m.invited;
-  $("msInvitedNote").textContent = `пришло по ссылке, за неделю ${m.invited_week}`;
+  $("msInvitedNote").textContent = `${(m.codes || []).length ? "пришло к вам" : "пришло по ссылке"}, за неделю ${m.invited_week}`;
+  const codes = m.codes || [];
+  $("msCodesBox").hidden = !codes.length;
+  $("msCodes").replaceChildren(...codes.map((c) => {
+    const r = el("div", "gift-row"), t = el("div"), b = el("button", "btn ghost", "Копировать");
+    b.style.cssText = "width:auto;flex:none;height:38px;padding:0 14px;font-size:13px"; b.type = "button";
+    t.append(el("b", "", c.code), el("span", "", [`даёт +${countOf(c.days, "день", "дня", "дней")}`, `пришло ${c.brought}`, `оплатили ${c.paying}`].join(" · ")));
+    b.onclick = () => copy(c.code);
+    r.append(t, b); return r;
+  }));
   $("msPaying").textContent = m.paying;
   $("msPercent").textContent = `${m.percent}%`;
   $("msBalance").textContent = money(m.balance);
@@ -1390,7 +1417,7 @@ function renderManagerStats(m) {
   $("msMoney").replaceChildren(...rows.map(([k, v]) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); return r; }));
   $("msFriends").replaceChildren(...(m.friends.length ? m.friends.map((f) => {
     const r = el("div", "gift-row"), t = el("div");
-    t.append(el("b", "", f.name), el("span", "", [shortDate(f.created_at), f.paid ? `принёс ${money(f.brought)}` : "ещё не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
+    t.append(el("b", "", f.name), el("span", "", [shortDate(f.created_at), f.code ? `код ${f.code}` : "", f.paid ? `принёс ${money(f.brought)}` : "ещё не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
     r.append(t); return r;
   }) : [el("p", "note", "По вашей ссылке пока никто не пришёл.")]));
   $("msEarnings").replaceChildren(...(m.earnings.length ? m.earnings.map((e) => {
@@ -2233,19 +2260,28 @@ function userDetail(u) {
   if (u.days_left) actions.append(reset);
   // days, a personal discount, a ban: all sent to the bot, which also tells the user
   const tools = el("div", "usr-tools");
-  const daysRow = el("div", "usr-tool"), daysIn = el("input", "field"), daysBtn = el("button", "btn ghost", "Начислить дни");
-  daysIn.type = "number"; daysIn.inputMode = "numeric"; daysIn.placeholder = "Дней, например 7"; daysIn.setAttribute("aria-label", "Сколько дней начислить");
+  const daysRow = el("div", "usr-tool"), daysIn = el("input", "field"), planSel = el("select"), daysBtn = el("button", "btn ghost", "Выдать");
+  daysIn.type = "number"; daysIn.inputMode = "numeric"; daysIn.placeholder = "Дней"; daysIn.setAttribute("aria-label", "Сколько дней начислить");
+  // the plan the subscription is recorded as: number of devices; "as is" keeps the current one
+  planSel.setAttribute("aria-label", "Тариф");
+  planSel.append(new Option("Тариф", ""));  // not chosen: the current plan stays
+  [...new Set(meta.plans.map((p) => p.devices))].sort((a, b) => a - b).forEach((n) => planSel.append(new Option(devicesWord(n), n)));
   daysBtn.onclick = async () => {
-    const days = parseInt(daysIn.value, 10);
-    if (!days) return toast("Введите число дней");
+    const days = parseInt(daysIn.value, 10) || 0, devices = +planSel.value || 0;
+    if (!days && !devices) return toast("Введите дни или выберите тариф");
     daysBtn.disabled = true;
     try {
-      const r = await serverApi(`/api/admin/users/${u.id}/days`, { days });
-      if (r.error) toast(r.error); else { toast(`Начислено ${days} дн.`); u.days_left = r.days_left; u.expires_at = r.expires_at; daysIn.value = ""; }
+      const r = await serverApi(`/api/admin/users/${u.id}/days`, { days, ...(devices && { devices }) });
+      if (r.error) toast(r.error);
+      else {
+        toast(days ? `Начислено ${days} дн.${devices ? `, ${devicesWord(devices)}` : ""}` : `Тариф: ${devicesWord(devices)}`);
+        Object.assign(u, { days_left: r.days_left, expires_at: r.expires_at }, r.plan ? { plan: r.plan, devices: r.devices } : {});
+        box.replaceWith(userDetail(u));
+      }
     } catch { toast("Нет связи с ботом"); }
     daysBtn.disabled = false;
   };
-  daysRow.append(daysIn, daysBtn);
+  daysRow.append(daysIn, planSel, daysBtn);
   const discRow = el("div", "usr-tool"), pct = el("select"), hrs = el("select"), discBtn = el("button", "btn ghost", "Скидка");
   [10, 15, 20, 30, 50].forEach((n) => pct.append(new Option(`${n}%`, n, n === 15, n === 15)));
   [[24, "на сутки"], [48, "на 2 дня"], [72, "на 3 дня"], [168, "на неделю"]].forEach(([n, t]) => hrs.append(new Option(t, n, n === 48, n === 48)));
@@ -2353,13 +2389,23 @@ let demoRefs = {
   totals: { managers: 2, invited: 41, paying: 17, revenue: 9840, payout_pending: 1200 },
   applications: [{ id: 700001, username: "kate_m", note: "Веду канал о технологиях, 3 000 подписчиков. Расскажу в обзоре и закреплю ссылку.", applied_at: Date.now() / 1000 - 5400, created_at: Date.now() / 1000 - 9 * 86400, paid: true, invited: 2 }],
   managers: [
-    { id: 700002, username: "ivan_k", slug: "ivan", since: Date.now() / 1000 - 20 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_ivan", invited: 33, invited_week: 6, paying: 12, percent: 30, revenue: 7420, payments: 19, earned: 2010, balance: 810, payout_pending: 1200, paid_out: 0 },
+    { id: 700002, username: "ivan_k", slug: "ivan", since: Date.now() / 1000 - 20 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_ivan", invited: 33, by_code: 9, invited_week: 6, paying: 12, percent: 30, revenue: 7420, payments: 19, earned: 2010, balance: 810, payout_pending: 1200, paid_out: 0 },
     { id: 700003, username: null, slug: "m4521", since: Date.now() / 1000 - 4 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_m4521", invited: 8, invited_week: 8, paying: 5, percent: 20, revenue: 2420, payments: 6, earned: 484, balance: 484, payout_pending: 0, paid_out: 0 },
   ],
 };
+let demoCodes = { 700002: [{ code: "IVAN", days: 3, max_uses: 0, used: 14, created_at: Date.now() / 1000 - 12 * 86400, brought: 11, paying: 4 },
+  { code: "IVANTG", days: 7, max_uses: 100, used: 37, created_at: Date.now() / 1000 - 3 * 86400, brought: 30, paying: 6 }] };
 function demoRefsAction(path, body) {
   const m = path.match(/managers\/(\d+)\/(\w+)$/);
-  if (!m) return { referrals: [{ id: 1, username: "petrov", created_at: Date.now() / 1000 - 3600, paid: true, active: true, pays: 2, spent: 398 }, { id: 2, username: null, created_at: Date.now() / 1000 - 2 * 86400, paid: false, active: false, pays: 0, spent: 0 }] };
+  if (m && m[2] === "code") {
+    const code = String(body.code || "").trim().toUpperCase(), list = demoCodes[m[1]] || [];
+    if (!/^[A-Z0-9_-]{3,32}$/.test(code)) return { error: "Промокод: от 3 до 32 символов, латинские буквы, цифры, _ и -." };
+    if (Object.values(demoCodes).flat().some((c) => c.code === code)) return { error: "Такой промокод уже есть." };
+    demoCodes[m[1]] = [{ code, days: +body.days, max_uses: +body.uses || 0, used: 0, created_at: Date.now() / 1000, brought: 0, paying: 0 }, ...list];
+    return { ok: true, ...demoRefs };
+  }
+  if (m && m[2] === "uncode") { demoCodes[m[1]] = (demoCodes[m[1]] || []).filter((c) => c.code !== body.code); return { ok: true, ...demoRefs }; }
+  if (!m) return { codes: demoCodes[path.match(/managers\/(\d+)/)[1]] || [], referrals: [{ id: 3, username: "olga_s", created_at: Date.now() / 1000 - 1800, paid: false, active: true, pays: 0, spent: 0, code: "IVANTG" }, { id: 1, username: "petrov", created_at: Date.now() / 1000 - 3600, paid: true, active: true, pays: 2, spent: 398 }, { id: 2, username: null, created_at: Date.now() / 1000 - 2 * 86400, paid: false, active: false, pays: 0, spent: 0 }] };
   const id = +m[1], act = m[2];
   if (act === "approve") {
     const a = demoRefs.applications.find((x) => x.id === id);
@@ -2402,7 +2448,8 @@ function managerBody(m) {
   const box = el("div", "usr-body"), rows = el("div", "panel-rows");
   const add = (k, v) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); rows.append(r); };
   add("Менеджер с", fullDate(m.since));
-  add("Пришло по ссылке", `${m.invited}, за неделю ${m.invited_week}`);
+  add("Пришло к нему", `${m.invited}, за неделю ${m.invited_week}`);
+  add("Из них по промокоду", String(m.by_code || 0));
   add("Оплатили", `${m.paying}, процент ${m.percent}%`);
   add("Выручка от них", `${money(m.revenue)}, оплат ${m.payments}`);
   add("Начислено ему", money(m.earned));
@@ -2416,30 +2463,72 @@ function managerBody(m) {
   link.append(input, save);
   const linkNote = el("p", "note", m.link);
   linkNote.style.overflowWrap = "anywhere";
-  const people = el("div", "ref-people");
+  const people = el("div", "ref-people"), codes = el("div", "ref-codes");
   people.append(skelRow(), skelRow("38%", "56%"));
-  serverApi(`/api/admin/managers/${m.id}`).then(({ referrals }) => {
-    people.replaceChildren(el("p", "sub-label", referrals.length ? "Последние приглашённые" : "По ссылке пока никто не пришёл"), ...referrals.map((f) => {
+  const loadDetail = () => serverApi(`/api/admin/managers/${m.id}`).then(({ referrals, codes: list = [] }) => {
+    codes.replaceChildren(...list.map((c) => codeRow(m, c, loadDetail)));
+    if (!list.length) codes.append(el("p", "note", "Промокодов пока нет. Создайте ниже: кто введёт код, получит дни и станет приглашённым этого менеджера."));
+    people.replaceChildren(el("p", "sub-label", referrals.length ? "Последние приглашённые" : "Пока никто не пришёл"), ...referrals.map((f) => {
       const r = el("div", "gift-row"), t = el("div");
-      t.append(el("b", "", supWho(f)), el("span", "", [shortDate(f.created_at), f.paid ? `${countOf(f.pays, "оплата", "оплаты", "оплат")}, ${money(f.spent)}` : "не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
+      t.append(el("b", "", supWho(f)), el("span", "", [shortDate(f.created_at), f.code ? `код ${f.code}` : "по ссылке", f.paid ? `${countOf(f.pays, "оплата", "оплаты", "оплат")}, ${money(f.spent)}` : "не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
       r.append(t); return r;
     }));
   }).catch(() => people.replaceChildren());
+  loadDetail();
+  codes.append(skelRow("44%", "70%"));
+  const form = el("div", "usr-tools"), r1 = el("div", "usr-tool"), r2 = el("div", "usr-tool");
+  const codeIn = el("input", "field"), daysSel = el("select"), usesIn = el("input", "field"), make = el("button", "btn ghost", "Создать");
+  codeIn.placeholder = "Код, например IVAN"; codeIn.maxLength = 32; codeIn.autocomplete = "off"; codeIn.spellcheck = false; codeIn.autocapitalize = "characters";
+  codeIn.setAttribute("aria-label", "Новый промокод менеджера");
+  [[1, "+1 день"], [3, "+3 дня"], [7, "+7 дней"], [14, "+14 дней"], [30, "+30 дней"]].forEach(([n, t]) => daysSel.append(new Option(t, n, n === 3, n === 3)));
+  daysSel.setAttribute("aria-label", "Сколько дней даёт код");
+  usesIn.type = "number"; usesIn.inputMode = "numeric"; usesIn.placeholder = "Лимит, пусто: без лимита"; usesIn.setAttribute("aria-label", "Лимит активаций");
+  make.onclick = async () => {
+    const code = codeIn.value.trim().toUpperCase();
+    if (!code) return toast("Введите промокод");
+    make.disabled = true; haptic();
+    try {
+      const r = await serverApi(`/api/admin/managers/${m.id}/code`, { code, days: +daysSel.value, uses: parseInt(usesIn.value, 10) || 0 });
+      if (r.error) toast(r.error); else { toast(`Промокод ${code} создан`); codeIn.value = usesIn.value = ""; loadDetail(); }
+    } catch { toast("Нет связи с ботом"); }
+    make.disabled = false;
+  };
+  r1.append(codeIn, daysSel); r2.append(usesIn, make); form.append(r1, r2);
   const actions = el("div", "usr-actions"), copyBtn = el("button", "btn", "Скопировать ссылку"), revoke = el("button", "btn ghost", "Снять статус");
   copyBtn.onclick = () => copy(m.link);
   revoke.onclick = () => confirmAsk(`Снять статус менеджера с ${supWho(m)}? Заработанный баланс останется у него.`, async () => {
     revoke.disabled = true; if (await refsAct(m.id, "revoke")) toast("Статус снят"); revoke.disabled = false;
   });
   actions.append(copyBtn, revoke);
-  box.append(rows, el("p", "sub-label", "Личная ссылка: t.me/…?start=m_"), link, linkNote, actions, people);
+  box.append(rows, el("p", "sub-label", "Личная ссылка: t.me/…?start=m_"), link, linkNote, actions,
+    el("p", "sub-label", "Личные промокоды"), codes, form, people);
   return box;
+}
+
+// one of a manager's codes: what it gives, how often it was entered, who it brought
+function codeRow(m, c, reload) {
+  const r = el("div", "gift-row"), t = el("div"), acts = el("div", "code-acts");
+  t.append(el("b", "", c.code), el("span", "", [`+${countOf(c.days, "день", "дня", "дней")}`,
+    `активаций ${c.used}${c.max_uses ? " из " + c.max_uses : ""}`, `пришло ${c.brought}`, `оплатили ${c.paying}`].join(" · ")));
+  const cp = el("button", "", "Копировать"), del = el("button", "", "Удалить");
+  cp.type = del.type = "button";
+  cp.onclick = () => copy(c.code);
+  del.onclick = () => confirmAsk(`Удалить промокод ${c.code}? Пришедшие по нему останутся приглашёнными ${supWho(m)}.`, async () => {
+    del.disabled = true;
+    try { const x = await serverApi(`/api/admin/managers/${m.id}/uncode`, { code: c.code }); if (x.error) toast(x.error); else { toast("Промокод удалён"); reload(); } }
+    catch { toast("Нет связи с ботом"); }
+    del.disabled = false;
+  });
+  acts.append(cp, del);
+  r.append(t, acts);
+  return r;
 }
 
 function managerRow(m) {
   const row = el("div", "usr"), head = el("button", "usr-head");
   head.type = "button";
   head.append(el("b", "", supWho(m)), el("span", "usr-pill on", `${m.percent}%`),
-    el("span", "usr-sub", `пришло ${m.invited} · оплатили ${m.paying} · ${money(m.revenue)}`));
+    el("span", "usr-sub", `пришло ${m.invited}${m.by_code ? ` (код ${m.by_code})` : ""} · оплатили ${m.paying} · ${money(m.revenue)}`));
   head.onclick = () => {
     haptic();
     const opened = row.querySelector(".usr-body");
