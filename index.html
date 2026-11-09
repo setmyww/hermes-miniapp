@@ -274,6 +274,25 @@
   /* admin statistics */
   #adminSeg { margin-top: 26px; }
   #statRange { margin-top: 14px; }
+  /* funnel: of those who came, who went how far, and where they came from */
+  #funRange { margin-top: 12px; }
+  #funSteps { margin-top: 14px; }
+  .fun-step { padding: 12px 0 10px; border-top: 1px solid var(--line); }
+  .fun-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .fun-top span { font-size: 14px; color: var(--muted); }
+  .fun-top b { font-size: 20px; font-weight: 800; white-space: nowrap; }
+  .fun-top small { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 6px; }
+  .fun-bar { height: 8px; margin-top: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .fun-bar i { display: block; height: 100%; border-radius: inherit; background: var(--text); transform-origin: left; animation: funGrow .7s var(--ease-out) both; }
+  .fun-loss { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+  .fun-leak { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); font-size: 14px; line-height: 1.4; }
+  .fun-leak b { font-weight: 800; }
+  @keyframes funGrow { from { transform: scaleX(0); } }
+  @media (prefers-reduced-motion: reduce) { .fun-bar i { animation: none; } }
+  .fun-list .gift-row > div:first-child { min-width: 0; }
+  .fun-list .gift-row b { overflow-wrap: anywhere; }
+  .fun-list .gift-row > b { flex: none; font-size: 15px; }
+  .fun-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .02em; }
   .stat-hero { font-weight: 800; font-size: 60px; line-height: 1; letter-spacing: -.04em; margin-top: 24px; }
   .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
   .kpi { padding: 14px; border-radius: 16px; background: var(--surface); }
@@ -549,7 +568,19 @@
         </div>
         <div class="chart" id="chartRevenue"></div>
         <div class="chart" id="chartUsers"></div>
-        <div class="rows block" id="statFunnel"></div>
+        <h2 class="sec block">Воронка</h2>
+        <p class="note">Кто пришёл за период и как далеко дошёл. Оплаты считаются за всё время после прихода.</p>
+        <div class="chips" id="funRange"><button data-d="7">7 дней</button><button class="on" data-d="30">30 дней</button><button data-d="90">90 дней</button><button data-d="0">Всё время</button></div>
+        <div id="funSteps"></div>
+        <div class="fun-leak" id="funLeak" hidden></div>
+        <h2 class="sec block">Откуда приходят</h2>
+        <p class="note">Те же люди по источникам: кто приводит платящих, а не только регистрации.</p>
+        <div class="fun-list" id="funSources"></div>
+        <h2 class="sec block">Промокоды</h2>
+        <p class="note">Коды, введённые за период, и сколько из этих людей оплатили.</p>
+        <div class="fun-list" id="funPromos"></div>
+        <h2 class="sec block">За всё время</h2>
+        <div class="rows" id="statFunnel" style="margin-top:6px"></div>
         <details class="day-table" id="statDays"><summary>По дням</summary><div id="statTable"></div></details>
         <p class="note" style="margin-top:14px">Звёзды пересчитаны в рубли по цене покупки и сегодняшнему курсу, доля Telegram не вычтена. Оплаты с реферального баланса не считаются.</p>
       </div>
@@ -1180,6 +1211,7 @@ function demoApi(path, body) {
     { code: "demo2", title: "2 устройства", created_at: Date.now() / 1000 - 9 * 86400, redeemed: true },
   ] };
   if (path === "/api/admin/stats") return demoStats();
+  if (path.startsWith("/api/admin/funnel")) return demoFunnel(+new URL(path, location.href).searchParams.get("days"));
   if (path.startsWith("/api/admin/users")) return demoUsers(new URL(path, location.href).searchParams);
   const m = path.match(/threads\/(\d+)(\/\w+)?$/);
   if (!m) return { threads: Object.values(DEMO_THREADS).filter((t) => t.open).map((t) => ({
@@ -2113,6 +2145,17 @@ function demoStats() {
   return { users: 412, active: 96, trials: 233, paid: 81, trial_paid: 58, gifts_sold: 7, gifts_redeemed: 5, revenue_total: 61240, stars_total: 21400, rub_total: 35000, days };
 }
 
+function demoFunnel(days) {
+  const k = { 7: .25, 30: 1, 90: 2.6, 0: 4 }[days] ?? 1, n = (x) => Math.round(x * k);
+  const src = (key, title, kind, came, trial, paid, renewed, revenue) => ({ key, title, kind, came: n(came), trial: n(trial), paid: n(paid), trial_paid: n(paid * .8), renewed: n(renewed), revenue: n(revenue) });
+  const sources = [src("self", "Пришли сами", "self", 64, 41, 9, 3, 3900), src("code:IVAN", "Код IVAN · @ivan_k", "code", 22, 19, 7, 2, 3640),
+    src("link:700002", "Ссылка @ivan_k", "link", 18, 12, 5, 2, 2410), src("friends", "Пригласили друзья", "friends", 9, 6, 3, 1, 1290),
+    src("link:700003", "Ссылка ID 700003", "link", 8, 7, 0, 0, 0)];
+  const sum = (f) => sources.reduce((a, x) => a + x[f], 0);
+  return { days, funnel: { came: sum("came"), trial: sum("trial"), paid: sum("paid"), trial_paid: sum("trial_paid"), renewed: sum("renewed"), revenue: sum("revenue") }, sources,
+    promos: [{ code: "IVAN", manager: "@ivan_k", used: n(25), paid: n(7), renewed: n(2) }, { code: "START7", manager: null, used: n(12), paid: n(1), renewed: 0 }] };
+}
+
 function barChart(box, title, days, key, format) {
   const max = Math.max(...days.map((d) => d[key]), 1);
   const head = el("div", "chart-head"), bars = el("div", "bars"), axis = el("div", "chart-axis"), read = el("div", "chart-read");
@@ -2180,6 +2223,80 @@ function renderStats() {
   $("statTable").replaceChildren(active.length ? table : el("p", "note", "За этот период событий нет."));
 }
 
+/* ---------- funnel ---------- */
+
+const funnel = { days: 30, data: null };
+const share = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+function funStep(label, value, of, ofWhat, came) {
+  const box = el("div", "fun-step"), top = el("div", "fun-top"), num = el("b", "", value.toLocaleString("ru-RU"));
+  if (of !== null) num.append(el("small", "", `${share(value, of)}% ${ofWhat}`));
+  top.append(el("span", "", label), num);
+  const bar = el("div", "fun-bar"), fill = el("i");
+  fill.style.width = `${came ? Math.max(value ? 2 : 0, (value / came) * 100) : 0}%`;
+  bar.append(fill);
+  box.append(top, bar);
+  return box;
+}
+
+function renderFunnel() {
+  const d = funnel.data, f = d.funnel;
+  document.querySelectorAll("#funRange button").forEach((b) => b.classList.toggle("on", +b.dataset.d === funnel.days));
+  const loss = (text) => el("p", "fun-loss", text);
+  const people = (n) => countOf(n, "человек", "человека", "человек");
+  const steps = [funStep("Пришли", f.came, null, "", f.came)];
+  if (f.came) {
+    steps.push(loss(`${people(f.came - f.trial)} не взяли пробный`));
+    steps.push(funStep("Взяли пробный", f.trial, f.came, "от пришедших", f.came));
+    steps.push(loss(`${people(f.trial - f.trial_paid)} не оплатили после пробного` + (f.paid > f.trial_paid ? `, ещё ${f.paid - f.trial_paid} оплатили без пробного` : "")));
+    steps.push(funStep("Оплатили", f.paid, f.came, "от пришедших", f.came));
+    steps.push(loss(`${people(f.paid - f.renewed)} оплатили один раз`));
+    steps.push(funStep("Продлили", f.renewed, f.paid, "от оплативших", f.came));
+  }
+  $("funSteps").replaceChildren(...steps);
+  // the weakest step: the lowest pass rate among the three moves
+  const moves = [
+    [f.came, f.trial, "до пробного", "взяли пробный"],
+    [f.trial, f.trial_paid, "после пробного", "оплатили"],
+    [f.paid, f.renewed, "на продлении", "продлили"],
+  ].filter(([from]) => from >= 3);
+  const leak = $("funLeak");
+  leak.hidden = !moves.length;
+  if (moves.length) {
+    const [from, to, where, what] = moves.reduce((a, b) => (b[1] / b[0] < a[1] / a[0] ? b : a));
+    leak.replaceChildren("Больше всего людей теряется ", el("b", "", where), `: ${what} ${to} из ${from} (${share(to, from)}%).`);
+  }
+  $("funSources").replaceChildren(...(d.sources.length ? d.sources.map((x) => {
+    const r = el("div", "gift-row"), t = el("div");
+    t.append(el("b", "", x.title), el("span", "", [`пришло ${x.came}`, `пробный ${x.trial}`, `оплатили ${x.paid} (${share(x.paid, x.came)}%)`, `продлили ${x.renewed}`].join(" · ")));
+    r.append(t, el("b", "", money(x.revenue)));
+    return r;
+  }) : [el("p", "note", "За этот период никто не пришёл.")]));
+  $("funPromos").replaceChildren(...(d.promos.length ? d.promos.map((x) => {
+    const r = el("div", "gift-row"), t = el("div"), name = el("b");
+    name.append(el("span", "fun-code", x.code), x.manager ? ` · ${x.manager}` : "");
+    t.append(name, el("span", "", [`активаций ${x.used}`, `оплатили ${x.paid} (${share(x.paid, x.used)}%)`, `продлили ${x.renewed}`].join(" · ")));
+    r.append(t);
+    return r;
+  }) : [el("p", "note", "Промокоды за этот период не вводили.")]));
+}
+
+async function loadFunnel() {
+  const days = funnel.days;
+  if (!funnel.data) $("funSteps").replaceChildren(skelLine("100%", 52), skelLine("100%", 52), skelLine("100%", 52));
+  try {
+    const data = await serverApi(`/api/admin/funnel?days=${days}`);
+    if (days !== funnel.days) return;  // another range was picked meanwhile
+    funnel.data = data; renderFunnel();
+  } catch { $("funSteps").replaceChildren(el("p", "note", "Воронка не загрузилась: нет связи с ботом.")); }
+}
+document.querySelectorAll("#funRange button").forEach((b) => b.onclick = () => {
+  if (+b.dataset.d === funnel.days) return;
+  haptic(); funnel.days = +b.dataset.d;
+  document.querySelectorAll("#funRange button").forEach((x) => x.classList.toggle("on", x === b));
+  loadFunnel();
+});
+
 function statSkeleton() {
   const kpis = el("div", "skel-kpis"), box = $("statSkel");
   kpis.append(skelLine("100%", 86), skelLine("100%", 86));
@@ -2196,6 +2313,7 @@ async function loadStats() {
     stats.data = await serverApi("/api/admin/stats");
     $("statEmpty").hidden = true; $("statBody").hidden = false; $("statSkel").hidden = true;
     renderStats();
+    loadFunnel();
   } catch {
     $("statBody").hidden = true; $("statSkel").hidden = true; $("statEmpty").hidden = false;
     $("statEmpty").textContent = "Нет связи с ботом. Проверьте, что он запущен, и откройте раздел заново.";
@@ -2839,6 +2957,7 @@ function renderPicker(tiersId, periodId, current, pick) {
     tiers.querySelectorAll(".tier").forEach((b) => b.onclick = () => choose(+b.dataset.n, current().days));
     // buttons in old chat messages may carry fewer periods: draw only those in the list (numbers only, no user text)
     const periods = [...new Set(meta.plans.map((p) => p.days))].sort((a, b) => a - b);
+    periodDrops.delete(period);  // the drop lives inside the buttons' box: a redraw makes a new one
     period.innerHTML = periods.map((d) => {
       const m = monthsOf({ days: d }), off = periodOff(d);
       return `<button data-days="${d}" aria-label="${periodFor(m)}${off ? `, скидка ${off}%` : ""}">${periodName(m)}${off ? `<small>−${off}%</small>` : ""}</button>`;
