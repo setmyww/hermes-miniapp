@@ -97,6 +97,7 @@
   .srv-card b { display: block; font-size: 18px; font-weight: 800; }
   .srv-card .note { margin: 6px 0 12px; }
   .srv-card .btn { height: 48px; }
+  .srv-tabs { margin: 4px 0 2px; }
   .my-srv { margin-top: 16px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); }
   .my-srv b { display: block; font-size: 16px; font-weight: 800; }
   .my-srv .note { margin: 4px 0 0; }
@@ -595,6 +596,22 @@
       <button data-seg="refs">Рефералы</button>
       <button data-seg="mail">Рассылка</button>
       <button data-seg="servers">Серверы</button>
+      <button data-seg="promos">Промокоды</button>
+    </div>
+    <div id="adminPromos" hidden>
+      <h1 style="margin-top:22px">Промокоды</h1>
+      <p class="note">Скидка: человек вводит код и получает свою скидку на тарифы, она действует 48 часов. Дни: код сразу добавляет дни подписки.</p>
+      <div class="usr-tools" id="prmForm">
+        <div class="usr-tool"><input class="field" id="prmCode" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Код, например SALE20" aria-label="Промокод">
+          <select id="prmKind" aria-label="Что даёт код"><option value="discount">Скидка, %</option><option value="days">Дни подписки</option></select></div>
+        <div class="usr-tool"><input class="field" id="prmValue" type="number" inputmode="numeric" placeholder="20" aria-label="Размер скидки или дней">
+          <input class="field" id="prmLimit" type="number" inputmode="numeric" placeholder="Лимит, пусто: без лимита" aria-label="Лимит активаций"></div>
+        <div class="usr-tool"><select id="prmDays" aria-label="Сколько действует код"><option value="0">Без срока</option><option value="1">1 день</option><option value="3">3 дня</option>
+          <option value="7">7 дней</option><option value="14">14 дней</option><option value="30">30 дней</option></select>
+          <button class="btn" id="prmCreate" type="button">Создать</button></div>
+      </div>
+      <div id="prmList" style="margin-top:14px"></div>
+      <p class="sup-empty" id="prmEmpty" hidden>Промокодов пока нет.</p>
     </div>
     <div id="adminServers" hidden>
       <h1 style="margin-top:22px">Личные серверы</h1>
@@ -965,8 +982,9 @@ const DEMO_META = {
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
   ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: false,
   stars: false,
-  servers: [["nl10", "10 Мбит/с", 250], ["nl100", "100 Мбит/с", 320], ["nl250", "250 Мбит/с", 390], ["nl500", "500 Мбит/с", 550], ["nl1000", "1 Гбит/с", 890]]
-    .map(([code, speed, rub]) => ({ code, speed, rub, stars: Math.ceil(rub / 1.23), title: `Личный сервер · Нидерланды · ${speed}`, country: "Нидерланды", days: 30, setup_hours: 2 })),
+  servers: [["nl", "Нидерланды"], ["ch", "Швейцария"]].flatMap(([cc, country]) =>
+    [["10", "10 Мбит/с", 250], ["100", "100 Мбит/с", 320], ["250", "250 Мбит/с", 390], ["500", "500 Мбит/с", 550], ["1000", "1 Гбит/с", 890]]
+      .map(([n, speed, rub]) => ({ code: cc + n, cc, speed, rub, stars: Math.ceil(rub / 1.23), title: `Личный сервер · ${country} · ${speed}`, country, days: 30, setup_hours: 2 }))),
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -1312,6 +1330,16 @@ function demoApi(path, body) {
   if (path === "/api/pay/autopay") return { link: "https://t.me/$demo" };
   if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: srvProduct(body.product).rub, title: srvProduct(body.product).title }; }
   if (path === "/api/admin/servers") return demoSrvAdmin;
+  if (path === "/api/admin/promos" && !body) return { promos: demoPromos };
+  if (path === "/api/admin/promos") {
+    if (!/^[A-Z0-9_-]{3,32}$/.test(body.code)) return { error: "Промокод: от 3 до 32 символов, латинские буквы, цифры, _ и -." };
+    if (demoPromos.some((x) => x.code === body.code)) return { error: "Такой промокод уже есть." };
+    if (body.kind === "discount" && !(body.value >= 5 && body.value <= 90)) return { error: "Скидка от 5 до 90%." };
+    demoPromos = [{ code: body.code, kind: body.kind, days: body.kind === "days" ? body.value : 0, percent: body.kind === "discount" ? body.value : 0, max_uses: body.limit, used: 0,
+      valid_until: body.valid_days ? Date.now() / 1000 + body.valid_days * 86400 : 0, created_at: Date.now() / 1000, manager: null, brought: 0 }, ...demoPromos];
+    return { ok: true, promos: demoPromos };
+  }
+  if (/\/api\/admin\/promos\/[^/]+\/delete$/.test(path)) { const c = decodeURIComponent(path.split("/")[4]); demoPromos = demoPromos.filter((x) => x.code !== c); return { ok: true, promos: demoPromos }; }
   if (/\/api\/admin\/servers\/\d+\/\w+$/.test(path)) {
     const [, id, act] = path.match(/servers\/(\d+)\/(\w+)$/), o = demoSrvAdmin.orders.find((x) => x.id === +id);
     if (act === "deliver") { if (!/^(https?|vless|happ):\/\//.test(body.link || "")) return { error: "Вставьте ссылку-подписку или ключ (https://…, vless://…)." };
@@ -3025,6 +3053,8 @@ function adminSegment(seg) {
   $("adminRefs").hidden = seg !== "refs";
   $("adminMail").hidden = seg !== "mail";
   $("adminServers").hidden = seg !== "servers";
+  $("adminPromos").hidden = seg !== "promos";
+  if (seg === "promos") loadPromosAdmin();
   if (seg === "servers") loadServersAdmin();
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
@@ -3182,12 +3212,23 @@ $("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; pay.p
 
 const srvProduct = (code) => (meta.servers || []).find((x) => x.code === code);
 
+let srvCountry = null;
 function renderSrvCards() {
-  const list = meta.servers || [];
-  if (!list.length) return $("srvCards").replaceChildren();
-  const c = el("div", "srv-card"), opts = el("div", "pay-opts");
-  c.append(el("b", "", "Личный сервер в Нидерландах"),
-    el("p", "note", `Отдельный сервер только для вас: свой IP-адрес, трафик без лимита. Настраиваем до ${list[0].setup_hours} часов после оплаты, ключ придёт в чат. Выберите скорость:`), opts);
+  const all = meta.servers || [];
+  if (!all.length) return $("srvCards").replaceChildren();
+  const countries = [...new Map(all.map((x) => [x.cc || "nl", x.country])).entries()];
+  srvCountry = srvCountry && countries.some(([cc]) => cc === srvCountry) ? srvCountry : countries[0][0];
+  const list = all.filter((x) => (x.cc || "nl") === srvCountry);
+  const c = el("div", "srv-card"), opts = el("div", "pay-opts"), tabs = el("div", "chips srv-tabs");
+  countries.forEach(([cc, name]) => {
+    const b = el("button", cc === srvCountry ? "on" : "", name); b.type = "button";
+    b.onclick = () => { if (cc === srvCountry) return; haptic(); srvCountry = cc; renderSrvCards(); };
+    tabs.append(b);
+  });
+  c.append(el("b", "", "Личный сервер"),
+    el("p", "note", `Отдельный сервер только для вас: свой IP-адрес, трафик без лимита. Настраиваем до ${all[0].setup_hours} часов после оплаты, ключ придёт в чат.`));
+  if (countries.length > 1) c.append(tabs);
+  c.append(opts);
   list.forEach((pr) => {
     const b = el("button", "pay-opt"), t = el("div");
     b.type = "button";
@@ -3207,7 +3248,7 @@ function openServerPay(code) {
   pay.plan = { id: code, server: true, rub: pr.rub, stars: pr.stars };
   $("payTitle").textContent = pr.title;
   $("payLead").textContent = `${money(pr.rub)} за ${pr.days} дней · настройка до ${pr.setup_hours} ч`;
-  $("payTitle").textContent = `Личный сервер · ${pr.speed}`;
+  $("payTitle").textContent = `${pr.country}, ${pr.speed}`;
   $("payChoose").hidden = false; $("payWait").hidden = true;
   const opts = [];
   const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
@@ -3231,7 +3272,7 @@ function renderMyServer() {
   const sv = me.server, box = $("mySrv");
   box.hidden = !sv || !["paid", "delivered"].includes(sv.status);
   if (box.hidden) return;
-  const pr = srvProduct(sv.product), name = pr ? `Личный сервер · ${pr.speed}` : "Личный сервер", btns = [];
+  const pr = srvProduct(sv.product), name = pr ? `Личный сервер · ${pr.country}, ${pr.speed}` : "Личный сервер", btns = [];
   const btn = (cls, t, fn) => { const b = el("button", "btn " + cls, t); b.type = "button"; b.onclick = () => { haptic(); fn(); }; btns.push(b); };
   if (sv.status === "paid") {
     const ready = new Date((sv.ready_by || (sv.created_at + (pr?.setup_hours || 2) * 3600)) * 1000);
@@ -3327,6 +3368,53 @@ function renderServersAdmin() {
     return row;
   }));
 }
+
+/* ---------- admin: promo codes ---------- */
+
+let prmData = null;
+let demoPromos = [
+  { code: "SALE20", kind: "discount", days: 0, percent: 20, max_uses: 100, used: 14, valid_until: Date.now() / 1000 + 6 * 86400, created_at: Date.now() / 1000 - 86400, manager: null, brought: 0 },
+  { code: "START7", kind: "days", days: 7, percent: 0, max_uses: 0, used: 41, valid_until: 0, created_at: Date.now() / 1000 - 9 * 86400, manager: null, brought: 0 },
+  { code: "IVAN", kind: "days", days: 3, percent: 0, max_uses: 0, used: 11, valid_until: 0, created_at: Date.now() / 1000 - 20 * 86400, manager: "@ivan_k", brought: 9 },
+];
+async function loadPromosAdmin() {
+  if (!prmData) $("prmList").replaceChildren(skelRow(), skelRow("40%", "60%"));
+  try { prmData = (await serverApi("/api/admin/promos")).promos; renderPromosAdmin(); }
+  catch { $("prmList").replaceChildren(); $("prmEmpty").hidden = false; $("prmEmpty").textContent = "Нет связи с ботом."; }
+}
+function renderPromosAdmin() {
+  $("prmEmpty").hidden = prmData.length > 0;
+  $("prmList").replaceChildren(...prmData.map((x) => {
+    const r = el("div", "gift-row"), t = el("div"), acts = el("div", "code-acts"), name = el("b", "fun-code", x.code);
+    const what = x.kind === "discount" ? `скидка ${x.percent}%` : `+${countOf(x.days, "день", "дня", "дней")}`;
+    const bits = [what, `активаций ${x.used}${x.max_uses ? " из " + x.max_uses : ""}`, x.valid_until ? (x.valid_until * 1000 < Date.now() ? "срок вышел" : `до ${shortDate(x.valid_until)}`) : "без срока"];
+    if (x.manager) bits.push(`менеджер ${x.manager}, пришло ${x.brought}`);
+    t.append(name, el("span", "", bits.join(" · ")));
+    const cp = el("button", "", "Копировать"), del = el("button", "", "Удалить");
+    cp.type = del.type = "button";
+    cp.onclick = () => copy(x.code);
+    del.onclick = () => confirmAsk(`Удалить промокод ${x.code}? Уже выданные по нему скидки и дни останутся.`, async () => {
+      try { const res = await serverApi(`/api/admin/promos/${encodeURIComponent(x.code)}/delete`, {}); if (res.error) return toast(res.error); prmData = res.promos; renderPromosAdmin(); toast("Промокод удалён"); }
+      catch { toast("Нет связи с ботом"); }
+    });
+    acts.append(cp, del);
+    r.append(t, acts);
+    return r;
+  }));
+}
+$("prmKind").onchange = () => { $("prmValue").placeholder = $("prmKind").value === "discount" ? "20" : "7"; };
+$("prmCreate").onclick = async () => {
+  const code = $("prmCode").value.trim().toUpperCase(), value = parseInt($("prmValue").value, 10);
+  if (!code) return toast("Введите код");
+  if (!value) return toast($("prmKind").value === "discount" ? "Укажите скидку в процентах" : "Укажите число дней");
+  $("prmCreate").disabled = true; haptic();
+  try {
+    const r = await serverApi("/api/admin/promos", { code, kind: $("prmKind").value, value, limit: parseInt($("prmLimit").value, 10) || 0, valid_days: +$("prmDays").value });
+    if (r.error) toast(r.error);
+    else { prmData = r.promos; renderPromosAdmin(); toast(`Промокод ${code} создан`); $("prmCode").value = $("prmValue").value = $("prmLimit").value = ""; }
+  } catch { toast("Нет связи с ботом"); }
+  $("prmCreate").disabled = false;
+};
 
 /* ---------- live server status ---------- */
 
