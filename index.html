@@ -87,6 +87,35 @@
   .loc-top { position: absolute; top: 14px; left: 16px; right: 16px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
   .loc-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
   .loc-tag.on { color: #fff; }
+  .loc-live { position: absolute; right: 16px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+              border-radius: 99px; font-size: 12px; font-weight: 700; background: rgba(0,0,0,.45); color: #fff; }
+  .loc-live i { width: 8px; height: 8px; border-radius: 50%; background: #9a9a9a; }
+  .loc-live.ok i { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
+  .loc-live.degraded i { background: #ffc233; }
+  .loc-live.down i { background: #ff5a4f; }
+  .renew-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; padding: 16px 18px;
+                border-radius: 20px; background: #fff; color: #0b0b0b; }
+  .renew-card b { display: block; font-size: 16px; font-weight: 800; }
+  .renew-card .note { margin: 2px 0 0; color: #555; }
+  .renew-card .btn { flex: none; width: auto; height: 44px; padding: 0 18px; background: #0b0b0b; color: #fff; font-size: 14px; }
+  .pay-opts { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .pay-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 0 18px; border-radius: 18px;
+             border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 700 16px/1.2 "Manrope", sans-serif; text-align: left; }
+  .pay-opt span { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-top: 3px; }
+  .pay-opt b { flex: none; font-size: 16px; }
+  .pay-opt.main { background: #fff; color: #0b0b0b; border-color: #fff; }
+  .pay-opt.main span { color: #555; }
+  .diag-row { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .diag-row .dot { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); }
+  .diag-row .dot svg { width: 16px; height: 16px; }
+  .diag-row.good .dot { background: #fff; color: #0b0b0b; }
+  .diag-row.bad .dot { background: #ff5a4f; color: #fff; }
+  .diag-row.warn .dot { background: #ffc233; color: #0b0b0b; }
+  .diag-row.wait .dot::after { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--muted); border-top-color: transparent; animation: spin 1s linear infinite; }
+  .diag-row b { display: block; font-size: 16px; font-weight: 700; }
+  .diag-row p { margin: 3px 0 0; font-size: 14px; color: var(--muted); line-height: 1.35; }
+  .diag-row .btn { margin-top: 10px; width: auto; height: 40px; padding: 0 16px; font-size: 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .loc .name { position: absolute; left: 16px; bottom: 10px; z-index: 1; font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: -.02em; text-shadow: 0 0 14px var(--surface), 0 0 4px var(--surface); }
   /* unavailable location: dimmed scene crossed by two hazard tapes with a running caption */
   .loc.off { cursor: default; }
@@ -419,6 +448,10 @@
     <div class="home-gap"></div>
     <div class="big" id="daysLeft">0</div>
     <div class="caption" id="daysCaption">дней осталось</div>
+    <div class="renew-card" id="renewCard" hidden>
+      <div><b id="renewTitle"></b><p class="note" id="renewNote"></p></div>
+      <button class="btn" id="renewBtn">Продлить</button>
+    </div>
     <button class="btn" id="connectBtn">Подключить</button>
     <div class="rows">
       <div><span>Устройства</span><b id="statDevices">—</b></div>
@@ -436,7 +469,39 @@
     <div class="rows block">
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
       <button data-go="check"><span>Проверить VPN</span><b>→</b></button>
-      <button data-go="help"><span>Не работает?</span><b>→</b></button>
+      <button data-go="diag"><span>Не работает?</span><b>→</b></button>
+    </div>
+  </section>
+
+  <!-- PAYMENT: SBP right here, Stars, auto-renewal -->
+  <section class="view" id="v-pay">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px" id="payTitle">Оплата</h1>
+    <p class="caption" id="payLead"></p>
+    <div id="payChoose">
+      <div class="pay-opts" id="payOpts"></div>
+      <p class="legal">Оплачивая, вы принимаете <a data-doc="terms" href="#">пользовательское соглашение</a> и <a data-doc="privacy" href="#">политику конфиденциальности</a>.</p>
+    </div>
+    <div id="payWait" hidden>
+      <div class="big" id="payAmount" style="font-size:64px;margin-top:18px">0 ₽</div>
+      <p class="note" id="payState">Счёт создан. Оплатите его в приложении банка: подписка продлится сама.</p>
+      <div class="stack block">
+        <button class="btn" id="payOpen">Перейти к оплате</button>
+        <button class="btn ghost" id="payCheck">Я оплатил — проверить</button>
+        <button class="btn ghost" id="payOther">Другой способ оплаты</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- "VPN doesn't work": automatic checks first -->
+  <section class="view" id="v-diag">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Проверим подключение</h1>
+    <p class="note">Смотрим подписку, устройства, серверы и откуда вы выходите в интернет.</p>
+    <div id="diagList"></div>
+    <div class="stack block">
+      <button class="btn" id="diagAgain">Проверить ещё раз</button>
+      <button class="btn ghost" data-go="help">Не помогло: ответить на вопросы</button>
     </div>
   </section>
 
@@ -745,7 +810,7 @@
     </div>
     <div class="stack block">
       <button class="btn" id="checkAgain">Проверить снова</button>
-      <button class="btn ghost" data-go="help">Не работает?</button>
+      <button class="btn ghost" data-go="diag">Не работает?</button>
     </div>
   </section>
 
@@ -762,6 +827,12 @@
       <div><b id="meName">Гость</b><span id="meId"></span><em class="me-badge" id="meBadge" hidden>Менеджер</em></div>
     </div>
     <div class="block">
+      <div class="ref-panel" id="autopayCard" hidden style="margin-bottom:22px">
+        <span class="note" style="margin:0">Автопродление</span>
+        <div style="font-weight:800;font-size:20px;margin-top:6px" id="autopayTitle"></div>
+        <p class="note" id="autopayNote"></p>
+        <button class="btn ghost" id="autopayOff">Отключить автопродление</button>
+      </div>
       <h2 class="sec">Приглашайте друзей</h2>
       <p class="note" id="refLead">Отправьте другу свою ссылку: когда он оплатит подписку, вы получите награду.</p>
       <div class="modes single" id="refModes"></div>
@@ -838,7 +909,7 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgro
 
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
-  trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства",
+  trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства", plan_id: "d3", autopay: null,
   referrals: 14, referral_bonus_days: 7, ref_mode: "days", ref_balance: 0, ref_earned: 0, ref_paying: 3,
   manager: { status: "", slug: null },
 };
@@ -870,7 +941,7 @@ const DEMO_META = {
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
-  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"],
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: true,
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -885,12 +956,14 @@ function decodeState(s) {
       ref_mode: st.rm || "days", ref_balance: st.rl || 0, ref_earned: st.re || 0, ref_paying: st.rp || 0,
       manager: { status: st.mg || "", slug: st.ms || null },
       discount: st.dc ? { percent: st.dc[0], expires_at: st.dc[1] } : null,
+      plan_id: st.pi || null, autopay: st.ap ? { plan_id: st.ap[0], stars: st.ap[1], until: st.ap[2] } : null,
     },
     meta: {
       // buttons in old chat messages still carry an old plan list, without ruble prices
       plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub, full]) => ({ id, title, days, stars, devices, rub, ...(full && { full_rub: full }) })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
+      sbp_min: st.sb || 0, autopay: !!st.as,
     },
   };
 }
@@ -1195,7 +1268,15 @@ async function serverApi(path, body) {
   return res.json();
 }
 
+let demoPay = null;
 function demoApi(path, body) {
+  if (path === "/api/pay/sbp") { const pl = meta.plans.find((x) => x.id === body.plan); demoPay = { n: 0 }; return { order_id: "demo-1", pay_url: "https://pay.rollypay.io/pay/demo", amount: pl.rub, title: planName(pl) }; }
+  if (path.startsWith("/api/pay/status")) { demoPay.n++; return demoPay.n < 2 ? { status: "created" } : { status: "paid", me: { ...me, active: true, days_left: me.days_left + 30, expires_at: me.expires_at + 30 * 86400 } }; }
+  if (path === "/api/pay/autopay") return { link: "https://t.me/$demo" };
+  if (path === "/api/autopay/cancel") return { ok: true, me: { ...me, autopay: null } };
+  if (path === "/api/servers") return { checked_at: Date.now() / 1000 - 60, locations: { ch: { status: "ok", points: 3, failing: 0 }, se: { status: "degraded", points: 3, failing: 1 } } };
+  if (path === "/api/diagnose") return { active: me.active, days_left: me.days_left, expires_at: me.expires_at, plan: me.plan, plan_id: me.plan_id, banned: false, has_key: true,
+    devices: { available: true, used: 3, limit: 3, reset_in: 0 }, servers: { ch: { status: "ok", points: 3, failing: 0 }, se: { status: "degraded", points: 3, failing: 1 } }, autopay: me.autopay };
   if (path === "/api/key") return { sub_link: me.sub_link };
   if (path === "/api/support") return { ok: true };
   if (path === "/api/promo" && body.code.toUpperCase() === "HERMES15-DEMO") {
@@ -2948,6 +3029,174 @@ function scene(kind) {
   return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${s[kind] || s.alps}</svg>`;
 }
 
+/* ---------- paying from the mini app: SBP bill, Stars, a Stars subscription ---------- */
+
+const planName = (p) => `${devicesWord(p.devices)}, ${monthsOf(p) === 1 ? "на месяц" : `на ${periodFor(monthsOf(p))}`}`;
+const pay = { plan: null, order: null, url: null, timer: 0, started: 0 };
+
+function openPay(planId) {
+  const pl = meta.plans.find((x) => x.id === planId);
+  if (!pl) return go("plans");
+  if (STATIC && !initData) return toBot("buy_" + planId);  // opened outside Telegram: the bot takes it
+  pay.plan = pl; stopPayPoll();
+  $("payTitle").textContent = planName(pl);
+  $("payLead").textContent = `${money(pl.rub)} · ${countOf(pl.stars, "звезда", "звезды", "звёзд")}`;
+  $("payChoose").hidden = false; $("payWait").hidden = true;
+  const opts = [];
+  const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
+  if (meta.sbp_min && pl.rub >= meta.sbp_min) add("main", "По СБП", "из приложения вашего банка", money(pl.rub), paySbp);
+  add("", "Звёздами Telegram", "прямо в Telegram", countOf(pl.stars, "звезда", "звезды", "звёзд"), payStars);
+  if (meta.autopay && pl.days === 30 && !me.autopay) add("", "Звёзды с автопродлением", "списываются каждые 30 дней, отключить можно в любой момент", `${pl.stars} в мес`, payAutopay);
+  add("", "Криптовалюта и другие способы", "откроется чат с ботом", "→", () => toBot("buy_" + pl.id));
+  $("payOpts").replaceChildren(...opts);
+  go("pay");
+}
+
+async function paySbp() {
+  if (DEMO && !STATIC) { /* demo walks the whole flow */ }
+  try {
+    const r = await serverApi("/api/pay/sbp", { plan: pay.plan.id });
+    if (r.error) return toast(r.error);
+    Object.assign(pay, { order: r.order_id, url: r.pay_url, started: Date.now() });
+    $("payAmount").textContent = money(r.amount);
+    $("payState").textContent = "Счёт создан. Оплатите его в приложении банка: подписка продлится сама.";
+    $("payChoose").hidden = true; $("payWait").hidden = false;
+    openPayUrl();
+    pollPay();
+  } catch { toast("Нет связи с ботом. Попробуйте ещё раз"); }
+}
+
+function openPayUrl() {
+  if (!pay.url) return;
+  if (DEMO) return toast("В Telegram откроется страница оплаты");
+  tg?.openLink ? tg.openLink(pay.url) : window.open(pay.url, "_blank");
+}
+
+function stopPayPoll() { clearTimeout(pay.timer); pay.timer = 0; }
+
+async function pollPay(manual = false) {
+  stopPayPoll();
+  if (!pay.order) return;
+  try {
+    const r = await serverApi(`/api/pay/status?order=${encodeURIComponent(pay.order)}`);
+    if (r.status === "paid") {
+      pay.order = null;
+      if (r.me) me = { ...me, ...r.me };
+      render(); go("home"); playPaid(); tg?.HapticFeedback?.notificationOccurred("success");
+      return;
+    }
+    if (r.status === "expired" || r.status === "canceled") {
+      $("payState").textContent = r.status === "expired" ? "Время счёта истекло. Выберите способ оплаты заново." : "Платёж отменён. Выберите способ оплаты заново.";
+      pay.order = null; return;
+    }
+    if (manual) toast("Оплата пока не поступила. Если вы уже оплатили, подождите минуту");
+  } catch { if (manual) toast("Нет связи с ботом"); }
+  // every 3 s for 15 minutes while this screen is open
+  if (currentView === "pay" && Date.now() - pay.started < 15 * 60 * 1000) pay.timer = setTimeout(pollPay, 3000);
+}
+
+async function payStars() {
+  if (DEMO) return toast("Оплата звёздами доступна в Telegram");
+  try {
+    const { link } = await serverApi("/api/invoice", { plan: pay.plan.id });
+    tg.openInvoice(link, (status) => { if (status === "paid") afterStars(); });
+  } catch { toBot("buy_" + pay.plan.id); }
+}
+
+async function payAutopay() {
+  if (DEMO) return toast("Подписка в звёздах оформляется в Telegram");
+  try {
+    const r = await serverApi("/api/pay/autopay", { plan: pay.plan.id });
+    if (r.error) return toast(r.error);
+    tg.openInvoice(r.link, (status) => { if (status === "paid") afterStars(); });
+  } catch { toast("Нет связи с ботом"); }
+}
+
+function afterStars() {
+  tg?.HapticFeedback?.notificationOccurred("success");
+  // the bot applies the payment on successful_payment; give it a moment
+  setTimeout(async () => { try { me = { ...me, ...await serverApi("/api/me") }; } catch { /* the chat has the result */ } render(); go("home"); playPaid(); }, 1500);
+}
+
+$("payOpen").onclick = () => { haptic(); openPayUrl(); };
+$("payCheck").onclick = () => { haptic(); pollPay(true); };
+$("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; openPay(pay.plan.id); };
+
+/* ---------- live server status ---------- */
+
+let servers = null;
+const LIVE = { ok: "Работает", degraded: "Частичные сбои", down: "Не отвечает", unknown: "Проверяем" };
+async function loadServers() {
+  try { servers = (await serverApi("/api/servers")).locations || {}; renderLocations(); } catch { /* the cards stay as they are */ }
+}
+
+/* ---------- "VPN doesn't work": automatic checks ---------- */
+
+const DOT = {
+  good: MARK.good, bad: MARK.bad, warn: MARK.unknown, wait: "",
+};
+function diagRow(kind, title, note, action) {
+  const r = el("div", "diag-row " + kind), dot = el("div", "dot"), t = el("div");
+  dot.innerHTML = DOT[kind] || "";
+  t.append(el("b", "", title), el("p", "", note));
+  if (action) { const b = el("button", "btn ghost", action[0]); b.type = "button"; b.onclick = () => { haptic(); action[1](b); }; t.append(b); }
+  r.append(dot, t);
+  return r;
+}
+
+async function runDiag() {
+  const list = $("diagList");
+  list.replaceChildren(diagRow("wait", "Подписка и устройства", "проверяем…"), diagRow("wait", "Серверы", "проверяем…"), diagRow("wait", "Ваше подключение", "проверяем…"));
+  let d = null;
+  try { d = await serverApi("/api/diagnose"); } catch { /* fall back to what the page knows */ }
+  const rows = [];
+  if (d?.banned) rows.push(diagRow("bad", "Доступ ограничен", "Напишите в поддержку, там разберутся.", ["Написать в поддержку", () => go("support")]));
+  const active = d ? d.active : me.active;
+  if (active) rows.push(diagRow("good", "Подписка активна", `до ${fullDate(d ? d.expires_at : me.expires_at)}, ${d ? d.plan : me.plan}`));
+  else rows.push(diagRow("bad", "Подписка не активна", "VPN работает только с активной подпиской.", [me.plan_id ? "Продлить" : "Выбрать тариф", () => (me.plan_id ? openPay(me.plan_id) : go("plans"))]));
+  if (d?.devices?.available) {
+    const dv = d.devices;
+    if (dv.used >= dv.limit) {
+      rows.push(diagRow("bad", `Устройств подключено ${dv.used} из ${dv.limit}`, dv.reset_in
+        ? `Новое устройство не подключится, пока не освободится место. Сбросить список можно через ${Math.ceil(dv.reset_in / 3600)} ч.`
+        : "Новое устройство не подключится. Сбросьте список и добавьте ключ заново на нужных устройствах.",
+        dv.reset_in ? null : ["Сбросить устройства", async (b) => {
+          b.disabled = true;
+          try { const r = await serverApi("/api/devices/reset", {}); toast(r.error || "Устройства сброшены"); if (!r.error) runDiag(); } catch { toast("Нет связи с ботом"); }
+          b.disabled = false;
+        }]));
+    } else rows.push(diagRow("good", `Устройств ${dv.used} из ${dv.limit}`, "Место для нового устройства есть."));
+  }
+  const srv = d?.servers || servers || {};
+  const live = meta.locations.filter((l) => srv[l.code]);
+  const broken = live.filter((l) => srv[l.code].status === "down" || srv[l.code].status === "degraded");
+  if (!live.length || live.every((l) => srv[l.code].status === "unknown")) rows.push(diagRow("warn", "Серверы", "Проверка серверов ещё идёт. Откройте экран через пару минут."));
+  else if (!broken.length) rows.push(diagRow("good", "Все серверы работают", live.map((l) => l.city).join(", ")));
+  else rows.push(diagRow(broken.some((l) => srv[l.code].status === "down") ? "bad" : "warn", `Сбой: ${broken.map((l) => l.city).join(", ")}`,
+    "Мы уже знаем и чиним. Пока выберите в Happ другой сервер или «Автовыбор»."));
+  list.replaceChildren(...rows, diagRow("wait", "Ваше подключение", "смотрим, откуда вы выходите в интернет…"));
+  const verdict = judge(await lookupIp());
+  const net = verdict.kind === "good" ? diagRow("good", verdict.title, verdict.note)
+    : diagRow(verdict.kind === "bad" ? "bad" : "warn", verdict.title, verdict.note + " Если включить не получается, добавьте ключ в Happ заново.", ["Добавить ключ в Happ", () => addToHapp()]);
+  list.replaceChildren(...rows, net, diagRow("warn", "Обновите подписку в Happ", "Если в Happ нет серверов или они не подключаются, потяните список серверов вниз: подписка обновится."));
+}
+$("diagAgain").onclick = () => { haptic(); runDiag(); };
+
+/* ---------- auto-renewal in the profile ---------- */
+
+function renderAutopay() {
+  const a = me.autopay;
+  $("autopayCard").hidden = !a;
+  if (!a) return;
+  const pl = meta.plans.find((x) => x.id === a.plan_id);
+  $("autopayTitle").textContent = pl ? planName(pl) : (a.title || "Включено");
+  $("autopayNote").textContent = `${countOf(a.stars, "звезда", "звезды", "звёзд")} каждые 30 дней, следующее списание ${fullDate(a.until)}. Оплаченные дни останутся, если отключить.`;
+}
+$("autopayOff").onclick = () => confirmAsk("Отключить автопродление? Оплаченные дни останутся.", async () => {
+  try { const r = await serverApi("/api/autopay/cancel", {}); if (r.error) return toast(r.error); me = { ...me, ...r.me }; render(); toast("Автопродление отключено"); }
+  catch { toast("Нет связи с ботом"); }
+});
+
 function renderHome() {
   const on = me.active;
   countTo($("daysLeft"), me.days_left, 1100);
@@ -2957,6 +3206,13 @@ function renderHome() {
   $("connectBtn").textContent = on ? "Подключить" : "Купить";
   $("statDevices").textContent = on ? me.device_limit : "—";
   $("trialCard").hidden = !me.trial_available;
+  const rp = me.plan_id && meta.plans.find((x) => x.id === me.plan_id);
+  const soon = rp && !me.autopay && ((on && me.days_left <= 3) || (!on && me.expires_at > 0));
+  $("renewCard").hidden = !soon;
+  if (soon) {
+    $("renewTitle").textContent = on ? `Подписка закончится через ${countOf(me.days_left, "день", "дня", "дней")}` : "Подписка закончилась";
+    $("renewNote").textContent = `${planName(rp)} — ${money(rp.rub)}`;
+  }
   $("trialText").textContent = `${meta.trial_days} ${plural(meta.trial_days, "день", "дня", "дней")} полного доступа`;
   $("keyCard").hidden = !(on && (me.sub_link || STATIC));
   if (keyLoading) $("subLink").replaceChildren(skelLine("82%", 13));
@@ -2990,6 +3246,7 @@ function renderLocations() {
       <div class="loc-top"><span>${l.city}</span>
         <span class="loc-tag ${sel ? "on" : ""}">${off ? LOCK + "Недоступно" : sel ? "Выбрана" : l.ping + " ms"}</span></div>
       <div class="name">${l.name}</div>
+      ${!off && servers && servers[l.code] ? `<div class="loc-live ${servers[l.code].status}"><i></i>${LIVE[servers[l.code].status]}</div>` : ""}
       ${off ? `<div class="tape tape-a"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>
                <div class="tape tape-b"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>` : ""}
     </div>`;
@@ -3161,6 +3418,7 @@ function renderProfile() {
   renderReferrals();
   $("demoNote").hidden = !DEMO; $("demoPaid").hidden = !DEMO;
   $("meBadge").hidden = !isManager();
+  renderAutopay();
 }
 
 const money = (n) => `${Math.round(n).toLocaleString("ru-RU")} ₽`;
@@ -3259,11 +3517,14 @@ function go(view, isBack = false) {
   if (view === "upgrade") loadUpgrade();
   if (view === "manager") renderManagerView();
   if (view === "mstats") loadManagerStats();
-  if (view === "profile") animateRefScale();
+  if (view === "profile") { animateRefScale(); renderAutopay(); }
+  if (view === "locations") loadServers();
+  if (view !== "pay") stopPayPoll();
   if (!isBack) {
     if (view === "promo") resetPromo();
     if (view === "check") runCheck();
     if (view === "help") helpStart();
+    if (view === "diag") runDiag();
   }
   placeLiquid(); runLiquid();
   if (view === "home") { $("daysLeft").textContent = homeCountFrom; homeCountFrom = 0; countTo($("daysLeft"), me.days_left, 900); }
@@ -3310,8 +3571,9 @@ $("trialBtn").onclick = async () => {
   catch { toast("Пробный период уже использован"); }
 };
 
+$("renewBtn").onclick = () => { haptic(); openPay(me.plan_id); };
 $("buyBtn").onclick = async () => {
-  if (STATIC) return toBot("buy_" + plan);
+  if (STATIC || DEMO) return openPay(plan);
   if (DEMO) return toast("Оплата доступна в Telegram");
   try {
     const { link } = await api("/api/invoice", { method: "POST", body: JSON.stringify({ plan }) });
