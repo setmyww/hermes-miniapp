@@ -106,7 +106,9 @@
 
   /* profile */
   .me { display: flex; align-items: center; gap: 14px; margin-top: 34px; }
-  .avatar { width: 56px; height: 56px; flex: none; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 24px; }
+  .avatar { width: 56px; height: 56px; flex: none; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 24px; overflow: hidden; position: relative; }
+  .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
+  .avatar img.on { opacity: 1; }
   .me b { display: block; font-weight: 800; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
   .me span { font-size: 14px; color: var(--muted); }
   .me-badge { display: inline-block; margin-left: 8px; padding: 3px 10px; border-radius: 99px; background: #fff; color: var(--bg); font-style: normal; font-weight: 700; font-size: 12px; vertical-align: 1px; }
@@ -3135,12 +3137,27 @@ function renderPlans() {
   $("planUpgrade").hidden = !(me.active && me.device_limit < biggest && !me.trial_available && me.plan !== "пробный период");
 }
 
+// The Telegram photo when the person has one and their privacy allows it; the first letter stays underneath until it loads
+function showAvatar(u, name) {
+  const box = $("avatar"), url = u?.photo_url;
+  if (box.dataset.src === (url || "")) return;  // render() runs often: don't reload the same picture
+  box.dataset.src = url || "";
+  box.textContent = name[0]?.toUpperCase() || "H";
+  if (!url || !/^https:\/\//.test(url)) return;
+  const img = new Image();
+  img.alt = ""; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+  img.onload = () => img.classList.add("on");
+  img.onerror = () => img.remove();
+  img.src = url;
+  box.append(img);
+}
+
 function renderProfile() {
   const u = tg?.initDataUnsafe?.user;
   const name = u ? [u.first_name, u.last_name].filter(Boolean).join(" ") : "Гость";
   $("meName").textContent = name;
   $("meId").textContent = u?.username ? "@" + u.username : (u ? "ID " + u.id : "демо-аккаунт");
-  $("avatar").textContent = name[0]?.toUpperCase() || "H";
+  showAvatar(u, name);
   renderReferrals();
   $("demoNote").hidden = !DEMO; $("demoPaid").hidden = !DEMO;
   $("meBadge").hidden = !isManager();
