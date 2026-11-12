@@ -93,6 +93,16 @@
   .loc-live.ok i { background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
   .loc-live.degraded i { background: #ffc233; }
   .loc-live.down i { background: #ff5a4f; }
+  .srv-card { margin-top: 22px; padding: 18px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); }
+  .srv-card b { display: block; font-size: 18px; font-weight: 800; }
+  .srv-card .note { margin: 6px 0 12px; }
+  .srv-card .btn { height: 48px; }
+  .my-srv { margin-top: 16px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); }
+  .my-srv b { display: block; font-size: 16px; font-weight: 800; }
+  .my-srv .note { margin: 4px 0 0; }
+  .my-srv .row2 { display: flex; gap: 8px; margin-top: 12px; }
+  .my-srv .row2 .btn { height: 44px; font-size: 14px; }
+  .srv-pill-wait { background: #ffc233 !important; color: #0b0b0b !important; }
   .renew-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; padding: 16px 18px;
                 border-radius: 20px; background: #fff; color: #0b0b0b; }
   .renew-card b { display: block; font-size: 16px; font-weight: 800; }
@@ -453,6 +463,10 @@
       <button class="btn" id="renewBtn">Продлить</button>
     </div>
     <button class="btn" id="connectBtn">Подключить</button>
+    <div class="my-srv" id="mySrv" hidden>
+      <b id="mySrvTitle"></b><p class="note" id="mySrvNote"></p>
+      <div class="row2" id="mySrvBtns"></div>
+    </div>
     <div class="rows">
       <div><span>Устройства</span><b id="statDevices">—</b></div>
       <div><span>Трафик</span><b>Без лимита</b></div>
@@ -528,6 +542,7 @@
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
     <button class="up-link" data-go="upgrade" id="planUpgrade" hidden>Уже есть подписка? Добавьте устройства к ней <b>→</b></button>
+    <div id="srvCards"></div>
     <p class="legal">Оплачивая, вы принимаете <a data-doc="terms" href="#">пользовательское соглашение</a> и <a data-doc="privacy" href="#">политику конфиденциальности</a>.</p>
     <div class="rows block">
       <button data-go="gift"><span>Купить в подарок другу</span><b>→</b></button>
@@ -579,6 +594,13 @@
       <button data-seg="users">Пользователи</button>
       <button data-seg="refs">Рефералы</button>
       <button data-seg="mail">Рассылка</button>
+      <button data-seg="servers">Серверы</button>
+    </div>
+    <div id="adminServers" hidden>
+      <h1 style="margin-top:22px">Личные серверы</h1>
+      <p class="note" id="srvTotals"></p>
+      <div id="srvAdminList"></div>
+      <p class="sup-empty" id="srvAdminEmpty" hidden>Заказов пока нет.</p>
     </div>
     <div id="adminMail" hidden>
       <h1 style="margin-top:22px">Рассылка</h1>
@@ -942,6 +964,7 @@ const DEMO_META = {
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
   ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: true,
+  servers: [{ code: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", rub: 390, stars: 317, days: 30, speed: "до 250 Мбит/с", setup_hours: 2 }],
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -957,13 +980,14 @@ function decodeState(s) {
       manager: { status: st.mg || "", slug: st.ms || null },
       discount: st.dc ? { percent: st.dc[0], expires_at: st.dc[1] } : null,
       plan_id: st.pi || null, autopay: st.ap ? { plan_id: st.ap[0], stars: st.ap[1], until: st.ap[2] } : null,
+      server: st.sv ? { id: st.sv[0], product: st.sv[1], status: st.sv[2], created_at: st.sv[3], expires_at: st.sv[4], sub_link: null } : null,
     },
     meta: {
       // buttons in old chat messages still carry an old plan list, without ruble prices
       plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub, full]) => ({ id, title, days, stars, devices, rub, ...(full && { full_rub: full }) })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
-      sbp_min: st.sb || 0, autopay: !!st.as,
+      sbp_min: st.sb || 0, autopay: !!st.as, servers: DEMO_META.servers,
     },
   };
 }
@@ -1269,10 +1293,32 @@ async function serverApi(path, body) {
 }
 
 let demoPay = null;
+let demoSrvAdmin = { waiting: 1, active: 1, orders: [
+  { id: 2, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000 - 5400, delivered_at: 0, expires_at: 0, days: 30,
+    ready_by: Date.now() / 1000 + 1800, price: 390, user_id: 700201, username: "anna_v", amount: 390, note: "", name: "@anna_v · 700201", link: "" },
+  { id: 1, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "delivered", created_at: Date.now() / 1000 - 12 * 86400, delivered_at: Date.now() / 1000 - 12 * 86400 + 3600,
+    expires_at: Date.now() / 1000 + 18 * 86400, days: 0, ready_by: 0, price: 390, user_id: 700202, username: null, amount: 390, note: "h1cloud #170001", name: "без username · 700202", link: "https://s-1.nl4.h1clayd.click/sub/demo" },
+] };
 function demoApi(path, body) {
   if (path === "/api/pay/sbp") { const pl = meta.plans.find((x) => x.id === body.plan); demoPay = { n: 0 }; return { order_id: "demo-1", pay_url: "https://pay.rollypay.io/pay/demo", amount: pl.rub, title: planName(pl) }; }
-  if (path.startsWith("/api/pay/status")) { demoPay.n++; return demoPay.n < 2 ? { status: "created" } : { status: "paid", me: { ...me, active: true, days_left: me.days_left + 30, expires_at: me.expires_at + 30 * 86400 } }; }
+  if (path.startsWith("/api/pay/status")) {
+    demoPay.n++;
+    if (demoPay.n < 2) return { status: "created" };
+    if (demoPay.server) return { status: "paid", me: { ...me, server: { id: 9, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000, expires_at: 0, ready_by: Date.now() / 1000 + 7200, sub_link: null } } };
+    return { status: "paid", me: { ...me, active: true, days_left: me.days_left + 30, expires_at: me.expires_at + 30 * 86400 } };
+  }
   if (path === "/api/pay/autopay") return { link: "https://t.me/$demo" };
+  if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: 390, title: "Личный сервер · Нидерланды" }; }
+  if (path === "/api/admin/servers") return demoSrvAdmin;
+  if (/\/api\/admin\/servers\/\d+\/\w+$/.test(path)) {
+    const [, id, act] = path.match(/servers\/(\d+)\/(\w+)$/), o = demoSrvAdmin.orders.find((x) => x.id === +id);
+    if (act === "deliver") { if (!/^(https?|vless|happ):\/\//.test(body.link || "")) return { error: "Вставьте ссылку-подписку или ключ (https://…, vless://…)." };
+      Object.assign(o, { status: "delivered", link: body.link, delivered_at: Date.now() / 1000, expires_at: Date.now() / 1000 + 30 * 86400 }); }
+    if (act === "note") o.note = body.note;
+    if (act === "cancel") o.status = "canceled";
+    demoSrvAdmin = { ...demoSrvAdmin, orders: demoSrvAdmin.orders.map((x) => ({ ...x })), waiting: demoSrvAdmin.orders.filter((x) => x.status === "paid").length, active: demoSrvAdmin.orders.filter((x) => x.status === "delivered").length };
+    return { ok: true, ...demoSrvAdmin };
+  }
   if (path === "/api/autopay/cancel") return { ok: true, me: { ...me, autopay: null } };
   if (path === "/api/servers") return { checked_at: Date.now() / 1000 - 60, locations: { ch: { status: "ok", points: 3, failing: 0 }, se: { status: "degraded", points: 3, failing: 1 } } };
   if (path === "/api/diagnose") return { active: me.active, days_left: me.days_left, expires_at: me.expires_at, plan: me.plan, plan_id: me.plan_id, banned: false, has_key: true,
@@ -1862,11 +1908,11 @@ function paidTargets(cx, cy, size) {
   });
 }
 
-function playPaid() {
+function playPaid(note) {
   if (document.querySelector(".paid-fx")) return;
   const fx = el("div", "paid-fx"), canvas = el("canvas"), text = el("div", "paid-text");
   const until = new Date(me.expires_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-  text.append(el("b", "", "Оплата прошла"), el("span", "", `Подписка активна до ${until}`));
+  text.append(el("b", "", "Оплата прошла"), el("span", "", note || `Подписка активна до ${until}`));
   fx.append(canvas, text);
   fx.setAttribute("role", "status");
   document.body.append(fx);
@@ -2976,6 +3022,8 @@ function adminSegment(seg) {
   $("adminUsers").hidden = seg !== "users";
   $("adminRefs").hidden = seg !== "refs";
   $("adminMail").hidden = seg !== "mail";
+  $("adminServers").hidden = seg !== "servers";
+  if (seg === "servers") loadServersAdmin();
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
   if (seg === "stats") loadStats();
@@ -3055,7 +3103,7 @@ function openPay(planId) {
 async function paySbp() {
   if (DEMO && !STATIC) { /* demo walks the whole flow */ }
   try {
-    const r = await serverApi("/api/pay/sbp", { plan: pay.plan.id });
+    const r = pay.plan.server ? await serverApi("/api/server/sbp", { product: pay.plan.id }) : await serverApi("/api/pay/sbp", { plan: pay.plan.id });
     if (r.error) return toast(r.error);
     Object.assign(pay, { order: r.order_id, url: r.pay_url, started: Date.now() });
     $("payAmount").textContent = money(r.amount);
@@ -3082,7 +3130,9 @@ async function pollPay(manual = false) {
     if (r.status === "paid") {
       pay.order = null;
       if (r.me) me = { ...me, ...r.me };
-      render(); go("home"); playPaid(); tg?.HapticFeedback?.notificationOccurred("success");
+      render(); go("home");
+      playPaid(pay.plan?.server ? (me.server?.status === "delivered" ? `Сервер продлён до ${fullDate(me.server.expires_at)}` : "Сервер настраивается, ключ придёт в чат") : undefined);
+      tg?.HapticFeedback?.notificationOccurred("success");
       return;
     }
     if (r.status === "expired" || r.status === "canceled") {
@@ -3098,7 +3148,7 @@ async function pollPay(manual = false) {
 async function payStars() {
   if (DEMO) return toast("Оплата звёздами доступна в Telegram");
   try {
-    const { link } = await serverApi("/api/invoice", { plan: pay.plan.id });
+    const { link } = pay.plan.server ? await serverApi("/api/server/invoice", { product: pay.plan.id }) : await serverApi("/api/invoice", { plan: pay.plan.id });
     tg.openInvoice(link, (status) => { if (status === "paid") afterStars(); });
   } catch { toBot("buy_" + pay.plan.id); }
 }
@@ -3115,12 +3165,157 @@ async function payAutopay() {
 function afterStars() {
   tg?.HapticFeedback?.notificationOccurred("success");
   // the bot applies the payment on successful_payment; give it a moment
-  setTimeout(async () => { try { me = { ...me, ...await serverApi("/api/me") }; } catch { /* the chat has the result */ } render(); go("home"); playPaid(); }, 1500);
+  setTimeout(async () => {
+    try { me = { ...me, ...await serverApi("/api/me") }; } catch { /* the chat has the result */ }
+    render(); go("home");
+    playPaid(pay.plan?.server ? (me.server?.status === "delivered" ? `Сервер продлён до ${fullDate(me.server.expires_at)}` : "Сервер настраивается, ключ придёт в чат") : undefined);
+  }, 1500);
 }
 
 $("payOpen").onclick = () => { haptic(); openPayUrl(); };
 $("payCheck").onclick = () => { haptic(); pollPay(true); };
-$("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; openPay(pay.plan.id); };
+$("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; pay.plan.server ? openServerPay(pay.plan.id) : openPay(pay.plan.id); };
+
+/* ---------- personal servers ---------- */
+
+const srvProduct = (code) => (meta.servers || []).find((x) => x.code === code);
+
+function renderSrvCards() {
+  $("srvCards").replaceChildren(...(meta.servers || []).map((pr) => {
+    const c = el("div", "srv-card"), b = el("button", "btn ghost", `Купить за ${money(pr.rub)}`);
+    c.append(el("b", "", pr.title), el("p", "note", `Отдельный сервер только для вас: свой IP-адрес, ${pr.speed}, без лимита трафика. ${money(pr.rub)} за ${pr.days} дней. Настраиваем до ${pr.setup_hours} часов после оплаты, ключ придёт в чат.`), b);
+    b.onclick = () => { haptic(); openServerPay(pr.code); };
+    return c;
+  }));
+}
+
+function openServerPay(code) {
+  const pr = srvProduct(code);
+  if (!pr) return;
+  if (STATIC && !initData) return toBot("srv_" + code);
+  stopPayPoll();
+  pay.plan = { id: code, server: true, rub: pr.rub, stars: pr.stars };
+  $("payTitle").textContent = pr.title;
+  $("payLead").textContent = `${money(pr.rub)} за ${pr.days} дней · настройка до ${pr.setup_hours} ч`;
+  $("payChoose").hidden = false; $("payWait").hidden = true;
+  const opts = [];
+  const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
+  if (meta.sbp_min && pr.rub >= meta.sbp_min) add("main", "По СБП", "из приложения вашего банка", money(pr.rub), paySbp);
+  add("", "Звёздами Telegram", "прямо в Telegram", countOf(pr.stars, "звезда", "звезды", "звёзд"), payStars);
+  add("", "Другие способы", "откроется чат с ботом", "→", () => toBot("srv_" + code));
+  $("payOpts").replaceChildren(...opts);
+  go("pay");
+}
+
+async function openServerKey() {
+  let link = me.server?.sub_link;
+  if (!link && !DEMO) { try { link = (await serverApi("/api/me")).server?.sub_link; } catch { /* below */ } }
+  if (!link) return toast(DEMO ? "В Telegram здесь откроется Happ с ключом сервера" : "Ключ пришёл в чат с ботом");
+  const page = new URL("open.html", location.href);
+  page.search = ""; page.hash = encodeURIComponent(link);
+  tg?.openLink ? tg.openLink(page.href) : window.open(page.href, "_blank");
+}
+
+function renderMyServer() {
+  const sv = me.server, box = $("mySrv");
+  box.hidden = !sv || !["paid", "delivered"].includes(sv.status);
+  if (box.hidden) return;
+  const pr = srvProduct(sv.product), name = pr ? pr.title : "Личный сервер", btns = [];
+  const btn = (cls, t, fn) => { const b = el("button", "btn " + cls, t); b.type = "button"; b.onclick = () => { haptic(); fn(); }; btns.push(b); };
+  if (sv.status === "paid") {
+    const ready = new Date((sv.ready_by || (sv.created_at + (pr?.setup_hours || 2) * 3600)) * 1000);
+    $("mySrvTitle").textContent = `${name}: настраивается`;
+    $("mySrvNote").textContent = `Обычно до ${pr?.setup_hours || 2} часов, ориентир к ${ready.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}. Ключ придёт в чат с ботом.`;
+  } else {
+    const left = Math.max(0, Math.ceil((sv.expires_at * 1000 - Date.now()) / 86400000));
+    $("mySrvTitle").textContent = name;
+    $("mySrvNote").textContent = `Работает до ${fullDate(sv.expires_at)}, осталось ${countOf(left, "день", "дня", "дней")}. Свой IP, только ваш.`;
+    btn("", "Подключить", openServerKey);
+    if (left <= 3) btn("ghost", `Продлить — ${money(pr?.rub || 0)}`, () => openServerPay(sv.product));
+  }
+  $("mySrvBtns").replaceChildren(...btns);
+  $("mySrvBtns").hidden = !btns.length;
+}
+
+// admin: orders, the h1cloud name to copy, the key to hand out
+const srvAdmin = { data: null, open: null };
+async function loadServersAdmin() {
+  if (!srvAdmin.data) $("srvAdminList").replaceChildren(skelRow(), skelRow("38%", "64%"));
+  try { srvAdmin.data = await serverApi("/api/admin/servers"); renderServersAdmin(); }
+  catch { $("srvAdminList").replaceChildren(); $("srvAdminEmpty").hidden = false; $("srvAdminEmpty").textContent = "Нет связи с ботом."; }
+}
+async function srvAct(id, action, body) {
+  try {
+    const r = await serverApi(`/api/admin/servers/${id}/${action}`, body);
+    if (r.error) { toast(r.error); return false; }
+    srvAdmin.data = r; if (r.warning) toast(r.warning); renderServersAdmin(); return true;
+  } catch { toast("Нет связи с ботом"); return false; }
+}
+function srvBody(o) {
+  const box = el("div", "usr-body"), rows = el("div", "panel-rows");
+  const add = (k, v) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); rows.append(r); };
+  add("Клиент", supWho({ id: o.user_id, username: o.username }));
+  add("Сервер", `${o.country}, ${money(o.price)} в месяц`);
+  add("Оплачено всего", money(o.amount));
+  add("Заказ", fullDate(o.created_at));
+  if (o.status === "paid") add("Оплачено дней", String(o.days));
+  if (o.status === "delivered") add("Работает до", fullDate(o.expires_at));
+  box.append(rows);
+  // the name to give the server on h1cloud
+  const nameRow = el("div", "ref-link"), nameIn = el("input", "field"), nameCopy = el("button", "btn ghost", "Копировать");
+  nameIn.value = o.name; nameIn.readOnly = true; nameIn.setAttribute("aria-label", "Название сервера на h1cloud");
+  nameCopy.onclick = () => copy(o.name);
+  nameRow.append(nameIn, nameCopy);
+  box.append(el("p", "sub-label", "Название сервера на h1cloud"), nameRow);
+  if (o.status === "paid" || o.status === "delivered") {
+    const keyRow = el("div", "usr-tools"), r1 = el("div", "usr-tool"), linkIn = el("input", "field"), give = el("button", "btn", o.status === "paid" ? "Выдать" : "Заменить");
+    linkIn.placeholder = "Ссылка-подписка из панели сервера"; linkIn.value = o.link || ""; linkIn.autocomplete = "off"; linkIn.spellcheck = false;
+    linkIn.setAttribute("aria-label", "Ключ или ссылка-подписка");
+    give.onclick = async () => {
+      const link = linkIn.value.trim();
+      if (!link) return toast("Вставьте ссылку-подписку");
+      give.disabled = true;
+      const first = o.status === "paid";
+      if (await srvAct(o.id, "deliver", { link })) toast(first ? "Ключ отправлен клиенту" : "Новый ключ отправлен клиенту");
+      give.disabled = false;
+    };
+    r1.append(linkIn, give); keyRow.append(r1);
+    box.append(el("p", "sub-label", o.status === "paid" ? "Ключ клиенту" : "Ключ (можно заменить)"), keyRow);
+    const r2 = el("div", "usr-tool"), noteIn = el("input", "field"), save = el("button", "btn ghost", "Сохранить");
+    noteIn.placeholder = "Заметка: id сервера на h1cloud, панель"; noteIn.value = o.note || ""; noteIn.maxLength = 300;
+    save.onclick = async () => { save.disabled = true; if (await srvAct(o.id, "note", { note: noteIn.value })) toast("Заметка сохранена"); save.disabled = false; };
+    r2.append(noteIn, save);
+    const tools = el("div", "usr-tools"); tools.append(r2);
+    const cancel = el("button", "btn ghost wide", "Отменить заказ");
+    cancel.onclick = () => confirmAsk(`Отменить заказ №${o.id}? Деньги клиенту вы возвращаете сами.`, async () => { if (await srvAct(o.id, "cancel", {})) toast("Заказ отменён"); });
+    const acts = el("div", "usr-actions"); acts.append(cancel);
+    box.append(tools, acts);
+  } else if (o.note) add("Заметка", o.note);
+  return box;
+}
+function renderServersAdmin() {
+  const d = srvAdmin.data;
+  $("srvTotals").textContent = `Ждут настройки: ${d.waiting} · работают: ${d.active}`;
+  $("srvAdminEmpty").hidden = d.orders.length > 0;
+  $("srvAdminList").replaceChildren(...d.orders.map((o) => {
+    const row = el("div", "usr"), head = el("button", "usr-head");
+    head.type = "button";
+    const late = o.status === "paid" && Date.now() / 1000 > o.ready_by;
+    const pill = o.status === "paid" ? `ждёт ${Math.max(1, Math.round((Date.now() / 1000 - o.created_at) / 3600))} ч` : o.status === "delivered" ? `до ${shortDate(o.expires_at)}` : o.status === "expired" ? "не продлён" : "отменён";
+    head.append(el("b", "", supWho({ id: o.user_id, username: o.username })), el("span", "usr-pill" + (o.status === "delivered" ? " on" : late || o.status === "paid" ? " srv-pill-wait" : ""), pill),
+      el("span", "usr-sub", `№${o.id} · ${o.country} · ${money(o.price)}${late ? " · просрочен" : ""}`));
+    head.onclick = () => {
+      haptic();
+      const opened = row.querySelector(".usr-body");
+      document.querySelectorAll("#srvAdminList .usr-body").forEach((b) => b.remove());
+      srvAdmin.open = opened ? null : o.id;
+      if (!opened) row.append(srvBody(o));
+    };
+    row.append(head);
+    if (srvAdmin.open === o.id) row.append(srvBody(o));
+    return row;
+  }));
+}
 
 /* ---------- live server status ---------- */
 
@@ -3206,6 +3401,7 @@ function renderHome() {
   $("connectBtn").textContent = on ? "Подключить" : "Купить";
   $("statDevices").textContent = on ? me.device_limit : "—";
   $("trialCard").hidden = !me.trial_available;
+  renderMyServer();
   const rp = me.plan_id && meta.plans.find((x) => x.id === me.plan_id);
   const soon = rp && !me.autopay && ((on && me.days_left <= 3) || (!on && me.expires_at > 0));
   $("renewCard").hidden = !soon;
@@ -3370,6 +3566,7 @@ const discountLive = () => (me.discount && me.discount.expires_at * 1000 > Date.
 const offerTime = (sec) => new Date(sec * 1000).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 function renderPlans() {
+  if (!$("srvCards").children.length) renderSrvCards();
   const current = () => meta.plans.find((x) => x.id === plan) || meta.plans[0];
   const p = renderPicker("tiers", "planPeriod", current, (id) => { plan = id; renderPlans(); bumpPrice($("priceBox")); });
   plan = p.id;
