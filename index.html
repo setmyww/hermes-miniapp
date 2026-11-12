@@ -983,7 +983,7 @@ const DEMO_META = {
   ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: false,
   stars: false,
   servers: [["nl", "Нидерланды"], ["ch", "Швейцария"]].flatMap(([cc, country]) =>
-    [["10", "10 Мбит/с", 250], ["100", "100 Мбит/с", 320], ["250", "250 Мбит/с", 390], ["500", "500 Мбит/с", 550], ["1000", "1 Гбит/с", 890]]
+    [["10", "10 Мбит/с", 350], ["100", "100 Мбит/с", 420], ["250", "250 Мбит/с", 490], ["500", "500 Мбит/с", 690], ["1000", "1 Гбит/с", 1190]]
       .map(([n, speed, rub]) => ({ code: cc + n, cc, speed, rub, stars: Math.ceil(rub / 1.23), title: `Личный сервер · ${country} · ${speed}`, country, days: 30, setup_hours: 2 }))),
 };
 
@@ -1315,9 +1315,9 @@ async function serverApi(path, body) {
 let demoPay = null;
 let demoSrvAdmin = { waiting: 1, active: 1, orders: [
   { id: 2, product: "nl250", title: "Личный сервер · Нидерланды · 250 Мбит/с", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000 - 5400, delivered_at: 0, expires_at: 0, days: 30,
-    ready_by: Date.now() / 1000 + 1800, price: 390, user_id: 700201, username: "anna_v", amount: 390, note: "", name: "@anna_v · 700201", link: "" },
+    ready_by: Date.now() / 1000 + 1800, price: 490, user_id: 700201, username: "anna_v", amount: 490, note: "", name: "@anna_v · 700201", link: "" },
   { id: 1, product: "nl100", title: "Личный сервер · Нидерланды · 100 Мбит/с", country: "Нидерланды", status: "delivered", created_at: Date.now() / 1000 - 12 * 86400, delivered_at: Date.now() / 1000 - 12 * 86400 + 3600,
-    expires_at: Date.now() / 1000 + 18 * 86400, days: 0, ready_by: 0, price: 390, user_id: 700202, username: null, amount: 390, note: "h1cloud #170001", name: "без username · 700202", link: "https://s-1.nl4.h1clayd.click/sub/demo" },
+    expires_at: Date.now() / 1000 + 18 * 86400, days: 0, ready_by: 0, price: 420, user_id: 700202, username: null, amount: 420, note: "h1cloud #170001", name: "без username · 700202", link: "https://s-1.nl4.h1clayd.click/sub/demo" },
 ] };
 function demoApi(path, body) {
   if (path === "/api/pay/sbp") { const pl = meta.plans.find((x) => x.id === body.plan); demoPay = { n: 0 }; return { order_id: "demo-1", pay_url: "https://pay.rollypay.io/pay/demo", amount: pl.rub, title: planName(pl) }; }
