@@ -537,8 +537,8 @@
     <div class="caption" id="planPer">за 30 дней</div>
     <p class="note" id="planNote" hidden>Максимальная выгода для совместного использования</p>
     <div class="rows">
-      <div><span>Звёздами Telegram, по курсу</span><b id="planStars">162 звезды</b></div>
-      <div><span>Также</span><b>СБП и криптовалюта</b></div>
+      <div id="planStarsRow"><span>Звёздами Telegram, по курсу</span><b id="planStars">162 звезды</b></div>
+      <div><span>Оплата</span><b>СБП и криптовалюта</b></div>
     </div>
     <button class="btn" id="buyBtn">Оплатить</button>
     <button class="up-link" data-go="upgrade" id="planUpgrade" hidden>Уже есть подписка? Добавьте устройства к ней <b>→</b></button>
@@ -963,8 +963,10 @@ const DEMO_META = {
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
-  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: true,
-  servers: [{ code: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", rub: 390, stars: 317, days: 30, speed: "до 250 Мбит/с", setup_hours: 2 }],
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: false,
+  stars: false,
+  servers: [["nl10", "10 Мбит/с", 250], ["nl100", "100 Мбит/с", 320], ["nl250", "250 Мбит/с", 390], ["nl500", "500 Мбит/с", 550], ["nl1000", "1 Гбит/с", 890]]
+    .map(([code, speed, rub]) => ({ code, speed, rub, stars: Math.ceil(rub / 1.23), title: `Личный сервер · Нидерланды · ${speed}`, country: "Нидерланды", days: 30, setup_hours: 2 })),
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -987,7 +989,7 @@ function decodeState(s) {
       plans: st.p.every((p) => p[5]) ? st.p.map(([id, title, days, stars, devices, rub, full]) => ({ id, title, days, stars, devices, rub, ...(full && { full_rub: full }) })) : DEMO_META.plans,
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
-      sbp_min: st.sb || 0, autopay: !!st.as, servers: DEMO_META.servers,
+      sbp_min: st.sb || 0, autopay: !!st.as, stars: !!st.zs, servers: DEMO_META.servers,
     },
   };
 }
@@ -1294,9 +1296,9 @@ async function serverApi(path, body) {
 
 let demoPay = null;
 let demoSrvAdmin = { waiting: 1, active: 1, orders: [
-  { id: 2, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000 - 5400, delivered_at: 0, expires_at: 0, days: 30,
+  { id: 2, product: "nl250", title: "Личный сервер · Нидерланды · 250 Мбит/с", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000 - 5400, delivered_at: 0, expires_at: 0, days: 30,
     ready_by: Date.now() / 1000 + 1800, price: 390, user_id: 700201, username: "anna_v", amount: 390, note: "", name: "@anna_v · 700201", link: "" },
-  { id: 1, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "delivered", created_at: Date.now() / 1000 - 12 * 86400, delivered_at: Date.now() / 1000 - 12 * 86400 + 3600,
+  { id: 1, product: "nl100", title: "Личный сервер · Нидерланды · 100 Мбит/с", country: "Нидерланды", status: "delivered", created_at: Date.now() / 1000 - 12 * 86400, delivered_at: Date.now() / 1000 - 12 * 86400 + 3600,
     expires_at: Date.now() / 1000 + 18 * 86400, days: 0, ready_by: 0, price: 390, user_id: 700202, username: null, amount: 390, note: "h1cloud #170001", name: "без username · 700202", link: "https://s-1.nl4.h1clayd.click/sub/demo" },
 ] };
 function demoApi(path, body) {
@@ -1304,11 +1306,11 @@ function demoApi(path, body) {
   if (path.startsWith("/api/pay/status")) {
     demoPay.n++;
     if (demoPay.n < 2) return { status: "created" };
-    if (demoPay.server) return { status: "paid", me: { ...me, server: { id: 9, product: "nl", title: "Личный сервер · Нидерланды", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000, expires_at: 0, ready_by: Date.now() / 1000 + 7200, sub_link: null } } };
+    if (demoPay.server) return { status: "paid", me: { ...me, server: { id: 9, product: "nl250", title: "Личный сервер · Нидерланды · 250 Мбит/с", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000, expires_at: 0, ready_by: Date.now() / 1000 + 7200, sub_link: null } } };
     return { status: "paid", me: { ...me, active: true, days_left: me.days_left + 30, expires_at: me.expires_at + 30 * 86400 } };
   }
   if (path === "/api/pay/autopay") return { link: "https://t.me/$demo" };
-  if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: 390, title: "Личный сервер · Нидерланды" }; }
+  if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: srvProduct(body.product).rub, title: srvProduct(body.product).title }; }
   if (path === "/api/admin/servers") return demoSrvAdmin;
   if (/\/api\/admin\/servers\/\d+\/\w+$/.test(path)) {
     const [, id, act] = path.match(/servers\/(\d+)\/(\w+)$/), o = demoSrvAdmin.orders.find((x) => x.id === +id);
@@ -3088,13 +3090,13 @@ function openPay(planId) {
   if (STATIC && !initData) return toBot("buy_" + planId);  // opened outside Telegram: the bot takes it
   pay.plan = pl; stopPayPoll();
   $("payTitle").textContent = planName(pl);
-  $("payLead").textContent = `${money(pl.rub)} · ${countOf(pl.stars, "звезда", "звезды", "звёзд")}`;
+  $("payLead").textContent = meta.stars ? `${money(pl.rub)} · ${countOf(pl.stars, "звезда", "звезды", "звёзд")}` : money(pl.rub);
   $("payChoose").hidden = false; $("payWait").hidden = true;
   const opts = [];
   const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
   if (meta.sbp_min && pl.rub >= meta.sbp_min) add("main", "По СБП", "из приложения вашего банка", money(pl.rub), paySbp);
-  add("", "Звёздами Telegram", "прямо в Telegram", countOf(pl.stars, "звезда", "звезды", "звёзд"), payStars);
-  if (meta.autopay && pl.days === 30 && !me.autopay) add("", "Звёзды с автопродлением", "списываются каждые 30 дней, отключить можно в любой момент", `${pl.stars} в мес`, payAutopay);
+  if (meta.stars) add("", "Звёздами Telegram", "прямо в Telegram", countOf(pl.stars, "звезда", "звезды", "звёзд"), payStars);
+  if (meta.autopay && meta.stars && pl.days === 30 && !me.autopay) add("", "Звёзды с автопродлением", "списываются каждые 30 дней, отключить можно в любой момент", `${pl.stars} в мес`, payAutopay);
   add("", "Криптовалюта и другие способы", "откроется чат с ботом", "→", () => toBot("buy_" + pl.id));
   $("payOpts").replaceChildren(...opts);
   go("pay");
@@ -3181,27 +3183,36 @@ $("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; pay.p
 const srvProduct = (code) => (meta.servers || []).find((x) => x.code === code);
 
 function renderSrvCards() {
-  $("srvCards").replaceChildren(...(meta.servers || []).map((pr) => {
-    const c = el("div", "srv-card"), b = el("button", "btn ghost", `Купить за ${money(pr.rub)}`);
-    c.append(el("b", "", pr.title), el("p", "note", `Отдельный сервер только для вас: свой IP-адрес, ${pr.speed}, без лимита трафика. ${money(pr.rub)} за ${pr.days} дней. Настраиваем до ${pr.setup_hours} часов после оплаты, ключ придёт в чат.`), b);
+  const list = meta.servers || [];
+  if (!list.length) return $("srvCards").replaceChildren();
+  const c = el("div", "srv-card"), opts = el("div", "pay-opts");
+  c.append(el("b", "", "Личный сервер в Нидерландах"),
+    el("p", "note", `Отдельный сервер только для вас: свой IP-адрес, трафик без лимита. Настраиваем до ${list[0].setup_hours} часов после оплаты, ключ придёт в чат. Выберите скорость:`), opts);
+  list.forEach((pr) => {
+    const b = el("button", "pay-opt"), t = el("div");
+    b.type = "button";
+    t.append(pr.speed, el("span", "", `${pr.days} дней`));
+    b.append(t, el("b", "", money(pr.rub)));
     b.onclick = () => { haptic(); openServerPay(pr.code); };
-    return c;
-  }));
+    opts.append(b);
+  });
+  $("srvCards").replaceChildren(c);
 }
 
 function openServerPay(code) {
   const pr = srvProduct(code);
   if (!pr) return;
-  if (STATIC && !initData) return toBot("srv_" + code);
+  if (STATIC && !initData) return toBot("srv_" + code);  // the bot shows that tier
   stopPayPoll();
   pay.plan = { id: code, server: true, rub: pr.rub, stars: pr.stars };
   $("payTitle").textContent = pr.title;
   $("payLead").textContent = `${money(pr.rub)} за ${pr.days} дней · настройка до ${pr.setup_hours} ч`;
+  $("payTitle").textContent = `Личный сервер · ${pr.speed}`;
   $("payChoose").hidden = false; $("payWait").hidden = true;
   const opts = [];
   const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
   if (meta.sbp_min && pr.rub >= meta.sbp_min) add("main", "По СБП", "из приложения вашего банка", money(pr.rub), paySbp);
-  add("", "Звёздами Telegram", "прямо в Telegram", countOf(pr.stars, "звезда", "звезды", "звёзд"), payStars);
+  if (meta.stars) add("", "Звёздами Telegram", "прямо в Telegram", countOf(pr.stars, "звезда", "звезды", "звёзд"), payStars);
   add("", "Другие способы", "откроется чат с ботом", "→", () => toBot("srv_" + code));
   $("payOpts").replaceChildren(...opts);
   go("pay");
@@ -3220,7 +3231,7 @@ function renderMyServer() {
   const sv = me.server, box = $("mySrv");
   box.hidden = !sv || !["paid", "delivered"].includes(sv.status);
   if (box.hidden) return;
-  const pr = srvProduct(sv.product), name = pr ? pr.title : "Личный сервер", btns = [];
+  const pr = srvProduct(sv.product), name = pr ? `Личный сервер · ${pr.speed}` : "Личный сервер", btns = [];
   const btn = (cls, t, fn) => { const b = el("button", "btn " + cls, t); b.type = "button"; b.onclick = () => { haptic(); fn(); }; btns.push(b); };
   if (sv.status === "paid") {
     const ready = new Date((sv.ready_by || (sv.created_at + (pr?.setup_hours || 2) * 3600)) * 1000);
@@ -3581,6 +3592,7 @@ function renderPlans() {
     ? `за ${periodFor(months)}, ${Math.round(p.rub / months)} ₽ в месяц`
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
   $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
+  $("planStarsRow").hidden = !meta.stars;
   const biggest = Math.max(...meta.plans.map((x) => x.devices));
   const saved = months > 1 && month ? month.rub * months - p.rub : 0;
   $("planNote").textContent = saved > 0 ? `Экономия ${money(saved)} к помесячной оплате` : "Максимальная выгода для совместного использования";
