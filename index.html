@@ -969,13 +969,13 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgro
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
   trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства", plan_id: "d3", autopay: null,
-  traffic: { used: 41.3, limit: 200, left: 158.7, extra: 0, out: false, resets_at: Date.now() / 1000 + 19 * 86400, week_total: 12.4,
+  traffic: { used: 41.3, limit: 300, left: 258.7, extra: 0, out: false, resets_at: Date.now() / 1000 + 19 * 86400, week_total: 12.4,
     week: [1.2, 1.8, 2.1, 1.4, 2.6, 1.9, 1.4].map((gb, i) => ({ day: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10), gb })) },
   referrals: 14, referral_bonus_days: 7, ref_mode: "days", ref_balance: 0, ref_earned: 0, ref_paying: 3,
   manager: { status: "", slug: null },
 };
 const DEMO_META = {
-  traffic_gb: { 2: 100, 3: 200, 5: 300, 10: 500 }, trial_gb: 10,
+  traffic_gb: { 2: 200, 3: 300, 5: 500, 10: 1000 }, trial_gb: 10,
   traffic_packs: [{ code: "g50", gb: 50, rub: 99 }, { code: "g150", gb: 150, rub: 249 }],
   plans: [
     { id: "d2", title: "2 устройства", days: 30, rub: 199, stars: 162, devices: 2 },
