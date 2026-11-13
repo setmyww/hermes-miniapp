@@ -96,6 +96,53 @@
   .srv-card .note { margin: 6px 0 12px; }
   .srv-card .btn { height: 48px; }
   .srv-tabs { margin: 4px 0 2px; }
+  /* empty states: a grey line drawing over the text */
+  .sup-empty, .empty-art { text-align: center; }
+  .sup-empty::before, .empty-art::before { content: ""; display: block; width: 132px; height: 96px; margin: 8px auto 14px; background: center / contain no-repeat;
+    background-image: var(--art, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 40l44-22 44 22v38H22z'/%3E%3Cpath d='M22 40l44 22 44-22M66 62v16'/%3E%3Cpath d='M40 30l44 22' stroke='%23333'/%3E%3C/svg%3E")); }
+  .art-chat { --art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 18h62v38H44l-14 12V56H20z'/%3E%3Cpath d='M92 34h20v34h-8v10l-12-10H62V64'/%3E%3Cpath d='M34 32h34M34 42h22' stroke='%23333'/%3E%3C/svg%3E"); }
+  .art-ticket { --art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 28h96v12a8 8 0 000 16v12H18V56a8 8 0 000-16z'/%3E%3Cpath d='M48 28v40' stroke-dasharray='4 5' stroke='%23333'/%3E%3Cpath d='M62 40h34M62 52h22' stroke='%23333'/%3E%3C/svg%3E"); }
+  .art-people { --art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='52' cy='34' r='12'/%3E%3Cpath d='M28 78c0-14 10-22 24-22s24 8 24 22'/%3E%3Ccircle cx='88' cy='38' r='9' stroke='%23333'/%3E%3Cpath d='M80 58c12 0 24 6 24 20' stroke='%23333'/%3E%3C/svg%3E"); }
+  .art-chart { --art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 78h92' stroke='%23333'/%3E%3Cpath d='M24 66l22-18 18 10 22-24 22 12'/%3E%3Ccircle cx='86' cy='34' r='4'/%3E%3C/svg%3E"); }
+  .art-news { --art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 96' fill='none' stroke='%23444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='24' y='18' width='70' height='60' rx='8'/%3E%3Cpath d='M94 34h12v36a8 8 0 01-8 8H34'/%3E%3Cpath d='M36 32h46M36 44h46M36 56h28' stroke='%23333'/%3E%3C/svg%3E"); }
+  .empty-art { color: var(--muted); font-size: 14px; margin: 18px 0 6px; }
+  /* tab badge */
+  #tabs button { position: relative; }
+  #tabs button .badge { position: absolute; top: 9px; right: calc(50% - 16px); width: 8px; height: 8px; border-radius: 50%; background: #ff5d5d; box-shadow: 0 0 0 2px #0b0b0b; }
+  .new-pill { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: #fff; color: #0b0b0b; font-size: 11px; font-weight: 800; vertical-align: 2px; }
+  .news-item { padding: 16px 0; border-top: 1px solid var(--line); }
+  .news-item:first-child { border-top: 0; }
+  .news-item b { font-size: 16px; } .news-item p { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .news-item time { display: block; margin-top: 8px; color: #6f6f6f; font-size: 12px; }
+  /* family */
+  .fam { margin-top: 22px; background: var(--surface); border-radius: 22px; padding: 16px; }
+  .fam .seats { display: flex; gap: 6px; margin: 12px 0 4px; }
+  .fam .seats i { flex: 1; height: 6px; border-radius: 3px; background: #2a2a2a; }
+  .fam .seats i.on { background: #fff; } .fam .seats i.wait { background: #6a6a6a; }
+  .fam .mem { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .fam .mem:first-of-type { border-top: 0; }
+  .fam .av { width: 36px; height: 36px; border-radius: 50%; background: #262626; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex: none; }
+  .fam .mem > div:not(.av) { flex: 1; min-width: 0; } .fam .mem b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fam .mem span { font-size: 12px; color: var(--muted); }
+  .fam .mem button { border: 1px solid #333; background: none; color: #fff; border-radius: 999px; padding: 7px 12px; font: 600 12px Manrope; }
+  /* story card */
+  .story-wrap { display: flex; justify-content: center; margin-top: 16px; }
+  .story-wrap canvas { width: 62%; max-width: 270px; aspect-ratio: 9 / 16; border-radius: 18px; box-shadow: 0 0 0 1px #262626; }
+  /* the admin's live feed */
+  .feed { margin-top: 18px; background: var(--surface); border-radius: 22px; padding: 16px 16px 6px; }
+  .feed .hd { display: flex; justify-content: space-between; align-items: center; }
+  .feed .live { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #3ddc84; font-weight: 700; }
+  .feed .live i { width: 7px; height: 7px; border-radius: 50%; background: #3ddc84; animation: livePulse 1.6s ease-in-out infinite; }
+  @keyframes livePulse { 50% { opacity: .35; } }
+  .feed .ev { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+  .feed .ev:first-of-type { border-top: 0; }
+  .feed .ic { width: 34px; height: 34px; border-radius: 11px; background: #232323; display: flex; align-items: center; justify-content: center; }
+  .feed .ic svg { width: 18px; height: 18px; }
+  .feed .ev b { font-size: 14px; font-weight: 700; display: block; } .feed .ev span { font-size: 12px; color: var(--muted); }
+  .feed .ev time { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .feed .ev.new { animation: evIn .5s cubic-bezier(.2,.8,.2,1); }
+  @keyframes evIn { from { opacity: 0; transform: translateY(-8px); } }
+  .feed-more { width: 100%; border: 0; background: none; color: var(--muted); font: 600 13px Manrope; padding: 10px 0 8px; }
   .mail-tpl button { display: inline-flex; align-items: center; gap: 8px; }
   .mail-tpl button i { font-style: normal; opacity: .6; padding: 0 2px; }
   .mail-when select, .mail-when input { flex: 1; min-width: 0; }
@@ -493,6 +540,8 @@
       <div><span>Устройства</span><b id="statDevices">—</b></div>
       <div><span>Локация</span><b id="netLoc">Скоро</b></div>
     </div>
+    <div class="tc" id="trafficSkel" hidden><span class="skel" style="width:40%;height:13px"></span><span class="skel" style="display:block;width:55%;height:30px;margin-top:10px"></span>
+      <span class="skel" style="display:block;width:100%;height:8px;margin-top:14px"></span><span class="skel" style="display:block;width:100%;height:60px;margin-top:14px"></span></div>
     <div class="tc" id="trafficCard" hidden>
       <div class="tc-row"><span class="tc-cap" id="tcCap">Трафик за неделю</span><span class="tc-cap" id="tcLeft"></span></div>
       <div class="tc-row" style="margin-top:4px"><div class="tc-big" id="tcWeek">0 ГБ</div><b class="tc-of" id="tcOf"></b></div>
@@ -641,7 +690,7 @@
           <button class="btn" id="prmCreate" type="button">Создать</button></div>
       </div>
       <div id="prmList" style="margin-top:14px"></div>
-      <p class="sup-empty" id="prmEmpty" hidden>Промокодов пока нет.</p>
+      <p class="sup-empty art-ticket" id="prmEmpty" hidden>Промокодов пока нет.</p>
     </div>
     <div id="adminServers" hidden>
       <h1 style="margin-top:22px">Личные серверы</h1>
@@ -671,6 +720,12 @@
       <p class="form-msg" id="mailMsg" role="status"></p>
       <p class="sub-label" id="mailPlanHead" hidden>Запланированные</p>
       <div id="mailPlan"></div>
+      <h2 class="sec" style="margin-top:30px">Новости сервиса</h2>
+      <p class="note">Появятся у всех в «Профиле» → «Новости», на вкладке загорится точка.</p>
+      <input class="field" id="newsTitle" maxlength="80" placeholder="Заголовок, например: Добавили Швейцарию" aria-label="Заголовок новости" style="margin-top:10px">
+      <textarea class="field" id="newsBody" maxlength="1000" placeholder="Пара предложений о том, что изменилось" aria-label="Текст новости" style="margin-top:8px;min-height:90px"></textarea>
+      <button class="btn" id="newsAdd" type="button" style="margin-top:8px">Опубликовать новость</button>
+      <div id="newsAdmin" style="margin-top:12px"></div>
     </div>
     <div id="adminRefs" hidden>
       <h1 style="margin-top:22px">Рефералы</h1>
@@ -681,7 +736,7 @@
         <button data-r="payouts">Выплаты</button>
       </div>
       <div id="refAdminList"></div>
-      <p class="sup-empty" id="refAdminEmpty" hidden></p>
+      <p class="sup-empty art-people" id="refAdminEmpty" hidden></p>
     </div>
     <div id="adminUsers" hidden>
       <h1 style="margin-top:22px">Пользователи</h1>
@@ -697,16 +752,18 @@
         <button data-f="none">Без подписки</button>
       </div>
       <div id="usrList"></div>
-      <p class="sup-empty" id="usrEmpty" hidden></p>
+      <p class="sup-empty art-people" id="usrEmpty" hidden></p>
       <button class="btn ghost" id="usrMore" hidden>Показать ещё</button>
     </div>
     <div id="adminStats" hidden>
+      <div class="feed" id="feedCard"><div class="hd"><b style="font-size:17px">Лента событий</b><span class="live"><i></i>вживую</span></div><div id="feedList"></div>
+        <button class="feed-more" id="feedMore" type="button" hidden>Показать ещё</button></div>
       <h1 style="margin-top:22px">Статистика</h1>
       <div class="chips" id="statRange">
         <button data-days="7">7 дней</button>
         <button class="on" data-days="30">30 дней</button>
       </div>
-      <p class="sup-empty" id="statEmpty" hidden></p>
+      <p class="sup-empty art-chart" id="statEmpty" hidden></p>
       <div id="statSkel" hidden></div>
       <div id="statBody" hidden>
         <div class="stat-hero" id="statRevenue">0 ₽</div>
@@ -739,7 +796,7 @@
       <h1>Обращения</h1>
       <p class="note" id="supCount"></p>
       <div id="supList"></div>
-      <p class="sup-empty" id="supEmpty" hidden>Открытых обращений нет.</p>
+      <p class="sup-empty art-chat" id="supEmpty" hidden>Открытых обращений нет.</p>
     </div>
     <div id="supThreadBox" hidden>
       <button class="back" id="supBack">← К списку</button>
@@ -814,7 +871,7 @@
       <p class="sub-label ms-link">Ваша ссылка</p>
       <div class="ref-link"><input class="field" id="msLink" readonly aria-label="Ваша ссылка"><button class="btn" id="msCopy">Копировать</button></div>
     </div>
-    <p class="sup-empty" id="msEmpty" hidden></p>
+    <p class="sup-empty art-people" id="msEmpty" hidden></p>
   </section>
 
   <section class="view" id="v-manager">
@@ -841,6 +898,23 @@
     <p class="caption" id="upLead"></p>
     <div id="upList"></div>
     <p class="note" id="upNote" style="margin-top:16px"></p>
+  </section>
+
+  <section class="view" id="v-news">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Новости</h1>
+    <div id="newsList" style="margin-top:10px"></div>
+  </section>
+
+  <section class="view" id="v-story">
+    <button class="back" data-back>← Назад</button>
+    <h1 style="margin-top:8px">Карточка для сторис</h1>
+    <p class="note">С вашей ссылкой-приглашением. Друзья перейдут по ней и получат пробный период.</p>
+    <div class="story-wrap"><canvas id="storyCanvas" width="1080" height="1920" aria-label="Карточка для сторис"></canvas></div>
+    <div class="stack block">
+      <button class="btn" id="storyShare" type="button">Опубликовать в сторис</button>
+      <button class="btn ghost" id="storySave" type="button">Сохранить картинку</button>
+    </div>
   </section>
 
   <section class="view" id="v-devices">
@@ -930,6 +1004,14 @@
         <button class="btn" id="shareBtn">Поделиться</button>
         <button class="btn ghost" id="copyRefBtn">Копировать</button>
       </div>
+      <button class="btn ghost wide" id="storyBtn" type="button" style="margin-top:8px">Карточка для сторис</button>
+      <div class="fam" id="famCard" hidden>
+        <div class="split"><b style="font-size:17px">Семейный доступ</b><span class="note" style="margin:0" id="famSeats"></span></div>
+        <p class="note" id="famLead"></p>
+        <div class="seats" id="famBar"></div>
+        <div id="famList"></div>
+        <button class="btn" id="famInvite" type="button" style="margin-top:12px">Пригласить</button>
+      </div>
       <div class="mgr-card" id="mgrCard" hidden>
         <b>Станьте менеджером</b>
         <p class="note" id="mgrText"></p>
@@ -937,6 +1019,7 @@
       </div>
     </div>
     <div class="rows block">
+      <button data-go="news"><span>Новости<em class="new-pill" id="newsPill" hidden></em></span><b>→</b></button>
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
       <button data-go="devices"><span>Устройства</span><b>→</b></button>
       <button data-go="gift"><span>Подарить подписку</span><b>→</b></button>
@@ -967,7 +1050,7 @@
   <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
   <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
   <button data-go="support" id="supportTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H9l-5 4z"/></svg>Админ</button>
-  <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль</button>
+  <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль<i class="badge" id="profileBadge" hidden></i></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -3214,7 +3297,8 @@ function adminSegment(seg) {
   if (seg === "servers") loadServersAdmin();
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
-  if (seg === "stats") loadStats();
+  if (seg === "stats") { loadStats(); loadFeed(); }
+  if (seg === "mail") loadNewsAdmin();
   if (seg === "users" && !users.counts) loadUsers();
   if (seg === "refs") loadRefsAdmin();
   if (seg === "mail") loadMail();
@@ -3580,16 +3664,19 @@ $("prmCreate").onclick = async () => {
 
 /* ---------- traffic: the week, the month's limit, top-ups ---------- */
 
-let trafficLoaded = false;
+let trafficLoaded = false, trafficDone = false;
 const gbText = (x) => `${(Math.round(x * 10) / 10).toLocaleString("ru-RU")} ГБ`;
 async function loadTraffic() {
   trafficLoaded = true;
   if (DEMO || !initData) return;
-  try { const r = await serverApi("/api/me"); if (r && "traffic" in r) { me.traffic = r.traffic; renderTraffic(); } } catch { /* the card waits for the next open */ }
+  renderTraffic();
+  try { const r = await serverApi("/api/me"); if (r && "traffic" in r) { me.traffic = r.traffic; } if (r && r.family) me.family = r.family; } catch { /* the card waits for the next open */ }
+  trafficDone = true; renderTraffic();
 }
 function renderTraffic() {
   const t = me.active ? me.traffic : null, card = $("trafficCard");
   card.hidden = !t;
+  $("trafficSkel").hidden = !(me.active && !t && trafficLoaded && !DEMO && initData && !trafficDone);
   if (!t) return;
   const week = t.week || [], total = t.week_total ?? week.reduce((a, x) => a + x.gb, 0);
   $("tcWeek").textContent = gbText(total);
@@ -3651,6 +3738,264 @@ function openTrafficPay(code) {
   $("payOpts").replaceChildren(...opts);
   go("pay");
 }
+
+/* ---------- haptics: light on choices, heavy on payments, a tick on every selection change ---------- */
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, a, .tier, .chips button");
+  if (!t || !tg?.HapticFeedback) return;
+  if (t.matches(".pay-opt.main, #buyBtn, #renewBtn, #payOpen, #storyShare")) tg.HapticFeedback.impactOccurred("heavy");
+  else if (t.closest(".chips, #tiers, #planPeriod, #adminSeg, .seg, #tabs, #mailWhen")) tg.HapticFeedback.selectionChanged();
+}, true);
+document.addEventListener("change", (e) => { if (e.target.matches("select, input[type=checkbox]")) tg?.HapticFeedback?.selectionChanged(); }, true);
+
+/* ---------- empty states ---------- */
+
+const emptyArt = (kind, text) => el("p", `empty-art art-${kind}`, text);
+
+/* ---------- service news ---------- */
+
+let newsData = null;
+const DEMO_NEWS = { unread: 1, items: [
+  { id: 3, title: "Скидка за верность", body: "Каждые три оплаты подряд дают скидку 10% на следующую. Скидка придёт вместе с напоминанием о продлении.", created_at: Date.now() / 1000 - 3600, new: true },
+  { id: 2, title: "Больше трафика", body: "Лимиты выросли: 200, 300, 500 и 1000 ГБ в месяц, в зависимости от числа устройств.", created_at: Date.now() / 1000 - 2 * 86400, new: false },
+  { id: 1, title: "Серверы для ИИ-сервисов", body: "Свой IP для ChatGPT, Claude, Gemini: без блокировок по региону. Нидерланды и Швейцария.", created_at: Date.now() / 1000 - 5 * 86400, new: false },
+] };
+async function loadNews() {
+  try { newsData = DEMO ? DEMO_NEWS : await serverApi("/api/news"); } catch { return; }
+  renderNewsBadge();
+  if (currentView === "news") renderNews();
+}
+function renderNewsBadge() {
+  const n = newsData?.unread || 0;
+  $("profileBadge").hidden = !n;
+  $("newsPill").hidden = !n; $("newsPill").textContent = n === 1 ? "новое" : `${n} новых`;
+}
+function renderNews() {
+  const list = $("newsList");
+  if (!newsData) { list.replaceChildren(skelRow(), skelRow("40%", "70%")); return; }
+  if (!newsData.items.length) { list.replaceChildren(emptyArt("news", "Новостей пока нет")); return; }
+  list.replaceChildren(...newsData.items.map((n) => {
+    const r = el("div", "news-item"), h = el("b", "", n.title);
+    if (n.new) h.append(el("em", "new-pill", "новое"));
+    r.append(h, el("p", "", n.body), el("time", "", fullDate(n.created_at)));
+    return r;
+  }));
+  const top = newsData.items[0];
+  if (newsData.unread && top) {
+    newsData.unread = 0; renderNewsBadge();
+    if (!DEMO) serverApi("/api/news/seen", { id: top.id }).catch(() => {});
+    setTimeout(() => newsData.items.forEach((n) => { n.new = false; }), 0);
+  }
+}
+async function loadNewsAdmin() {
+  try { const r = DEMO ? DEMO_NEWS : await serverApi("/api/news"); renderNewsAdmin(r.items); } catch { /* the section stays as it was */ }
+}
+function renderNewsAdmin(items) {
+  $("newsAdmin").replaceChildren(...items.map((n) => {
+    const r = el("div", "gift-row"), t = el("div"), acts = el("div", "code-acts"), del = el("button", "", "Удалить");
+    t.append(el("b", "", n.title), el("span", "", fullDate(n.created_at)));
+    del.type = "button";
+    del.onclick = () => confirmAsk(`Удалить новость «${n.title}»?`, async () => {
+      try { const res = DEMO ? (DEMO_NEWS.items = DEMO_NEWS.items.filter((x) => x.id !== n.id), DEMO_NEWS) : await serverApi(`/api/admin/news/${n.id}/delete`, {}); renderNewsAdmin(res.items); toast("Новость удалена"); }
+      catch { toast("Нет связи с ботом"); }
+    });
+    acts.append(del); r.append(t, acts);
+    return r;
+  }));
+}
+$("newsAdd").onclick = async () => {
+  const title = $("newsTitle").value.trim(), body = $("newsBody").value.trim();
+  if (!title || !body) return toast("Напишите заголовок и текст");
+  $("newsAdd").disabled = true;
+  try {
+    let r;
+    if (DEMO) { DEMO_NEWS.items.unshift({ id: Date.now(), title, body, created_at: Date.now() / 1000, new: true }); r = { ...DEMO_NEWS }; }
+    else r = await serverApi("/api/admin/news", { title, body });
+    if (r.error) toast(r.error);
+    else { renderNewsAdmin(r.items); $("newsTitle").value = $("newsBody").value = ""; toast("Новость опубликована"); tg?.HapticFeedback?.notificationOccurred("success"); }
+  } catch { toast("Нет связи с ботом"); }
+  $("newsAdd").disabled = false;
+};
+
+/* ---------- family access ---------- */
+
+let famData = null;
+const demoFam = { role: "owner", seats: 2, members: [{ id: 700001, username: "mama_l", joined_at: Date.now() / 1000 - 6 * 86400, online_at: Date.now() / 1000 - 300, used: 8.4 }],
+  invites: [{ token: "demo-invite", created_at: Date.now() / 1000 - 3600, link: "https://t.me/Hermesvpn_app?start=fam_demo-invite" }] };
+async function loadFamily() {
+  if (DEMO) { famData = me.family?.role === "member" ? me.family : demoFam; return renderFamily(); }
+  try { famData = await serverApi("/api/family"); renderFamily(); } catch { /* hidden until it answers */ }
+}
+const agoText = (sec) => {
+  if (!sec) return "ещё не подключался";
+  const a = Date.now() / 1000 - sec;
+  return a < 20 * 60 ? "в сети сейчас" : a < 3600 ? `был ${countOf(Math.round(a / 60), "минуту", "минуты", "минут")} назад`
+    : a < 86400 ? `был ${countOf(Math.round(a / 3600), "час", "часа", "часов")} назад` : `был ${fullDate(sec)}`;
+};
+function famAct(path, body, ok) {
+  return async () => {
+    try {
+      const r = DEMO ? demoFamAct(path, body) : await serverApi(path, body);
+      if (r.error) return toast(r.error);
+      if (r.family) famData = r.family; else famData = r;
+      renderFamily(); if (ok) toast(ok);
+      return r;
+    } catch { toast("Нет связи с ботом"); }
+  };
+}
+function demoFamAct(path, body) {
+  if (path === "/api/family/invite") { const tk = "demo" + Date.now(); demoFam.invites.push({ token: tk, created_at: Date.now() / 1000, link: `https://t.me/Hermesvpn_app?start=fam_${tk}` }); return { ok: true, token: tk, ...demoFam }; }
+  if (path.endsWith("/delete")) { demoFam.invites = demoFam.invites.filter((x) => !path.includes(x.token)); return { ok: true, ...demoFam }; }
+  if (path === "/api/family/remove") { demoFam.members = demoFam.members.filter((x) => x.id !== body.member_id); return { ok: true, ...demoFam }; }
+  if (path === "/api/family/leave") { return { ok: true, family: { role: "none", seats: 0, members: [], invites: [] } }; }
+  return { error: "?" };
+}
+function shareInvite(link) {
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Присоединяйся к моей семейной подписке HERMES VPN")}`;
+  tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank");
+}
+function renderFamily() {
+  const f = famData, card = $("famCard");
+  card.hidden = !f || (f.role !== "member" && !f.seats);
+  if (card.hidden) return;
+  if (f.role === "member") {
+    $("famSeats").textContent = "";
+    $("famLead").textContent = `Вы в семейной подписке ${f.owner_name ? "@" + f.owner_name : "владельца"} до ${fullDate(f.expires_at)}. Продлевает её владелец, трафик общий.`;
+    $("famBar").replaceChildren();
+    const leave = el("button", "btn ghost", "Выйти из семьи"); leave.type = "button";
+    leave.onclick = () => confirmAsk("Выйти из семейной подписки? Ваш ключ перестанет работать.", famAct("/api/family/leave", {}, "Вы вышли из семьи"));
+    $("famList").replaceChildren(leave);
+    $("famInvite").hidden = true;
+    return;
+  }
+  const used = f.members.length, wait = f.invites.length;
+  $("famSeats").textContent = `${used} из ${f.seats}`;
+  $("famLead").textContent = "Отдайте близким часть устройств тарифа: у каждого свой ключ до той же даты, трафик общий. Вы видите, кто подключён, и можете забрать место.";
+  $("famBar").replaceChildren(...Array.from({ length: f.seats }, (_, i) => el("i", i < used ? "on" : i < used + wait ? "wait" : "")));
+  const rows = f.members.map((m) => {
+    const r = el("div", "mem"), t = el("div"), rm = el("button", "", "Убрать"); rm.type = "button";
+    t.append(el("b", "", m.username ? "@" + m.username : `ID ${m.id}`), el("span", "", `${agoText(m.online_at)} · ${gbText(m.used)}`));
+    rm.onclick = () => confirmAsk(`Убрать ${m.username ? "@" + m.username : "этого человека"} из семьи? Его ключ перестанет работать.`, famAct("/api/family/remove", { member_id: m.id }, "Место освободилось"));
+    r.append(el("div", "av", (m.username || "?")[0].toUpperCase()), t, rm);
+    return r;
+  });
+  const invs = f.invites.map((inv) => {
+    const r = el("div", "mem"), t = el("div"), send = el("button", "", "Отправить"), cancel = el("button", "", "Отменить");
+    send.type = cancel.type = "button";
+    t.append(el("b", "", "Ждём"), el("span", "", `с ${shortDate(inv.created_at)}`));
+    send.onclick = () => shareInvite(inv.link);
+    cancel.onclick = famAct(`/api/family/invite/${encodeURIComponent(inv.token)}/delete`, {}, "Приглашение отменено");
+    r.append(el("div", "av", "+"), t, send, cancel);
+    return r;
+  });
+  $("famList").replaceChildren(...rows, ...invs);
+  if (!rows.length && !invs.length) $("famList").replaceChildren(emptyArt("people", "Пока никого. Пригласите тех, с кем хотите делить подписку."));
+  $("famInvite").hidden = used + wait >= f.seats;
+}
+$("famInvite").onclick = async () => {
+  const r = await famAct("/api/family/invite", {}, null)();
+  const inv = r && (r.invites || []).find((x) => x.token === r.token);
+  if (inv) shareInvite(inv.link);
+};
+
+/* ---------- the referral story card ---------- */
+
+async function drawStory() {
+  const cv = $("storyCanvas"), x = cv.getContext("2d"), W = 1080, H = 1920;
+  try { await document.fonts.load("800 64px Manrope"); await document.fonts.load("600 40px Manrope"); } catch { /* system font */ }
+  x.fillStyle = "#0b0b0b"; x.fillRect(0, 0, W, H);
+  // the dotted planet, turned to Russia and Europe
+  const pts = globePoints(2.2), R = 470, cx = W / 2, cy = 800, t = 45 * Math.PI / 180, ph = 35 * Math.PI / 180;
+  for (let i = 0; i < pts.length; i += 4) {
+    const px = pts[i], py = pts[i + 1], pz = pts[i + 2], land = pts[i + 3];
+    const x1 = px * Math.cos(t) - pz * Math.sin(t), z1 = px * Math.sin(t) + pz * Math.cos(t);
+    const y2 = py * Math.cos(ph) - z1 * Math.sin(ph), z2 = py * Math.sin(ph) + z1 * Math.cos(ph);
+    if (z2 <= 0) continue;
+    x.globalAlpha = (land ? .55 : .18) * (.35 + .65 * z2);
+    x.fillStyle = land ? "#d9d9d9" : "#ffffff";
+    x.beginPath(); x.arc(cx + x1 * R, cy - y2 * R, land ? 3.4 : 2.4, 0, 7); x.fill();
+  }
+  x.globalAlpha = 1;
+  const fade = x.createLinearGradient(0, 1050, 0, 1500); fade.addColorStop(0, "rgba(11,11,11,0)"); fade.addColorStop(1, "#0b0b0b");
+  x.fillStyle = fade; x.fillRect(0, 1050, W, 460);
+  x.fillStyle = "#fff"; x.font = "800 60px Manrope"; x.fillText("HERMES", 90, 170);
+  x.fillStyle = "#8a8a8a"; x.font = "600 34px Manrope"; x.fillText("VPN в Telegram", 90, 222);
+  x.fillStyle = "#fff"; x.font = "800 104px Manrope";
+  x.fillText("Быстрый", 90, 1430); x.fillText("и приватный", 90, 1545);
+  x.fillStyle = "#8a8a8a"; x.font = "600 40px Manrope";
+  x.fillText(`${meta.trial_days || 3} дня бесплатно по моей ссылке`, 90, 1625);
+  // the link in a pill
+  const link = refLink().replace("https://", "");
+  x.font = "700 38px Manrope";
+  const w = Math.min(W - 180, x.measureText(link).width + 80);
+  x.fillStyle = "#fff"; x.beginPath(); x.roundRect(90, 1690, w, 96, 48); x.fill();
+  x.fillStyle = "#0b0b0b"; x.fillText(link, 130, 1751, w - 80);
+}
+let storyUrl = null;
+async function storyUpload() {
+  if (storyUrl) return storyUrl;
+  const image = $("storyCanvas").toDataURL("image/jpeg", .9);
+  if (DEMO) return (storyUrl = image);
+  const r = await serverApi("/api/story", { image });
+  if (r.error) throw new Error(r.error);
+  return (storyUrl = SERVER_API + r.url);
+}
+$("storyBtn").onclick = async () => { haptic(); storyUrl = null; go("story"); await drawStory(); };
+$("storyShare").onclick = async () => {
+  try {
+    const url = await storyUpload();
+    if (tg?.shareToStory && tg.isVersionAtLeast?.("7.8")) tg.shareToStory(url, { text: `Мой VPN: ${refLink()}`.slice(0, 200) });
+    else toast(DEMO ? "В Telegram откроется редактор сторис" : "Обновите Telegram, чтобы публиковать сторис");
+  } catch { toast("Не удалось подготовить картинку"); }
+};
+$("storySave").onclick = async () => {
+  try {
+    const url = await storyUpload();
+    if (tg?.downloadFile && tg.isVersionAtLeast?.("8.0") && !DEMO) tg.downloadFile({ url, file_name: "hermes-story.jpg" });
+    else if (DEMO) { const a = document.createElement("a"); a.href = url; a.download = "hermes-story.jpg"; a.click(); }
+    else tg?.openLink ? tg.openLink(url) : window.open(url, "_blank");
+  } catch { toast("Не удалось подготовить картинку"); }
+};
+
+/* ---------- the admin's live feed ---------- */
+
+const FEED_IC = {
+  pay: '<path d="M3 7h18v10H3zM3 11h18" stroke="#fff" stroke-width="2" fill="none"/>',
+  gb: '<path d="M4 17l5-5 4 4 7-8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  trial: '<circle cx="12" cy="12" r="8" stroke="#fff" stroke-width="2" fill="none"/><path d="M12 8v4l3 2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>',
+  srv: '<rect x="4" y="5" width="16" height="6" rx="2" stroke="#fff" stroke-width="2" fill="none"/><rect x="4" y="13" width="16" height="6" rx="2" stroke="#fff" stroke-width="2" fill="none"/>',
+  user: '<circle cx="12" cy="9" r="4" stroke="#fff" stroke-width="2" fill="none"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="#fff" stroke-width="2" fill="none"/>',
+  gift: '<rect x="4" y="9" width="16" height="11" rx="2" stroke="#fff" stroke-width="2" fill="none"/><path d="M12 9v11M4 13h16M12 9c-2-4-6-3-5 0M12 9c2-4 6-3 5 0" stroke="#fff" stroke-width="2" fill="none"/>',
+  family: '<circle cx="9" cy="9" r="3" stroke="#fff" stroke-width="2" fill="none"/><circle cx="16" cy="10" r="2.5" stroke="#fff" stroke-width="2" fill="none"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M14 15c3 0 6 1 6 4" stroke="#fff" stroke-width="2" fill="none"/>',
+};
+const feed = { seen: new Set(), timer: 0, all: [], limit: 8 };
+const demoFeed = () => { const n = Date.now() / 1000; return [
+  { t: n - 20, kind: "pay", title: "@marina оплатила 3 устройства", sub: "250 ₽ · СБП" }, { t: n - 130, kind: "gb", title: "@alex_dev докупил 50 ГБ", sub: "99 ₽ · СБП" },
+  { t: n - 400, kind: "trial", title: "@kate_m начал пробный период", sub: "3 дня бесплатно" }, { t: n - 860, kind: "srv", title: "@petrov заказал сервер для ИИ", sub: "Швейцария · 500 Мбит/с · 690 ₽ · СБП" },
+  { t: n - 1300, kind: "user", title: "Новый пользователь", sub: "по ссылке @ivan_k" }, { t: n - 2300, kind: "family", title: "@mama_l присоединился к семье @olga_s", sub: "семейный доступ" },
+  { t: n - 3000, kind: "pay", title: "@olga_s оплатил 5 устройств, год", sub: "2730 ₽ · СБП" }]; };
+const feedAgo = (t) => { const a = Date.now() / 1000 - t; return a < 60 ? "сейчас" : a < 3600 ? `${Math.round(a / 60)} мин` : a < 86400 ? `${Math.round(a / 3600)} ч` : shortDate(t); };
+async function loadFeed() {
+  clearTimeout(feed.timer);
+  if (!feed.all.length) $("feedList").replaceChildren(skelRow(), skelRow("40%", "62%"), skelRow("52%", "70%"));
+  try { feed.all = DEMO ? demoFeed() : (await serverApi("/api/admin/feed")).events; renderFeed(); } catch { if (!feed.all.length) $("feedList").replaceChildren(emptyArt("chart", "Нет связи с ботом")); }
+  if (admin.seg === "stats" && currentView === "support") feed.timer = setTimeout(loadFeed, 10000);
+}
+function renderFeed() {
+  const first = !feed.seen.size;
+  if (!feed.all.length) { $("feedList").replaceChildren(emptyArt("chart", "Событий пока нет")); return; }
+  $("feedList").replaceChildren(...feed.all.slice(0, feed.limit).map((e) => {
+    const key = `${e.t}|${e.title}`, r = el("div", "ev" + (!first && !feed.seen.has(key) ? " new" : "")), ic = el("div", "ic"), t = el("div");
+    feed.seen.add(key);
+    ic.innerHTML = `<svg viewBox="0 0 24 24">${FEED_IC[e.kind] || FEED_IC.user}</svg>`;
+    t.append(el("b", "", e.title), el("span", "", e.sub || ""));
+    r.append(ic, t, el("time", "", feedAgo(e.t)));
+    return r;
+  }));
+  $("feedMore").hidden = feed.all.length <= feed.limit;
+}
+$("feedMore").onclick = () => { feed.limit += 12; renderFeed(); };
 
 /* ---------- live server status ---------- */
 
@@ -3736,7 +4081,7 @@ function renderHome() {
   $("connectBtn").textContent = on ? "Подключить" : "Купить";
   $("statDevices").textContent = on ? me.device_limit : "—";
   renderTraffic();
-  if (!trafficLoaded) loadTraffic();
+  if (!trafficLoaded) { loadTraffic(); loadNews(); }
   $("trialCard").hidden = !me.trial_available;
   renderMyServer();
   const rp = me.plan_id && meta.plans.find((x) => x.id === me.plan_id);
@@ -4049,6 +4394,8 @@ function go(view, isBack = false) {
   if (view === "mstats") loadManagerStats();
   if (view === "profile") { animateRefScale(); renderAutopay(); }
   if (view === "locations") loadServers();
+  if (view === "news") renderNews();
+  if (view === "profile") loadFamily();
   if (view !== "pay") stopPayPoll();
   if (!isBack) {
     if (view === "promo") resetPromo();
