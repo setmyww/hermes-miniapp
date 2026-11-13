@@ -79,9 +79,7 @@
 
   /* locations */
   #locList { display: grid; gap: 10px; margin-top: 26px; }
-  .loc { position: relative; height: 168px; border-radius: 18px; background: var(--surface); overflow: hidden; cursor: pointer; transition: transform .2s; }
-  .loc:active { transform: scale(.985); }
-  .loc.sel { box-shadow: inset 0 0 0 1.5px #fff; }
+  .loc { position: relative; height: 168px; border-radius: 18px; background: var(--surface); overflow: hidden; }
   .loc svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; animation: sceneDrift 18s ease-in-out infinite alternate; transform-origin: 50% 70%; }
   @keyframes sceneDrift { from { transform: scale(1.02) translateX(-1.5%); } to { transform: scale(1.08) translateX(1.5%); } }
   .loc-top { position: absolute; top: 14px; left: 16px; right: 16px; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
@@ -98,6 +96,20 @@
   .srv-card .note { margin: 6px 0 12px; }
   .srv-card .btn { height: 48px; }
   .srv-tabs { margin: 4px 0 2px; }
+  .tc { margin-top: 22px; background: var(--surface); border-radius: 22px; padding: 16px 16px 12px; }
+  .tc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .tc-cap { color: var(--muted); font-size: 13px; }
+  .tc-big { font-size: 32px; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; }
+  .tc-of { font-size: 15px; white-space: nowrap; }
+  .tc-bar { height: 8px; border-radius: 4px; background: #2a2a2a; margin-top: 12px; overflow: hidden; }
+  .tc-bar i { display: block; height: 100%; width: 0; background: #fff; border-radius: 4px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .tc-bar.warn i { background: #ffb547; } .tc-bar.out i { background: #ff5d5d; }
+  #tcSpark { display: block; width: 100%; height: 64px; margin-top: 14px; overflow: visible; }
+  .tc-x { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; padding-top: 2px; }
+  .tc-x span.on { color: #fff; font-weight: 700; }
+  .tc-out { margin-top: 12px; display: grid; gap: 8px; }
+  .tc-out p { margin: 0; font-size: 14px; color: var(--muted); }
+  .tc-out .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .my-srv { margin-top: 16px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); }
   .my-srv b { display: block; font-size: 16px; font-weight: 800; }
   .my-srv .note { margin: 4px 0 0; }
@@ -470,8 +482,15 @@
     </div>
     <div class="rows">
       <div><span>Устройства</span><b id="statDevices">—</b></div>
-      <div><span>Трафик</span><b>Без лимита</b></div>
       <div><span>Локация</span><b id="netLoc">Скоро</b></div>
+    </div>
+    <div class="tc" id="trafficCard" hidden>
+      <div class="tc-row"><span class="tc-cap" id="tcCap">Трафик за неделю</span><span class="tc-cap" id="tcLeft"></span></div>
+      <div class="tc-row" style="margin-top:4px"><div class="tc-big" id="tcWeek">0 ГБ</div><b class="tc-of" id="tcOf"></b></div>
+      <div class="tc-bar"><i id="tcBar"></i></div>
+      <svg id="tcSpark" viewBox="0 0 326 64" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="tc-x" id="tcDays"></div>
+      <div class="tc-out" id="tcOut" hidden></div>
     </div>
     <div class="block split" id="trialCard" hidden>
       <div><b>Попробуйте бесплатно</b><p class="note" id="trialText">3 дня полного доступа</p></div>
@@ -538,6 +557,7 @@
     <div class="caption" id="planPer">за 30 дней</div>
     <p class="note" id="planNote" hidden>Максимальная выгода для совместного использования</p>
     <div class="rows">
+      <div><span>Трафик</span><b id="planTraffic">100 ГБ в месяц</b></div>
       <div id="planStarsRow"><span>Звёздами Telegram, по курсу</span><b id="planStars">162 звезды</b></div>
       <div><span>Оплата</span><b>СБП и криптовалюта</b></div>
     </div>
@@ -949,10 +969,14 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgro
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
   trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства", plan_id: "d3", autopay: null,
+  traffic: { used: 41.3, limit: 200, left: 158.7, extra: 0, out: false, resets_at: Date.now() / 1000 + 19 * 86400, week_total: 12.4,
+    week: [1.2, 1.8, 2.1, 1.4, 2.6, 1.9, 1.4].map((gb, i) => ({ day: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10), gb })) },
   referrals: 14, referral_bonus_days: 7, ref_mode: "days", ref_balance: 0, ref_earned: 0, ref_paying: 3,
   manager: { status: "", slug: null },
 };
 const DEMO_META = {
+  traffic_gb: { 2: 100, 3: 200, 5: 300, 10: 500 }, trial_gb: 10,
+  traffic_packs: [{ code: "g50", gb: 50, rub: 99 }, { code: "g150", gb: 150, rub: 249 }],
   plans: [
     { id: "d2", title: "2 устройства", days: 30, rub: 199, stars: 162, devices: 2 },
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
@@ -1008,6 +1032,7 @@ function decodeState(s) {
       locations: st.loc, bot_username: st.bot, support: st.sp, trial_days: st.td, admin: !!st.adm,
       ref_tiers: st.rt || DEMO_META.ref_tiers, ref_min_payout: st.rx || DEMO_META.ref_min_payout, vpn_ips: st.vi || [],
       sbp_min: st.sb || 0, autopay: !!st.as, stars: !!st.zs, servers: DEMO_META.servers,
+      traffic_gb: DEMO_META.traffic_gb, trial_gb: DEMO_META.trial_gb, traffic_packs: DEMO_META.traffic_packs,
     },
   };
 }
@@ -1324,10 +1349,12 @@ function demoApi(path, body) {
   if (path.startsWith("/api/pay/status")) {
     demoPay.n++;
     if (demoPay.n < 2) return { status: "created" };
+    if (demoPay.traffic) { const t = me.traffic, limit = t.limit + demoPay.traffic.gb; return { status: "paid", me: { ...me, traffic: { ...t, limit, extra: t.extra + demoPay.traffic.gb, left: limit - t.used, out: false } } }; }
     if (demoPay.server) return { status: "paid", me: { ...me, server: { id: 9, product: "nl250", title: "Личный сервер · Нидерланды · 250 Мбит/с", country: "Нидерланды", status: "paid", created_at: Date.now() / 1000, expires_at: 0, ready_by: Date.now() / 1000 + 7200, sub_link: null } } };
     return { status: "paid", me: { ...me, active: true, days_left: me.days_left + 30, expires_at: me.expires_at + 30 * 86400 } };
   }
   if (path === "/api/pay/autopay") return { link: "https://t.me/$demo" };
+  if (path === "/api/traffic/sbp") { const pk = meta.traffic_packs.find((x) => x.code === body.pack); demoPay = { n: 0, traffic: pk }; return { order_id: "demo-gb", pay_url: "https://pay.rollypay.io/pay/demo", amount: pk.rub, title: `+${pk.gb} ГБ трафика` }; }
   if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: srvProduct(body.product).rub, title: srvProduct(body.product).title }; }
   if (path === "/api/admin/servers") return demoSrvAdmin;
   if (path === "/api/admin/promos" && !body) return { promos: demoPromos };
@@ -3135,7 +3162,8 @@ function openPay(planId) {
 async function paySbp() {
   if (DEMO && !STATIC) { /* demo walks the whole flow */ }
   try {
-    const r = pay.plan.server ? await serverApi("/api/server/sbp", { product: pay.plan.id }) : await serverApi("/api/pay/sbp", { plan: pay.plan.id });
+    const r = pay.plan.server ? await serverApi("/api/server/sbp", { product: pay.plan.id })
+      : pay.plan.traffic ? await serverApi("/api/traffic/sbp", { pack: pay.plan.id }) : await serverApi("/api/pay/sbp", { plan: pay.plan.id });
     if (r.error) return toast(r.error);
     Object.assign(pay, { order: r.order_id, url: r.pay_url, started: Date.now() });
     $("payAmount").textContent = money(r.amount);
@@ -3154,6 +3182,11 @@ function openPayUrl() {
 
 function stopPayPoll() { clearTimeout(pay.timer); pay.timer = 0; }
 
+function paidNote() {
+  if (pay.plan?.traffic) return me.traffic ? `Трафик добавлен: осталось ${gbText(me.traffic.left)}` : "Трафик добавлен";
+  if (pay.plan?.server) return me.server?.status === "delivered" ? `Сервер продлён до ${fullDate(me.server.expires_at)}` : "Сервер настраивается, ключ придёт в чат";
+  return undefined;
+}
 async function pollPay(manual = false) {
   stopPayPoll();
   if (!pay.order) return;
@@ -3163,7 +3196,7 @@ async function pollPay(manual = false) {
       pay.order = null;
       if (r.me) me = { ...me, ...r.me };
       render(); go("home");
-      playPaid(pay.plan?.server ? (me.server?.status === "delivered" ? `Сервер продлён до ${fullDate(me.server.expires_at)}` : "Сервер настраивается, ключ придёт в чат") : undefined);
+      playPaid(paidNote());
       tg?.HapticFeedback?.notificationOccurred("success");
       return;
     }
@@ -3200,13 +3233,13 @@ function afterStars() {
   setTimeout(async () => {
     try { me = { ...me, ...await serverApi("/api/me") }; } catch { /* the chat has the result */ }
     render(); go("home");
-    playPaid(pay.plan?.server ? (me.server?.status === "delivered" ? `Сервер продлён до ${fullDate(me.server.expires_at)}` : "Сервер настраивается, ключ придёт в чат") : undefined);
+    playPaid(paidNote());
   }, 1500);
 }
 
 $("payOpen").onclick = () => { haptic(); openPayUrl(); };
 $("payCheck").onclick = () => { haptic(); pollPay(true); };
-$("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; pay.plan.server ? openServerPay(pay.plan.id) : openPay(pay.plan.id); };
+$("payOther").onclick = () => { haptic(); stopPayPoll(); pay.order = null; pay.plan.server ? openServerPay(pay.plan.id) : pay.plan.traffic ? openTrafficPay(pay.plan.id) : openPay(pay.plan.id); };
 
 /* ---------- personal servers ---------- */
 
@@ -3416,6 +3449,73 @@ $("prmCreate").onclick = async () => {
   $("prmCreate").disabled = false;
 };
 
+/* ---------- traffic: the week, the month's limit, top-ups ---------- */
+
+let trafficLoaded = false;
+const gbText = (x) => `${(Math.round(x * 10) / 10).toLocaleString("ru-RU")} ГБ`;
+async function loadTraffic() {
+  trafficLoaded = true;
+  if (DEMO || !initData) return;
+  try { const r = await serverApi("/api/me"); if (r && "traffic" in r) { me.traffic = r.traffic; renderTraffic(); } } catch { /* the card waits for the next open */ }
+}
+function renderTraffic() {
+  const t = me.active ? me.traffic : null, card = $("trafficCard");
+  card.hidden = !t;
+  if (!t) return;
+  const week = t.week || [], total = t.week_total ?? week.reduce((a, x) => a + x.gb, 0);
+  $("tcWeek").textContent = gbText(total);
+  $("tcOf").textContent = `${gbText(t.used)} из ${gbText(t.limit)}`;
+  $("tcLeft").textContent = t.out ? "лимит исчерпан" : `осталось ${gbText(t.left)}`;
+  const share = t.limit ? Math.min(1, t.used / t.limit) : 0, bar = $("tcBar").parentElement;
+  bar.classList.toggle("warn", share >= 0.8 && !t.out); bar.classList.toggle("out", !!t.out);
+  requestAnimationFrame(() => { $("tcBar").style.width = `${Math.max(share * 100, share ? 1.5 : 0)}%`; });
+  // the line: a smooth curve through the seven days, today marked
+  const W = 326, H = 64, max = Math.max(0.1, ...week.map((x) => x.gb)) * 1.15;
+  const P = week.map((x, i) => [2 + i * (W - 4) / Math.max(1, week.length - 1), H - 6 - (x.gb / max) * (H - 12)]);
+  let d = P.length ? `M${P[0][0]} ${P[0][1]}` : "";
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(i - 1, 0)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(i + 2, P.length - 1)];
+    d += ` C${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]} ${p2[1]}`;
+  }
+  const last = P[P.length - 1];
+  $("tcSpark").innerHTML = P.length ? `<path d="${d} L${W - 2} ${H - 4} L2 ${H - 4} Z" fill="#fff" fill-opacity=".06"/>
+    <path d="${d}" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="#fff"/>` : "";
+  const DOW = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  $("tcDays").innerHTML = week.map((x, i) => `<span class="${i === week.length - 1 ? "on" : ""}">${DOW[new Date(x.day + "T12:00:00").getDay()]}</span>`).join("");
+  // top-ups: when it runs low or out
+  const out = $("tcOut"), packs = meta.traffic_packs || [];
+  out.hidden = !(packs.length && (t.out || share >= 0.8));
+  if (!out.hidden) {
+    const when = t.resets_at ? new Date(t.resets_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) : "";
+    const note = el("p", "", t.out ? `Трафик на этот месяц закончился, VPN остановлен${when ? ` до ${when}` : ""}. Докупите, и он заработает сразу.`
+      : `Осталось мало трафика.${when ? ` Новый лимит придёт ${when}.` : ""}`);
+    const row = el("div", "row2");
+    packs.slice(0, 2).forEach((pk, i) => {
+      const b = el("button", "btn small" + (i ? " ghost" : ""), `+${pk.gb} ГБ · ${money(pk.rub)}`); b.type = "button";
+      b.onclick = () => { haptic(); openTrafficPay(pk.code); };
+      row.append(b);
+    });
+    out.replaceChildren(note, row);
+  }
+}
+function openTrafficPay(code) {
+  const pk = (meta.traffic_packs || []).find((x) => x.code === code);
+  if (!pk) return;
+  if (STATIC && !initData) return toBot("gb_" + code);
+  stopPayPoll();
+  pay.plan = { id: code, traffic: true, rub: pk.rub };
+  $("payTitle").textContent = `+${pk.gb} ГБ трафика`;
+  $("payLead").textContent = `${money(pk.rub)} · добавится сразу, до конца месяца подписки`;
+  $("payChoose").hidden = false; $("payWait").hidden = true;
+  const opts = [];
+  const add = (cls, title, sub, price, fn) => { const b = el("button", "pay-opt " + cls); b.type = "button"; const t = el("div"); t.append(title, el("span", "", sub)); b.append(t, el("b", "", price)); b.onclick = () => { haptic(); fn(); }; opts.push(b); };
+  if (meta.sbp_min && pk.rub >= meta.sbp_min) add("main", "По СБП", "из приложения вашего банка", money(pk.rub), paySbp);
+  add("", "Другие способы", "откроется чат с ботом", "→", () => toBot("gb_" + code));
+  $("payOpts").replaceChildren(...opts);
+  go("pay");
+}
+
 /* ---------- live server status ---------- */
 
 let servers = null;
@@ -3499,6 +3599,8 @@ function renderHome() {
     : "подписка не активна";
   $("connectBtn").textContent = on ? "Подключить" : "Купить";
   $("statDevices").textContent = on ? me.device_limit : "—";
+  renderTraffic();
+  if (!trafficLoaded) loadTraffic();
   $("trialCard").hidden = !me.trial_available;
   renderMyServer();
   const rp = me.plan_id && meta.plans.find((x) => x.id === me.plan_id);
@@ -3534,25 +3636,18 @@ function renderLocations() {
   const avail = meta.locations.filter(isAvail).length;
   $("locCount").textContent = `${avail} из ${meta.locations.length} доступно`;
   $("locList").innerHTML = meta.locations.map((l, i) => {
-    const off = !isAvail(l), sel = i === selectedLoc;
+    const off = !isAvail(l);
     return `
-    <div class="loc ${sel ? "sel" : ""} ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
+    <div class="loc ${off ? "off" : ""}" data-i="${i}" style="--i:${i + 1}">
       ${scene(l.scene)}
       <div class="loc-top"><span>${l.city}</span>
-        <span class="loc-tag ${sel ? "on" : ""}">${off ? LOCK + "Недоступно" : sel ? "Выбрана" : l.ping + " ms"}</span></div>
+        <span class="loc-tag">${off ? LOCK + "Недоступно" : l.ping + " ms"}</span></div>
       <div class="name">${l.name}</div>
       ${!off && servers && servers[l.code] ? `<div class="loc-live ${servers[l.code].status}"><i></i>${LIVE[servers[l.code].status]}</div>` : ""}
       ${off ? `<div class="tape tape-a"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>
                <div class="tape tape-b"><span>${TAPE_TEXT} ${TAPE_TEXT}</span></div>` : ""}
     </div>`;
   }).join("");
-  $("locList").querySelectorAll(".loc").forEach((el) => el.onclick = () => {
-    const l = meta.locations[+el.dataset.i];
-    if (!isAvail(l)) { tg?.HapticFeedback?.notificationOccurred("warning"); return toast(`${l.name}: локация пока недоступна`); }
-    // re-rendering after a pick shouldn't replay the entrance animation
-    selectedLoc = +el.dataset.i; haptic(); $("locList").classList.add("settled"); renderLocations(); renderHome();
-    toast(`${l.name} выбрана`);
-  });
 }
 
 const isYear = (p) => p.days >= 365;
@@ -3680,6 +3775,8 @@ function renderPlans() {
     ? `за ${periodFor(months)}, ${Math.round(p.rub / months)} ₽ в месяц`
     : `за ${p.days} дней, ${Math.round(p.rub / p.devices)} ₽ за устройство`;
   $("planStars").textContent = `${p.stars.toLocaleString("ru-RU")} ${plural(p.stars, "звезда", "звезды", "звёзд")}`;
+  const tgb = (meta.traffic_gb || {})[p.devices];
+  $("planTraffic").textContent = tgb ? `${tgb} ГБ ${p.days > 30 ? "каждый месяц" : "в месяц"}` : "—";
   $("planStarsRow").hidden = !meta.stars;
   const biggest = Math.max(...meta.plans.map((x) => x.devices));
   const saved = months > 1 && month ? month.rub * months - p.rub : 0;
