@@ -96,6 +96,9 @@
   .srv-card .note { margin: 6px 0 12px; }
   .srv-card .btn { height: 48px; }
   .srv-tabs { margin: 4px 0 2px; }
+  .mail-tpl button { display: inline-flex; align-items: center; gap: 8px; }
+  .mail-tpl button i { font-style: normal; opacity: .6; padding: 0 2px; }
+  .mail-when select, .mail-when input { flex: 1; min-width: 0; }
   .tc { margin-top: 22px; background: var(--surface); border-radius: 22px; padding: 16px 16px 12px; }
   .tc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .tc-cap { color: var(--muted); font-size: 13px; }
@@ -108,6 +111,12 @@
   .tc-x { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; padding-top: 2px; }
   .tc-x span.on { color: #fff; font-weight: 700; }
   .tc-out { margin-top: 12px; display: grid; gap: 8px; }
+  .tc-dev { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 12px; padding: 12px 0 2px; border: 0; border-top: 1px solid var(--line);
+    background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+  .tc-dev > span { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+  .tc-dev i { width: 8px; height: 8px; border-radius: 50%; background: #5a5a5a; }
+  .tc-dev i.on { background: #3ddc84; }
+  .tc-dev:active { opacity: .55; }
   .tc-out p { margin: 0; font-size: 14px; color: var(--muted); }
   .tc-out .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .my-srv { margin-top: 16px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--surface); }
@@ -491,6 +500,7 @@
       <svg id="tcSpark" viewBox="0 0 326 64" preserveAspectRatio="none" aria-hidden="true"></svg>
       <div class="tc-x" id="tcDays"></div>
       <div class="tc-out" id="tcOut" hidden></div>
+      <button class="tc-dev" type="button" data-go="devices"><span><i id="tcDot"></i><span id="tcOnline">—</span></span><b>Устройства →</b></button>
     </div>
     <div class="block split" id="trialCard" hidden>
       <div><b>Попробуйте бесплатно</b><p class="note" id="trialText">3 дня полного доступа</p></div>
@@ -643,16 +653,24 @@
       <h1 style="margin-top:22px">Рассылка</h1>
       <p class="note">Кому отправить</p>
       <div class="chips usr-filters" id="mailSeg"></div>
+      <p class="note" style="margin-top:18px">Шаблоны</p>
+      <div class="chips mail-tpl" id="mailTpl"></div>
       <label class="note" for="mailText" style="display:block;margin:18px 0 8px">Текст сообщения</label>
       <textarea class="field" id="mailText" maxlength="3500" placeholder="Например: открыли новые серверы, подключение стало быстрее"></textarea>
       <p class="note" id="mailCount"></p>
       <p class="sub-label">Так увидят пользователи</p>
       <div class="mail-preview"><div class="bubble" id="mailPreview"></div></div>
+      <p class="note" style="margin-top:18px">Когда отправить</p>
+      <div class="usr-tool mail-when"><select id="mailWhen" aria-label="Когда отправить"></select>
+        <input class="field" id="mailAt" type="datetime-local" aria-label="Дата и время отправки" hidden></div>
       <div class="usr-actions">
         <button class="btn ghost" id="mailTest">Отправить себе</button>
         <button class="btn" id="mailSend">Отправить</button>
       </div>
+      <button class="btn ghost wide" id="mailSaveTpl" type="button" style="margin-top:10px">Сохранить текст как шаблон</button>
       <p class="form-msg" id="mailMsg" role="status"></p>
+      <p class="sub-label" id="mailPlanHead" hidden>Запланированные</p>
+      <div id="mailPlan"></div>
     </div>
     <div id="adminRefs" hidden>
       <h1 style="margin-top:22px">Рефералы</h1>
@@ -969,7 +987,7 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgro
 const DEMO_ME = {
   id: 0, username: "guest", active: true, days_left: 27, expires_at: Date.now() / 1000 + 27 * 86400,
   trial_available: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-K9xQ2pLm", device_limit: 3, plan: "3 устройства", plan_id: "d3", autopay: null,
-  traffic: { used: 41.3, limit: 300, left: 258.7, extra: 0, out: false, resets_at: Date.now() / 1000 + 19 * 86400, week_total: 12.4,
+  traffic: { used: 41.3, limit: 300, left: 258.7, extra: 0, out: false, resets_at: Date.now() / 1000 + 19 * 86400, week_total: 12.4, online_at: Date.now() / 1000 - 300,
     week: [1.2, 1.8, 2.1, 1.4, 2.6, 1.9, 1.4].map((gb, i) => ({ day: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10), gb })) },
   referrals: 14, referral_bonus_days: 7, ref_mode: "days", ref_balance: 0, ref_earned: 0, ref_paying: 3,
   manager: { status: "", slug: null },
@@ -1421,6 +1439,10 @@ function demoApi(path, body) {
   if (/\/api\/admin\/users\/\d+\/discount$/.test(path)) return { ok: true, code: `HERMES${body.percent}-DEMO1`, expires_at: Date.now() / 1000 + body.hours * 3600 };
   if (/\/api\/admin\/users\/\d+\/(ban|unban)$/.test(path)) return { ok: true };
   if (path === "/api/admin/broadcast") return body ? demoBroadcastSend(body) : demoBroadcastInfo();
+  if (path === "/api/admin/templates") { demoMailX.templates.unshift({ id: Date.now(), name: body.name, text: body.text }); return { ok: true, ...demoMailX }; }
+  if (/\/api\/admin\/templates\/\d+\/delete$/.test(path)) { const id = +path.split("/")[4]; demoMailX.templates = demoMailX.templates.filter((t) => t.id !== id); return { ok: true, ...demoMailX }; }
+  if (/\/api\/admin\/scheduled\/\d+\/cancel$/.test(path)) { const id = +path.split("/")[4]; demoMailX.scheduled = demoMailX.scheduled.filter((x) => x.id !== id); return { ok: true, ...demoMailX }; }
+  if (/\/api\/admin\/users\/\d+\/traffic$/.test(path)) { if (!(body.gb >= 1 && body.gb <= 2000)) return { error: "От 1 до 2000 ГБ." }; return { ok: true, traffic: { used: 41.3, limit: 300 + body.gb, left: 258.7 + body.gb, extra: body.gb, out: false } }; }
   if (path === "/api/admin/broadcast/test") return body.text ? { ok: true } : { error: "Текст от 1 до 3500 символов." };
   if (path === "/api/gifts") return { gifts: [
     { code: "demo1", title: "3 устройства", created_at: Date.now() / 1000 - 3600, redeemed: false },
@@ -2597,7 +2619,8 @@ function demoUsers(params) {
       plan: !active ? "нет подписки" : paid ? ["2 устройства", "3 устройства, год", "5 устройств"][i % 3] : "пробный период",
       devices: active ? [2, 3, 5][i % 3] : 0, trial_used: i % 5 !== 4, pays, spent: pays * 250, last_pay: paid ? now - i * 30000 : null,
       ref_by: i % 6 === 1 ? 700000100 : null, ref_username: i % 6 === 1 ? "ivan_k" : null, invited: i === 0 ? 11 : i % 9 === 0 ? 2 : 0,
-      ref_mode: i % 7 === 0 ? "percent" : "days", ref_balance: i % 7 === 0 ? 340 : 0 };
+      ref_mode: i % 7 === 0 ? "percent" : "days", ref_balance: i % 7 === 0 ? 340 : 0,
+      traffic: active ? { used: 12 + i, limit: [200, 300, 500][i % 3], left: [200, 300, 500][i % 3] - 12 - i, extra: 0, out: false } : null, loyal_streak: pays };
   });
   const q = (params.get("q") || "").replace(/^@/, "").toLowerCase();
   const match = (u) => !q || (/^\d+$/.test(q) ? String(u.id).startsWith(q) : (u.username || "").toLowerCase().includes(q));
@@ -2615,6 +2638,8 @@ function userDetail(u) {
   add("Пришёл", fullDate(u.created_at));
   add("Подписка", u.days_left ? u.plan : "нет");
   if (u.days_left) { add("Действует до", fullDate(u.expires_at)); add("Устройств", String(u.devices)); }
+  if (u.traffic) add("Трафик", `${gbText(u.traffic.used)} из ${gbText(u.traffic.limit)}${u.traffic.extra ? `, из них докуплено ${u.traffic.extra} ГБ` : ""}`);
+  if (u.loyal_streak > 1) add("Оплат подряд", String(u.loyal_streak));
   add("Пробный период", u.trial_used ? "брал" : "не брал");
   add("Оплаты", u.pays ? `${u.pays} на ${money(u.spent)}` : "нет");
   if (u.pays) add("Последняя оплата", fullDate(u.last_pay));
@@ -2681,7 +2706,22 @@ function userDetail(u) {
     } catch { toast("Нет связи с ботом"); }
     banBtn.disabled = false;
   });
+  const gbRow = el("div", "usr-tool"), gbIn = el("input", "field"), gbBtn = el("button", "btn ghost", "Начислить ГБ");
+  gbIn.type = "number"; gbIn.inputMode = "numeric"; gbIn.placeholder = "Гигабайт"; gbIn.setAttribute("aria-label", "Сколько гигабайт начислить");
+  gbBtn.onclick = async () => {
+    const gb = parseInt(gbIn.value, 10) || 0;
+    if (!gb) return toast("Введите число гигабайт");
+    gbBtn.disabled = true;
+    try {
+      const r = await serverApi(`/api/admin/users/${u.id}/traffic`, { gb });
+      if (r.error) toast(r.error);
+      else { toast(`Начислено ${gb} ГБ, пользователь получил сообщение`); u.traffic = r.traffic; box.replaceWith(userDetail(u)); }
+    } catch { toast("Нет связи с ботом"); }
+    gbBtn.disabled = false;
+  };
+  gbRow.append(gbIn, gbBtn);
   tools.append(daysRow, discRow);
+  if (u.days_left) tools.append(gbRow);
   if (u.manager_status !== "manager") {
     const make = el("button", "btn ghost wide", "Сделать менеджером");
     make.onclick = () => confirmAsk(`Сделать ${supWho(u)} менеджером? Он получит личную ссылку и процент с оплат приглашённых.`, async () => {
@@ -3008,20 +3048,91 @@ const mail = { seg: "trial_only", info: null, timer: 0 };
 let demoMail = { running: false, segment: "", total: 0, sent: 0, failed: 0 };
 function demoBroadcastInfo() {
   if (demoMail.running) { demoMail.sent = Math.min(demoMail.total, demoMail.sent + 7); if (demoMail.sent >= demoMail.total) demoMail.running = false; }
-  return { max: 3500, status: demoMail, segments: [
+  return { max: 3500, status: demoMail, ...demoMailX, segments: [
     { id: "all", title: "Все", count: 64 }, { id: "active", title: "С активной подпиской", count: 48 }, { id: "paid_active", title: "Платные активные", count: 20 },
     { id: "trial_only", title: "Брали пробный, не купили", count: 30 }, { id: "expired", title: "Подписка закончилась", count: 12 },
     { id: "never", title: "Ни разу не подключались", count: 4 }, { id: "managers", title: "Менеджеры", count: 2 }] };
 }
+let demoMailX = {
+  templates: [{ id: 1, name: "Новые серверы", text: "Открыли новые серверы в Швейцарии: подключение стало быстрее." }],
+  scheduled: [{ id: 7, segment: "expired", title: "Подписка закончилась", send_at: Date.now() / 1000 + 20 * 3600, status: "pending", total: 0, text: "Вернитесь со скидкой 20%" }],
+};
 function demoBroadcastSend(body) {
   if (!body.text) return { error: "Текст от 1 до 3500 символов." };
+  if (body.send_at) {
+    const seg = demoBroadcastInfo().segments.find((x) => x.id === body.segment);
+    demoMailX.scheduled.unshift({ id: Date.now(), segment: body.segment, title: seg.title, send_at: body.send_at, status: "pending", total: 0, text: body.text.slice(0, 200) });
+    return { ok: true, planned: true, ...demoMailX };
+  }
   const seg = demoBroadcastInfo().segments.find((x) => x.id === body.segment);
   demoMail = { running: true, segment: body.segment, total: seg.count, sent: 0, failed: 0 };
   return { ok: true, total: seg.count };
 }
 
+// when to send: now, or a moment in Moscow time
+const MSK_OFF = 3 * 3600 * 1000;
+function mskAt(dayShift, hour) {
+  const m = new Date(Date.now() + MSK_OFF);
+  return Math.floor((Date.UTC(m.getUTCFullYear(), m.getUTCMonth(), m.getUTCDate() + dayShift, hour) - MSK_OFF) / 1000);
+}
+function whenOptions() {
+  const now = Date.now() / 1000, opts = [["now", "Сейчас"], ["h1", "Через час"]];
+  if (mskAt(0, 19) > now + 600) opts.push(["t19", "Сегодня в 19:00"]);
+  opts.push(["m10", "Завтра в 10:00"], ["m19", "Завтра в 19:00"], ["custom", "Своё время"]);
+  return opts;
+}
+function whenAt() {
+  const v = $("mailWhen").value;
+  if (v === "h1") return Math.floor(Date.now() / 1000) + 3600;
+  if (v === "t19") return mskAt(0, 19);
+  if (v === "m10") return mskAt(1, 10);
+  if (v === "m19") return mskAt(1, 19);
+  if (v === "custom") { const t = new Date($("mailAt").value).getTime(); return t ? Math.floor(t / 1000) : -1; }
+  return 0;
+}
+function mskText(sec) {
+  return new Date(sec * 1000).toLocaleString("ru-RU", { timeZone: "Europe/Moscow", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + " МСК";
+}
+function renderMailExtras() {
+  const info = mail.info;
+  $("mailTpl").replaceChildren(...(info.templates || []).map((t) => {
+    const b = el("button", "", t.name), x = el("i", "", "×"); b.type = "button";
+    x.setAttribute("aria-label", `Удалить шаблон ${t.name}`);
+    b.append(x);
+    b.onclick = (e) => {
+      if (e.target === x) return confirmAsk(`Удалить шаблон «${t.name}»?`, async () => {
+        try { Object.assign(mail.info, await serverApi(`/api/admin/templates/${t.id}/delete`, {})); renderMailExtras(); toast("Шаблон удалён"); } catch { toast("Нет связи с ботом"); }
+      });
+      haptic(); $("mailText").value = t.text; mailPreview();
+    };
+    return b;
+  }));
+  if (!(info.templates || []).length) $("mailTpl").replaceChildren(el("span", "note", "Пока нет: напишите текст и сохраните его кнопкой ниже."));
+  const plan = info.scheduled || [];
+  $("mailPlanHead").hidden = !plan.length;
+  $("mailPlan").replaceChildren(...plan.map((b) => {
+    const r = el("div", "gift-row"), t = el("div");
+    const state = b.status === "pending" ? `${mskText(b.send_at)} · ${b.title}` : b.status === "sent" ? `ушла ${mskText(b.send_at)} · ${b.title}, ${b.total} чел.` : "отменена";
+    t.append(el("b", "", state), el("span", "", b.text));
+    r.append(t);
+    if (b.status === "pending") {
+      const c = el("button", "", "Отменить"); c.type = "button";
+      c.onclick = () => confirmAsk("Отменить эту рассылку?", async () => {
+        try { const res = await serverApi(`/api/admin/scheduled/${b.id}/cancel`, {}); if (res.error) return toast(res.error); Object.assign(mail.info, res); renderMailExtras(); toast("Рассылка отменена"); }
+        catch { toast("Нет связи с ботом"); }
+      });
+      const acts = el("div", "code-acts"); acts.append(c); r.append(acts);
+    }
+    return r;
+  }));
+}
 function renderMail() {
   const info = mail.info, seg = info.segments.find((x) => x.id === mail.seg) || info.segments[0];
+  if (!$("mailWhen").options.length) {
+    whenOptions().forEach(([v, t]) => $("mailWhen").append(new Option(t, v)));
+    $("mailWhen").onchange = () => { $("mailAt").hidden = $("mailWhen").value !== "custom"; renderMail(); };
+  }
+  renderMailExtras();
   mail.seg = seg.id;
   $("mailSeg").replaceChildren(...info.segments.map((x) => {
     const b = el("button", x.id === mail.seg ? "on" : "", x.title); b.type = "button";
@@ -3030,8 +3141,9 @@ function renderMail() {
     return b;
   }));
   const st = info.status;
-  $("mailSend").textContent = `Отправить: ${countOf(seg.count, "человек", "человека", "человек")}`;
-  $("mailSend").disabled = st.running || !seg.count;
+  const later = $("mailWhen").value !== "now";
+  $("mailSend").textContent = later ? `Запланировать: ${countOf(seg.count, "человек", "человека", "человек")}` : `Отправить: ${countOf(seg.count, "человек", "человека", "человек")}`;
+  $("mailSend").disabled = (st.running && !later) || !seg.count;
   $("mailCount").textContent = `${$("mailText").value.length} из ${info.max} символов`;
   if (st.running) $("mailMsg").textContent = `Идёт рассылка: ${st.sent + st.failed} из ${st.total}…`;
   else if (st.total && st.finished_at !== 0) $("mailMsg").textContent = `Последняя рассылка: доставлено ${st.sent} из ${st.total}${st.failed ? `, не доставлено ${st.failed}` : ""}.`;
@@ -3058,14 +3170,31 @@ $("mailTest").onclick = async () => {
   catch { toast("Нет связи с ботом"); }
   $("mailTest").disabled = false;
 };
+$("mailSaveTpl").onclick = async () => {
+  const text = $("mailText").value.trim();
+  if (!text) return toast("Сначала напишите текст");
+  const name = (text.split("\n")[0] || text).slice(0, 28).trim() + (text.length > 28 ? "…" : "");
+  try {
+    const r = await serverApi("/api/admin/templates", { name, text });
+    if (r.error) return toast(r.error);
+    Object.assign(mail.info, r); renderMailExtras(); toast("Шаблон сохранён"); haptic();
+  } catch { toast("Нет связи с ботом"); }
+};
 $("mailSend").onclick = () => {
   const text = $("mailText").value.trim(), seg = mail.info.segments.find((x) => x.id === mail.seg);
   if (!text) return toast("Напишите текст");
-  confirmAsk(`Отправить сообщение группе «${seg.title}» (${countOf(seg.count, "человек", "человека", "человек")})?`, async () => {
+  const at = whenAt();
+  if (at === -1) return toast("Выберите дату и время");
+  const ask = at ? `Запланировать сообщение группе «${seg.title}» на ${mskText(at)}?` : `Отправить сообщение группе «${seg.title}» (${countOf(seg.count, "человек", "человека", "человек")})?`;
+  confirmAsk(ask, async () => {
     $("mailSend").disabled = true;
     try {
-      const r = await serverApi("/api/admin/broadcast", { segment: mail.seg, text });
+      const r = await serverApi("/api/admin/broadcast", { segment: mail.seg, text, ...(at && { send_at: at }) });
       if (r.error) { toast(r.error); $("mailSend").disabled = false; return; }
+      if (r.planned) {
+        Object.assign(mail.info, r); $("mailWhen").value = "now"; $("mailAt").hidden = true; renderMail();
+        toast(`Запланировано на ${mskText(at)}`); haptic("heavy"); $("mailSend").disabled = false; return;
+      }
       toast(`Рассылка началась: ${r.total}`); haptic("heavy");
       loadMail();
     } catch { toast("Нет связи с ботом"); $("mailSend").disabled = false; }
@@ -3483,6 +3612,13 @@ function renderTraffic() {
     <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="#fff"/>` : "";
   const DOW = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
   $("tcDays").innerHTML = week.map((x, i) => `<span class="${i === week.length - 1 ? "on" : ""}">${DOW[new Date(x.day + "T12:00:00").getDay()]}</span>`).join("");
+  // when the VPN was last in use (the bot looks every 15 minutes)
+  const ago = t.online_at ? Date.now() / 1000 - t.online_at : null;
+  $("tcDot").classList.toggle("on", ago !== null && ago < 20 * 60);
+  $("tcOnline").textContent = ago === null ? "VPN ещё не подключали" : ago < 20 * 60 ? "VPN в сети сейчас"
+    : ago < 3600 ? `VPN был в сети ${countOf(Math.round(ago / 60), "минуту", "минуты", "минут")} назад`
+    : ago < 86400 ? `VPN был в сети ${countOf(Math.round(ago / 3600), "час", "часа", "часов")} назад`
+    : `VPN был в сети ${new Date(t.online_at * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
   // top-ups: when it runs low or out
   const out = $("tcOut"), packs = meta.traffic_packs || [];
   out.hidden = !(packs.length && (t.out || share >= 0.8));
