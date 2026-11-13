@@ -96,6 +96,7 @@
   .srv-card .note { margin: 6px 0 12px; }
   .srv-card .btn { height: 48px; }
   .srv-tabs { margin: 4px 0 2px; }
+  .key-leak { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--muted); font: 600 13px Manrope; text-decoration: underline; text-underline-offset: 3px; }
   /* empty states: a grey line drawing over the text */
   .sup-empty, .empty-art { text-align: center; }
   .sup-empty::before, .empty-art::before { content: ""; display: block; width: 132px; height: 96px; margin: 8px auto 14px; background: center / contain no-repeat;
@@ -558,6 +559,7 @@
     <div class="block" id="keyCard" hidden>
       <div class="split"><b>Ваш ключ</b><button class="btn small ghost" id="copyBtn">Копировать</button></div>
       <div class="link-box" id="subLink"></div>
+      <button class="key-leak" id="rekeyBtn" type="button">Ключ утёк? Выпустить новый</button>
     </div>
     <div class="rows block">
       <button data-go="connect"><span>Как подключить</span><b>→</b></button>
@@ -2743,6 +2745,14 @@ function userDetail(u) {
   id.onclick = () => copy(String(u.id));
   actions.append(write, id);
   if (u.days_left) actions.append(reset);
+  const rekey = el("button", "btn ghost wide", "Выпустить новый ключ");
+  rekey.onclick = () => confirmAsk(`Выпустить ${supWho(u)} новый ключ? Старая ссылка перестанет работать, новая придёт ему в бота.`, async () => {
+    rekey.disabled = true;
+    try { const r = DEMO ? { ok: true } : await serverApi(`/api/admin/users/${u.id}/reissue`, {}); toast(r.error || "Новый ключ отправлен"); }
+    catch { toast("Нет связи с ботом"); }
+    rekey.disabled = false;
+  });
+  if (u.days_left) actions.append(rekey);
   // days, a personal discount, a ban: all sent to the bot, which also tells the user
   const tools = el("div", "usr-tools");
   const daysRow = el("div", "usr-tool"), daysIn = el("input", "field"), planSel = el("select"), daysBtn = el("button", "btn ghost", "Выдать");
@@ -4419,6 +4429,15 @@ $("connectBtn").onclick = () => {
   addToHapp();
 };
 $("copyBtn").onclick = copyKey;
+$("rekeyBtn").onclick = () => confirmAsk("Выпустить новый ключ? Старая ссылка сразу перестанет работать у всех, кто её получил. На своих устройствах удалите старую подписку в Happ и добавьте новую. Трафик за месяц сохранится.", async () => {
+  $("rekeyBtn").disabled = true;
+  try {
+    const r = DEMO ? { ok: true, sub_link: "https://vpn.hermes.example:2096/sub/demo-" + Math.random().toString(36).slice(2, 10) } : await serverApi("/api/key/reissue", {});
+    if (r.error) { toast(r.error); tg?.HapticFeedback?.notificationOccurred("error"); }
+    else { me.sub_link = r.sub_link; renderHome(); renderConnect(); toast("Новый ключ готов, старый отключён"); tg?.HapticFeedback?.notificationOccurred("success"); }
+  } catch { toast("Нет связи с ботом"); }
+  $("rekeyBtn").disabled = false;
+});
 $("copyRefBtn").onclick = () => copy(refLink());
 $("connAddBtn").onclick = addToHapp;
 $("connKeyBtn").onclick = copyKey;
