@@ -1063,7 +1063,8 @@ const initData = tg?.initData || "";
 // STATIC: page hosted without a backend (e.g. GitHub Pages); the bot passes the user's
 // status in ?s= and actions go back to the bot as t.me/<bot>?start=<action> deep links.
 const STATE = new URLSearchParams(location.search).get("s");
-const STATIC = !!STATE;
+// Opened from the chat list's «Открыть» (the bot's main mini app) there is no ?s=: the status comes from the bot's API instead
+const STATIC = !!STATE || !!initData;
 const DEMO = !STATIC && !initData;
 const $ = (id) => document.getElementById(id);
 
@@ -4484,8 +4485,11 @@ $("buyBtn").onclick = async () => {
 };
 
 (async () => {
-  if (STATIC) {
+  if (STATE) {
     try { ({ me, meta } = decodeState(STATE)); } catch { toast("Ошибка загрузки"); }
+  } else if (initData) {
+    try { [me, meta] = await Promise.all([serverApi("/api/me"), serverApi("/api/meta")]); trafficLoaded = trafficDone = true; }
+    catch { toast("Нет связи с ботом. Откройте HERMES из чата с ботом"); }
   } else if (!DEMO) {
     try { [me, meta] = await Promise.all([api("/api/me"), api("/api/meta")]); }
     catch { toast("Ошибка загрузки"); }
