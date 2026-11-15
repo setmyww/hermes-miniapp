@@ -319,6 +319,32 @@
   .srv-hint i { width: 34px; height: 34px; flex: none; border-radius: 10px; background: #2a2a2a; display: grid; place-items: center; }
   .srv-hint svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .srv-card .srv-hint b { display: inline; font-size: 13px; font-weight: 800; color: #fff; }
+
+  /* monthly referral contest */
+  .contest { margin-bottom: 22px; padding: 16px; border-radius: 22px; background: var(--surface); }
+  .contest .split b { font-weight: 800; font-size: 18px; }
+  .contest .note { margin-top: 6px; }
+  .contest-prizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+  .contest-prizes div { position: relative; overflow: hidden; padding: 10px 10px 9px; border-radius: 14px; background: #1f1f1f; }
+  .contest-prizes div:first-child { background: #fff; color: var(--bg); }
+  .contest-prizes div::after { content: ""; position: absolute; right: -14px; bottom: -14px; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.3) 1px, transparent 1.5px) 0 0 / 6px 6px; }
+  .contest-prizes div:first-child::after { background-image: radial-gradient(circle, rgba(11,11,11,.25) 1px, transparent 1.5px); }
+  .contest-prizes small { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .contest-prizes div:first-child small { color: #5a5a5a; }
+  .contest-prizes b { display: block; font-weight: 800; font-size: 18px; margin-top: 2px; }
+  .contest-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .contest-row:first-child { margin-top: 10px; }
+  .contest-row i { width: 28px; height: 28px; flex: none; border-radius: 50%; background: #262626; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; }
+  .contest-row.top i { background: #fff; color: var(--bg); }
+  .contest-row span { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .contest-row b { font-weight: 800; font-size: 14px; }
+  .contest-row.mine span { color: #fff; font-weight: 800; }
+  .contest-row.mine { background: #1f1f1f; margin: 0 -8px; padding: 9px 8px; border-radius: 12px; }
+  .contest-me { margin-top: 10px !important; }
+  /* antifraud tab */
+  .fraud-row .usr-sub { white-space: normal; }
+  .fraud-pill { display: inline-block; padding: 3px 9px; border-radius: 99px; background: #fff; color: var(--bg); font-weight: 800; font-size: 11px; margin-left: 6px; }
+  .fraud-pill.off { background: #2a2a2a; color: var(--muted); }
   /* profile menu */
   .me-card { display: flex; align-items: center; gap: 14px; margin-top: 30px; padding: 10px; border-radius: 40px; background: var(--surface); }
   .me-txt { flex: 1; min-width: 0; }
@@ -813,6 +839,13 @@
       <button data-seg="mail">Рассылка</button>
       <button data-seg="servers">Серверы</button>
       <button data-seg="promos">Промокоды</button>
+      <button data-seg="fraud">Антифрод</button>
+    </div>
+    <div id="adminFraud" hidden>
+      <h1 style="margin-top:22px">Антифрод</h1>
+      <p class="note" id="frdLead">Бот сверяет устройства по их железу. Второй пробный период на том же телефоне завершается сам, а награда за друга, который платит с телефона пригласившего, не начисляется.</p>
+      <div id="frdList" style="margin-top:14px"></div>
+      <p class="sup-empty art-ticket" id="frdEmpty" hidden>Пока ничего подозрительного.</p>
     </div>
     <div id="adminPromos" hidden>
       <h1 style="margin-top:22px">Промокоды</h1>
@@ -1149,6 +1182,13 @@
   <section class="view" id="v-ref">
     <button class="back" data-back>← Назад</button>
     <div class="block" style="margin-top:8px">
+      <div class="contest" id="contestCard" hidden>
+        <div class="split"><b>Рейтинг месяца</b><span class="note" style="margin:0" id="contestMonth"></span></div>
+        <p class="note" id="contestLead"></p>
+        <div class="contest-prizes" id="contestPrizes"></div>
+        <div id="contestTop"></div>
+        <p class="note contest-me" id="contestMe"></p>
+      </div>
       <h2 class="sec">Приглашайте друзей</h2>
       <p class="note" id="refLead">Отправьте другу свою ссылку: когда он оплатит подписку, вы получите награду.</p>
       <div class="modes single" id="refModes"></div>
@@ -1616,6 +1656,14 @@ function demoApi(path, body) {
   if (path === "/api/traffic/sbp") { const pk = meta.traffic_packs.find((x) => x.code === body.pack); demoPay = { n: 0, traffic: pk }; return { order_id: "demo-gb", pay_url: "https://pay.rollypay.io/pay/demo", amount: pk.rub, title: `+${pk.gb} ГБ трафика` }; }
   if (path === "/api/server/sbp") { demoPay = { n: 0, server: true }; return { order_id: "demo-srv", pay_url: "https://pay.rollypay.io/pay/demo", amount: srvProduct(body.product).rub, title: srvProduct(body.product).title }; }
   if (path === "/api/admin/servers") return demoSrvAdmin;
+  if (path === "/api/contest") return DEMO_CONTEST;
+  if (path === "/api/admin/fraud") return demoFraud;
+  if (/\/api\/admin\/fraud\/\d+\/(clear|restore)$/.test(path)) {
+    const id = +path.split("/")[4];
+    demoFraud = { ...demoFraud, flags: demoFraud.flags.map((f) => (f.id === id ? { ...f, status: "cleared" } : f)) };
+    demoFraud.open = demoFraud.flags.filter((f) => f.status === "open").length;
+    return { ok: true, ...demoFraud };
+  }
   if (path === "/api/admin/promos" && !body) return { promos: demoPromos };
   if (path === "/api/admin/promos") {
     if (!/^[A-Z0-9_-]{3,32}$/.test(body.code)) return { error: "Промокод: от 3 до 32 символов, латинские буквы, цифры, _ и -." };
@@ -1914,7 +1962,8 @@ function renderManagerStats(m) {
   $("msCodes").replaceChildren(...codes.map((c) => {
     const r = el("div", "gift-row"), t = el("div"), b = el("button", "btn ghost", "Копировать");
     b.style.cssText = "width:auto;flex:none;height:38px;padding:0 14px;font-size:13px"; b.type = "button";
-    t.append(el("b", "", c.code), el("span", "", [`даёт +${countOf(c.days, "день", "дня", "дней")}`, `пришло ${c.brought}`, `оплатили ${c.paying}`].join(" · ")));
+    t.append(el("b", "", c.code), el("span", "", [c.percent ? `даёт скидку ${c.percent}%` : `даёт +${countOf(c.days, "день", "дня", "дней")}`, `пришло ${c.brought}`, `оплатили ${c.paying}`,
+      c.sales ? `продаж на ${money(c.revenue)}, вам ${money(c.earned)}` : ""].filter(Boolean).join(" · ")));
     b.onclick = () => copy(c.code);
     r.append(t, b); return r;
   }));
@@ -3056,6 +3105,10 @@ let demoAdminPayouts = {
   pending: [{ id: 2, amount: 1200, status: "pending", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 7200, settled_at: 0, user_id: 700002, username: "ivan_k", slug: "ivan", earned: 2010 }],
   history: [{ id: 1, amount: 640, status: "paid", details: "+7 900 000-00-00, Т-Банк", created_at: Date.now() / 1000 - 12 * 86400, settled_at: Date.now() / 1000 - 11 * 86400, user_id: 700002, username: "ivan_k", slug: "ivan", earned: 2010 }],
 };
+let demoFraud = { open: 2, trial_cut: true, ref_check: true, flags: [
+  { id: 3, kind: "trial_repeat", what: "второй пробный период на том же устройстве", status: "open", user_id: 700021, username: "new_acc22", other_id: 700011, other_username: "alex_p", note: "пробный период завершён", created_at: Date.now() / 1000 - 3600 },
+  { id: 2, kind: "ref_same_device", what: "приглашённый платит с устройства пригласившего", status: "open", user_id: 700031, username: null, other_id: 700002, other_username: "ivan_k", note: "награда за приглашение не начислена", created_at: Date.now() / 1000 - 26 * 3600 },
+  { id: 1, kind: "trial_repeat", what: "второй пробный период на том же устройстве", status: "cleared", user_id: 700041, username: "kate_2", other_id: 700040, other_username: "kate_m", note: "пробный период завершён", created_at: Date.now() / 1000 - 5 * 86400 }] };
 let demoRefs = {
   totals: { managers: 2, invited: 41, paying: 17, revenue: 9840, payout_pending: 1200 },
   applications: [{ id: 700001, username: "kate_m", note: "Веду канал о технологиях, 3 000 подписчиков. Расскажу в обзоре и закреплю ссылку.", applied_at: Date.now() / 1000 - 5400, created_at: Date.now() / 1000 - 9 * 86400, paid: true, invited: 2 }],
@@ -3064,15 +3117,19 @@ let demoRefs = {
     { id: 700003, username: null, slug: "m4521", since: Date.now() / 1000 - 4 * 86400, link: "https://t.me/hermes_vpn_bot?start=m_m4521", invited: 8, invited_week: 8, paying: 5, percent: 20, revenue: 2420, payments: 6, earned: 484, balance: 484, payout_pending: 0, paid_out: 0 },
   ],
 };
-let demoCodes = { 700002: [{ code: "IVAN", days: 3, max_uses: 0, used: 14, created_at: Date.now() / 1000 - 12 * 86400, brought: 11, paying: 4 },
-  { code: "IVANTG", days: 7, max_uses: 100, used: 37, created_at: Date.now() / 1000 - 3 * 86400, brought: 30, paying: 6 }] };
+let demoCodes = { 700002: [{ code: "IVAN", days: 3, percent: 0, max_uses: 0, used: 14, created_at: Date.now() / 1000 - 12 * 86400, brought: 11, paying: 4, sales: 6, revenue: 1630, earned: 489 },
+  { code: "IVAN20", days: 0, percent: 20, max_uses: 100, used: 37, created_at: Date.now() / 1000 - 3 * 86400, brought: 30, paying: 9, sales: 11, revenue: 2860, earned: 858 }] };
 function demoRefsAction(path, body) {
   const m = path.match(/managers\/(\d+)\/(\w+)$/);
   if (m && m[2] === "code") {
     const code = String(body.code || "").trim().toUpperCase(), list = demoCodes[m[1]] || [];
     if (!/^[A-Z0-9_-]{3,32}$/.test(code)) return { error: "Промокод: от 3 до 32 символов, латинские буквы, цифры, _ и -." };
     if (Object.values(demoCodes).flat().some((c) => c.code === code)) return { error: "Такой промокод уже есть." };
-    demoCodes[m[1]] = [{ code, days: +body.days, max_uses: +body.uses || 0, used: 0, created_at: Date.now() / 1000, brought: 0, paying: 0 }, ...list];
+    demoCodes[m[1]] = [{ code, days: body.percent ? 0 : +body.days, percent: +body.percent || 0, max_uses: +body.uses || 0, used: 0, created_at: Date.now() / 1000, brought: 0, paying: 0, sales: 0, revenue: 0, earned: 0 }, ...list];
+    return { ok: true, ...demoRefs };
+  }
+  if (m && m[2] === "percent") {
+    demoRefs.managers = demoRefs.managers.map((x) => (x.id === +m[1] ? { ...x, own_percent: +body.percent || 0, percent: +body.percent || 20 } : x));
     return { ok: true, ...demoRefs };
   }
   if (m && m[2] === "uncode") { demoCodes[m[1]] = (demoCodes[m[1]] || []).filter((c) => c.code !== body.code); return { ok: true, ...demoRefs }; }
@@ -3121,12 +3178,19 @@ function managerBody(m) {
   add("Менеджер с", fullDate(m.since));
   add("Пришло к нему", `${m.invited}, за неделю ${m.invited_week}`);
   add("Из них по промокоду", String(m.by_code || 0));
-  add("Оплатили", `${m.paying}, процент ${m.percent}%`);
+  add("Оплатили", `${m.paying}, процент ${m.percent}%${m.own_percent ? " (личный)" : ""}`);
   add("Выручка от них", `${money(m.revenue)}, оплат ${m.payments}`);
   add("Начислено ему", money(m.earned));
   add("Баланс", money(m.balance));
   if (m.payout_pending) add("Ждёт выплаты", money(m.payout_pending));
   if (m.paid_out) add("Выплачено", money(m.paid_out));
+  // the partner's own percent instead of the tiers
+  const pctRow = el("div", "usr-tool"), pctSel = el("select"), pctSave = el("button", "btn ghost", "Сохранить");
+  pctSel.append(new Option(`По шкале: ${meta.ref_tiers.map((t) => t[1] + "%").join(" → ")}`, 0, !m.own_percent, !m.own_percent));
+  (meta.partner_percents || [10, 15, 20, 25, 30, 35, 40, 50]).forEach((n) => pctSel.append(new Option(`Личный: ${n}%`, n, m.own_percent === n, m.own_percent === n)));
+  pctSel.setAttribute("aria-label", "Процент менеджера");
+  pctSave.onclick = async () => { pctSave.disabled = true; haptic(); if (await refsAct(m.id, "percent", { percent: +pctSel.value })) toast(+pctSel.value ? `Личный процент ${pctSel.value}%` : "Процент по шкале"); pctSave.disabled = false; };
+  pctRow.append(pctSel, pctSave);
   const link = el("div", "ref-link"), input = el("input", "field"), save = el("button", "btn ghost", "Сохранить");
   input.value = m.slug || ""; input.maxLength = 24; input.autocomplete = "off"; input.spellcheck = false;
   input.setAttribute("aria-label", "Имя ссылки после m_");
@@ -3138,7 +3202,7 @@ function managerBody(m) {
   people.append(skelRow(), skelRow("38%", "56%"));
   const loadDetail = () => serverApi(`/api/admin/managers/${m.id}`).then(({ referrals, codes: list = [] }) => {
     codes.replaceChildren(...list.map((c) => codeRow(m, c, loadDetail)));
-    if (!list.length) codes.append(el("p", "note", "Промокодов пока нет. Создайте ниже: кто введёт код, получит дни и станет приглашённым этого менеджера."));
+    if (!list.length) codes.append(el("p", "note", "Промокодов пока нет. Создайте ниже: кто введёт код, получит дни или скидку и станет приглашённым этого менеджера."));
     people.replaceChildren(el("p", "sub-label", referrals.length ? "Последние приглашённые" : "Пока никто не пришёл"), ...referrals.map((f) => {
       const r = el("div", "gift-row"), t = el("div");
       t.append(el("b", "", supWho(f)), el("span", "", [shortDate(f.created_at), f.code ? `код ${f.code}` : "по ссылке", f.paid ? `${countOf(f.pays, "оплата", "оплаты", "оплат")}, ${money(f.spent)}` : "не платил", f.active ? "подписка активна" : ""].filter(Boolean).join(" · ")));
@@ -3151,15 +3215,17 @@ function managerBody(m) {
   const codeIn = el("input", "field"), daysSel = el("select"), usesIn = el("input", "field"), make = el("button", "btn ghost", "Создать");
   codeIn.placeholder = "Код, например IVAN"; codeIn.maxLength = 32; codeIn.autocomplete = "off"; codeIn.spellcheck = false; codeIn.autocapitalize = "characters";
   codeIn.setAttribute("aria-label", "Новый промокод менеджера");
-  [[1, "+1 день"], [3, "+3 дня"], [7, "+7 дней"], [14, "+14 дней"], [30, "+30 дней"]].forEach(([n, t]) => daysSel.append(new Option(t, n, n === 3, n === 3)));
-  daysSel.setAttribute("aria-label", "Сколько дней даёт код");
+  [[1, "+1 день"], [3, "+3 дня"], [7, "+7 дней"], [14, "+14 дней"], [30, "+30 дней"]].forEach(([n, t]) => daysSel.append(new Option(t, "d" + n, n === 3, n === 3)));
+  (meta.partner_code_percents || [5, 10, 15, 20, 25, 30]).forEach((n) => daysSel.append(new Option(`Скидка ${n}% на покупку`, "p" + n)));
+  daysSel.setAttribute("aria-label", "Что даёт код: дни или скидку");
   usesIn.type = "number"; usesIn.inputMode = "numeric"; usesIn.placeholder = "Лимит, пусто: без лимита"; usesIn.setAttribute("aria-label", "Лимит активаций");
   make.onclick = async () => {
     const code = codeIn.value.trim().toUpperCase();
     if (!code) return toast("Введите промокод");
     make.disabled = true; haptic();
     try {
-      const r = await serverApi(`/api/admin/managers/${m.id}/code`, { code, days: +daysSel.value, uses: parseInt(usesIn.value, 10) || 0 });
+      const v = daysSel.value, gift = v[0] === "p" ? { percent: +v.slice(1) } : { days: +v.slice(1) };
+      const r = await serverApi(`/api/admin/managers/${m.id}/code`, { code, ...gift, uses: parseInt(usesIn.value, 10) || 0 });
       if (r.error) toast(r.error); else { toast(`Промокод ${code} создан`); codeIn.value = usesIn.value = ""; loadDetail(); }
     } catch { toast("Нет связи с ботом"); }
     make.disabled = false;
@@ -3171,7 +3237,7 @@ function managerBody(m) {
     revoke.disabled = true; if (await refsAct(m.id, "revoke")) toast("Статус снят"); revoke.disabled = false;
   });
   actions.append(copyBtn, revoke);
-  box.append(rows, el("p", "sub-label", "Личная ссылка: t.me/…?start=m_"), link, linkNote, actions,
+  box.append(rows, el("p", "sub-label", "Процент с оплат приглашённых"), pctRow, el("p", "sub-label", "Личная ссылка: t.me/…?start=m_"), link, linkNote, actions,
     el("p", "sub-label", "Личные промокоды"), codes, form, people);
   return box;
 }
@@ -3179,8 +3245,9 @@ function managerBody(m) {
 // one of a manager's codes: what it gives, how often it was entered, who it brought
 function codeRow(m, c, reload) {
   const r = el("div", "gift-row"), t = el("div"), acts = el("div", "code-acts");
-  t.append(el("b", "", c.code), el("span", "", [`+${countOf(c.days, "день", "дня", "дней")}`,
-    `активаций ${c.used}${c.max_uses ? " из " + c.max_uses : ""}`, `пришло ${c.brought}`, `оплатили ${c.paying}`].join(" · ")));
+  t.append(el("b", "", c.code), el("span", "", [c.percent ? `скидка ${c.percent}%` : `+${countOf(c.days, "день", "дня", "дней")}`,
+    `активаций ${c.used}${c.max_uses ? " из " + c.max_uses : ""}`, `пришло ${c.brought}`, `оплатили ${c.paying}`,
+    c.sales ? `продаж ${c.sales} на ${money(c.revenue)}, ему ${money(c.earned)}` : ""].filter(Boolean).join(" · ")));
   const cp = el("button", "", "Копировать"), del = el("button", "", "Удалить");
   cp.type = del.type = "button";
   cp.onclick = () => copy(c.code);
@@ -3459,7 +3526,9 @@ function adminSegment(seg) {
   $("adminMail").hidden = seg !== "mail";
   $("adminServers").hidden = seg !== "servers";
   $("adminPromos").hidden = seg !== "promos";
+  $("adminFraud").hidden = seg !== "fraud";
   if (seg === "promos") loadPromosAdmin();
+  if (seg === "fraud") loadFraudAdmin();
   if (seg === "servers") loadServersAdmin();
   admin.seg = seg;
   supportPoll(seg === "chats" && currentView === "support");
@@ -3824,6 +3893,47 @@ let demoPromos = [
   { code: "START7", kind: "days", days: 7, percent: 0, max_uses: 0, used: 41, valid_until: 0, created_at: Date.now() / 1000 - 9 * 86400, manager: null, brought: 0 },
   { code: "IVAN", kind: "days", days: 3, percent: 0, max_uses: 0, used: 11, valid_until: 0, created_at: Date.now() / 1000 - 20 * 86400, manager: "@ivan_k", brought: 9 },
 ];
+let frdData = null;
+async function loadFraudAdmin() {
+  if (!frdData) $("frdList").replaceChildren(skelRow(), skelRow("40%", "60%"));
+  try { frdData = await serverApi("/api/admin/fraud"); renderFraudAdmin(); }
+  catch { $("frdList").replaceChildren(); $("frdEmpty").hidden = false; $("frdEmpty").textContent = "Нет связи с ботом."; }
+}
+function renderFraudAdmin() {
+  const list = frdData.flags || [];
+  $("frdEmpty").hidden = list.length > 0;
+  $("frdEmpty").textContent = "Пока ничего подозрительного.";
+  $("frdList").replaceChildren(...list.map((f) => {
+    const row = el("div", "usr fraud-row"), head = el("div", "usr-head");
+    const who = f.username ? "@" + f.username : "ID " + f.user_id, other = f.other_id ? (f.other_username ? "@" + f.other_username : "ID " + f.other_id) : "";
+    const pill = el("span", "fraud-pill" + (f.status === "open" ? "" : " off"), f.status === "open" ? "новое" : "разобрано");
+    const name = el("b", "", who); name.append(pill);
+    head.append(name, el("span", "usr-sub", [f.what + (other ? `, совпало с ${other}` : ""), f.note, shortDate(f.created_at)].filter(Boolean).join(" · ")));
+    row.append(head);
+    if (f.status === "open") {
+      const acts = el("div", "usr-actions"), ok = el("button", "btn ghost", "Не мошенник");
+      ok.type = "button";
+      ok.onclick = () => fraudAct(f.id, "clear", ok);
+      if (f.kind === "trial_repeat") {
+        const back = el("button", "btn", "Вернуть пробный"); back.type = "button";
+        back.onclick = () => confirmAsk(`Вернуть ${who} пробный период на ${meta.trial_days} дн.?`, () => fraudAct(f.id, "restore", back));
+        acts.append(back);
+      }
+      acts.append(ok);
+      const body = el("div", "usr-body"); body.style.display = "block"; body.append(acts); row.append(body);
+    }
+    return row;
+  }));
+}
+async function fraudAct(id, action, btn) {
+  btn.disabled = true; haptic();
+  try {
+    const r = await serverApi(`/api/admin/fraud/${id}/${action}`, {});
+    if (r.error) toast(r.error); else { frdData = r; renderFraudAdmin(); toast(action === "restore" ? "Пробный период возвращён" : "Отметка снята"); }
+  } catch { toast("Нет связи с ботом"); }
+  btn.disabled = false;
+}
+
 async function loadPromosAdmin() {
   if (!prmData) $("prmList").replaceChildren(skelRow(), skelRow("40%", "60%"));
   try { prmData = (await serverApi("/api/admin/promos")).promos; renderPromosAdmin(); }
@@ -4592,6 +4702,28 @@ function renderReferrals() {
   $("refOutBtn").classList.toggle("ghost", !can);
 }
 
+const DEMO_CONTEST = { month: "ноябрь 2026", ends_at: Date.now() / 1000 + 15 * 86400, prizes: [30, 14, 7], place: 4, friends: 2, to_prize: 2, manager: false,
+  top: [{ place: 1, name: "@ma•••", friends: 6, prize: 30 }, { place: 2, name: "@ol•••", friends: 4, prize: 14 }, { place: 3, name: "Пользователь •8812", friends: 3, prize: 7 },
+    { place: 4, name: "Вы", friends: 2, me: true, prize: 0 }, { place: 5, name: "@dm•••", friends: 1, prize: 0 }] };
+async function loadContest() {
+  let c;
+  try { c = DEMO ? DEMO_CONTEST : await serverApi("/api/contest"); } catch { $("contestCard").hidden = true; return; }
+  if (!c || !c.prizes?.length || c.manager) { $("contestCard").hidden = true; return; }
+  $("contestCard").hidden = false;
+  $("contestMonth").textContent = c.month;
+  const left = Math.max(0, Math.ceil((c.ends_at - Date.now() / 1000) / 86400));
+  $("contestLead").textContent = `Трое лучших по друзьям, оплатившим подписку в этом месяце, получают дни в подарок. До конца ${countOf(left, "день", "дня", "дней")}.`;
+  $("contestPrizes").replaceChildren(...c.prizes.map((d, i) => { const x = el("div"); x.append(el("small", "", `${i + 1} место`), el("b", "", `+${d} дн.`)); return x; }));
+  $("contestTop").replaceChildren(...(c.top.length ? c.top.map((r) => {
+    const row = el("div", "contest-row" + (r.place <= c.prizes.length ? " top" : "") + (r.me ? " mine" : ""));
+    row.append(el("i", "", String(r.place)), el("span", "", r.name), el("b", "", countOf(r.friends, "друг", "друга", "друзей")));
+    return row;
+  }) : [el("p", "note", "Пока никто не попал в рейтинг. Пригласите друга первым.")]));
+  $("contestMe").textContent = c.place && c.place <= c.prizes.length ? `Вы на ${c.place} месте: приз +${c.prizes[c.place - 1]} дн., если удержитесь до конца месяца.`
+    : c.place ? `Вы на ${c.place} месте. До призового места не хватает ${countOf(c.to_prize, "друга", "друзей", "друзей")} с оплатой.`
+    : "Пригласите друга по своей ссылке: когда он оплатит подписку, вы попадёте в рейтинг.";
+}
+
 function animateRefScale() {
   if (REDUCED || $("refPercentPanel").hidden) return;
   const fill = $("refTiers").querySelector(".fill"), nodes = [...$("refTiers").querySelectorAll(".tier-node")];
@@ -4653,7 +4785,7 @@ function go(view, isBack = false) {
   if (view === "manager") renderManagerView();
   if (view === "mstats") loadManagerStats();
   if (view === "profile") renderAutopay();
-  if (view === "ref") animateRefScale();
+  if (view === "ref") { animateRefScale(); loadContest(); }
   if (view === "locations") loadServers();
   if (view === "news") renderNews();
   if (view === "profile" || view === "family") loadFamily();
