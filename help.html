@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>HERMES · поддержка</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0b0b0b; --surface: #161616; --surface-2: #1d1d1d; --line: #2a2a2a; --line-2: #3a3a3a; --muted: #a6a6a6; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; }
+  * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: #fff; font-family: Manrope, system-ui, sans-serif; }
+  body { min-height: 100vh; padding: 18px 18px 110px; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .brand svg { width: 26px; height: 26px; }
+  .brand em { font-style: normal; color: var(--muted); font-weight: 600; font-size: 13px; margin-left: auto; border: 1px solid var(--line-2); border-radius: 20px; padding: 5px 10px; }
+  h1 { font-weight: 800; font-size: 32px; line-height: 1.06; letter-spacing: -.02em; margin-top: 22px; }
+  h2 { font-weight: 800; font-size: 18px; margin: 22px 0 10px; }
+  .muted { color: var(--muted); font-size: 14px; margin-top: 8px; line-height: 1.4; }
+  .view { display: none; } .view.on { display: block; animation: in .22s ease; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .search { display: flex; align-items: center; gap: 10px; height: 52px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 0 16px; margin-top: 18px; }
+  .search svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+  .search input { flex: 1; background: none; border: 0; outline: 0; color: #fff; font: inherit; font-size: 15px; }
+  .search input::placeholder { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .topic { position: relative; height: 104px; border-radius: 20px; background: var(--surface); padding: 14px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; text-align: left; }
+  .topic:active { transform: scale(.98); }
+  .topic b { display: block; font-weight: 700; font-size: 15px; line-height: 1.2; }
+  .topic small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .topic .ico { width: 34px; height: 34px; border-radius: 11px; background: #222; display: grid; place-items: center; }
+  .topic .ico svg { width: 18px; height: 18px; }
+  .topic::after { content: ""; position: absolute; right: -16px; bottom: -16px; width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.18) 1px, transparent 1.6px) 0 0 / 6px 6px; }
+  .status { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line-2); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 5px rgba(74,222,128,.15); flex: none; }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 0 5px rgba(251,191,36,.15); } .dot.bad { background: var(--bad); box-shadow: 0 0 0 5px rgba(248,113,113,.15); }
+  .dot.unk { background: var(--muted); box-shadow: 0 0 0 5px rgba(166,166,166,.12); }
+  .status b { font-size: 14px; } .status span { color: var(--muted); font-size: 12px; display: block; margin-top: 1px; }
+  .btn { display: flex; width: 100%; align-items: center; justify-content: center; height: 54px; border-radius: 14px; background: #fff; color: var(--bg); font-weight: 700; font-size: 16px; margin-top: 14px; }
+  .btn:active { opacity: .85; } .btn:disabled { opacity: .45; }
+  .btn.ghost { background: transparent; color: #fff; border: 1px solid var(--line-2); }
+  .btn.sm { height: 44px; font-size: 14px; margin-top: 8px; }
+  body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(rgba(11,11,11,0), var(--bg) 50%); pointer-events: none; z-index: 3; }
+  .tabs { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); height: 62px; display: flex; gap: 6px; z-index: 5; }
+  .tabs button { flex: 1; border-radius: 31px; background: rgba(28,28,28,.92); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 700; color: var(--muted); position: relative; }
+  .tabs button.on { background: #fff; color: var(--bg); }
+  .tabs svg { width: 19px; height: 19px; }
+  .tabs .badge { position: absolute; top: 9px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--bad); display: none; }
+  .tabs .badge.on { display: block; }
+  /* answer sheet */
+  .answer { margin-top: 14px; border-radius: 20px; border: 1px dashed var(--line-2); padding: 16px; display: none; }
+  .answer.on { display: block; animation: in .22s ease; }
+  .answer b { font-size: 16px; } .answer p { color: #e6e6e6; font-size: 14px; line-height: 1.45; margin-top: 8px; white-space: pre-line; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chips button { padding: 9px 13px; border-radius: 16px; border: 1px solid var(--line-2); font-size: 13px; font-weight: 600; }
+  .chips button.w { background: #fff; color: var(--bg); border-color: #fff; }
+  /* chat */
+  .op { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .av { width: 44px; height: 44px; border-radius: 50%; background: #fff; color: var(--bg); display: grid; place-items: center; font-weight: 800; flex: none; }
+  .op b { font-size: 16px; } .op span { display: block; color: var(--muted); font-size: 12px; }
+  .msgs { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; padding-bottom: 70px; }
+  .m { max-width: 82%; padding: 11px 14px; border-radius: 18px; font-size: 14px; line-height: 1.38; white-space: pre-wrap; word-wrap: break-word; }
+  .m.me { align-self: flex-end; background: #fff; color: var(--bg); border-bottom-right-radius: 6px; }
+  .m.them { background: var(--surface); border-bottom-left-radius: 6px; }
+  .m small { display: block; font-size: 11px; opacity: .55; margin-top: 4px; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 10px; line-height: 1.5; }
+  .inp { position: fixed; left: 18px; right: 18px; bottom: calc(88px + env(safe-area-inset-bottom)); display: none; gap: 8px; z-index: 4; }
+  .inp.on { display: flex; }
+  .inp textarea { flex: 1; min-height: 48px; max-height: 120px; resize: none; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); padding: 13px 16px; color: #fff; font: inherit; font-size: 14px; outline: 0; }
+  .inp button { width: 48px; height: 48px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; align-self: flex-end; }
+  .inp button:disabled { opacity: .45; }
+  /* partners */
+  .bars { display: flex; align-items: flex-end; gap: 14px; height: 190px; margin-top: 22px; padding-bottom: 6px; border-bottom: 1px solid var(--line-2); }
+  .bar { flex: 1; text-align: center; }
+  .bar b { display: block; font-weight: 800; font-size: 22px; margin-bottom: 8px; color: rgba(255,255,255,.6); }
+  .bar .dots { margin: 0 auto; width: 84px; background: radial-gradient(circle, rgba(255,255,255,.3) 3.4px, transparent 4px) 0 0 / 12px 12px; }
+  .bar.top b { color: #fff; } .bar.top .dots { background-image: radial-gradient(circle, #fff 3.4px, transparent 4px); }
+  .labels { display: flex; gap: 14px; margin-top: 8px; } .labels span { flex: 1; text-align: center; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .list { margin-top: 16px; display: flex; flex-direction: column; }
+  .list div { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.35; }
+  .list div i { width: 30px; height: 30px; border-radius: 10px; background: #222; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; flex: none; }
+  textarea.note { width: 100%; min-height: 96px; margin-top: 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); padding: 14px; color: #fff; font: inherit; font-size: 14px; outline: 0; resize: vertical; }
+  .msg { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; text-align: center; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line-2); font-size: 13px; font-weight: 600; }
+  /* cabinet */
+  .bal { margin-top: 20px; padding: 18px; border-radius: 22px; background: #fff; color: var(--bg); position: relative; overflow: hidden; }
+  .bal small { font-weight: 600; font-size: 13px; color: #555; } .bal b { display: block; font-weight: 800; font-size: 40px; letter-spacing: -.02em; margin-top: 2px; }
+  .bal .sub2 { font-size: 13px; color: #555; margin-top: 2px; }
+  .bal::after { content: ""; position: absolute; right: -20px; top: -20px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgba(11,11,11,.18) 1.4px, transparent 2px) 0 0 / 9px 9px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .kpi { border-radius: 16px; background: var(--surface); padding: 12px; } .kpi b { display: block; font-size: 20px; font-weight: 800; } .kpi span { color: var(--muted); font-size: 11px; }
+  .spark { height: 96px; margin-top: 8px; border-radius: 16px; background: var(--surface); padding: 12px 12px 8px; }
+  .spark .cols { height: 62px; display: flex; align-items: flex-end; gap: 4px; }
+  .spark i { flex: 1; border-radius: 3px; background: #3a3a3a; min-height: 3px; } .spark i.l { background: #fff; }
+  .spark .cap { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 6px; }
+  .link { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 12px 14px; border-radius: 16px; border: 1px dashed var(--line-2); font-size: 13px; color: var(--muted); }
+  .link b { color: #fff; flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link button { padding: 7px 12px; border-radius: 12px; background: #fff; color: var(--bg); font-weight: 700; font-size: 12px; flex: none; }
+  .card { margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--surface); }
+  .card .row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-top: 1px solid var(--line); } .card .row:first-child { border-top: 0; }
+  .card .row span { color: var(--muted); }
+  input.field { width: 100%; height: 48px; margin-top: 8px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); padding: 0 14px; color: #fff; font: inherit; font-size: 14px; outline: 0; }
+  .toast { position: fixed; left: 50%; top: 18px; transform: translate(-50%, -80px); background: #fff; color: var(--bg); padding: 10px 16px; border-radius: 14px; font-weight: 700; font-size: 13px; transition: transform .25s; z-index: 9; }
+  .toast.show { transform: translate(-50%, 0); }
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute"><defs><path id="logo" d="M176 88a44 44 0 0144 44v62c16 28 56 28 72 0v-62a44 44 0 0188 0v248a44 44 0 01-88 0v-62c-16-28-56-28-72 0v62a44 44 0 01-88 0V132a44 44 0 0144-44z"/></defs></svg>
+
+<!-- 1. help -->
+<section class="view on" id="v-help">
+  <div class="brand"><svg viewBox="0 0 512 512"><use href="#logo" fill="#fff"/></svg>hermes<em>поддержка</em></div>
+  <h1>Чем помочь?</h1>
+  <p class="muted">Ответ по вашей подписке придёт сразу. Если не поможет, подключим оператора.</p>
+  <label class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="q" placeholder="Опишите проблему" enterkeyhint="search" autocomplete="off"></label>
+  <div class="grid">
+    <button class="topic" data-t="conn"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M5 12a7 7 0 0112-5M19 12a7 7 0 01-12 5M17 3v4h-4M7 21v-4h4"/></svg></span><span><b>Не подключается</b><small>проверим подписку</small></span></button>
+    <button class="topic" data-t="slow"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 18a9 9 0 0116 0M12 18l4-6"/></svg></span><span><b>Медленно</b><small>советы по скорости</small></span></button>
+    <button class="topic" data-t="dev"><span class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></span><span><b>Новое устройство</b><small>сброс и лимит</small></span></button>
+    <button class="topic" data-t="pay"><span class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></span><span><b>Оплата</b><small>не пришли дни</small></span></button>
+  </div>
+  <div class="answer" id="answer"><b id="aTitle"></b><p id="aText"></p><div class="chips" id="aChips"></div></div>
+  <div class="status" id="srv"><i class="dot unk" id="srvDot"></i><div><b id="srvTitle">Проверяем серверы…</b><span id="srvSub"></span></div></div>
+  <button class="btn" id="toChat">Написать оператору</button>
+</section>
+
+<!-- 2. chat -->
+<section class="view" id="v-chat">
+  <div class="brand"><svg viewBox="0 0 512 512"><use href="#logo" fill="#fff"/></svg>hermes<em>поддержка</em></div>
+  <div class="op"><div class="av">H</div><div><b>Поддержка HERMES</b><span id="opSub">обычно отвечаем за 10 минут</span></div></div>
+  <div class="msgs" id="msgs"></div>
+</section>
+<div class="inp" id="inp"><textarea id="txt" rows="1" placeholder="Сообщение…" maxlength="4000"></textarea>
+  <button id="send" aria-label="Отправить"><svg width="20" height="20" viewBox="0 0 24 24" stroke="#0b0b0b" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+
+<!-- 3. partners -->
+<section class="view" id="v-partner">
+  <div class="brand"><svg viewBox="0 0 512 512"><use href="#logo" fill="#fff"/></svg>hermes<em>партнёрам</em></div>
+  <h1 id="pTitle">До 40% с оплат ваших клиентов</h1>
+  <p class="muted" id="pSub">Каждый месяц, до 6 месяцев. Выплаты на карту, по СБП или в USDT.</p>
+  <div class="bars" id="bars"></div>
+  <div class="labels" id="barLabels"></div>
+  <div class="list"><div><i>1</i>Личная ссылка и промокоды со скидкой для вашей аудитории</div><div><i>2</i>Статистика переходов, оплат и дохода по дням</div><div><i>3</i>Личный процент выше максимального для крупных команд</div></div>
+  <div id="applyBox">
+    <h2>Заявка</h2>
+    <p class="muted" style="margin-top:0">Где будете приглашать людей: канал, сайт, реклама, примерный охват.</p>
+    <textarea class="note" id="note" maxlength="1000" placeholder="Например: Telegram-канал про технологии, 12 тыс. подписчиков"></textarea>
+    <button class="btn" id="apply">Подать заявку</button>
+    <div class="msg" id="applyMsg"></div>
+  </div>
+  <div id="pendingBox" style="display:none"><div class="pill"><i class="dot warn"></i>Заявка на рассмотрении. Ответим в чате бота.</div></div>
+  <div id="isMgrBox" style="display:none"><button class="btn" data-go="cab">Открыть кабинет</button></div>
+</section>
+
+<!-- 4. profile / cabinet -->
+<section class="view" id="v-cab">
+  <div class="brand"><svg viewBox="0 0 512 512"><use href="#logo" fill="#fff"/></svg>hermes<em id="cabTag">профиль</em></div>
+  <div id="profileBox">
+    <h1 id="hello">Профиль</h1>
+    <div class="card" id="subCard"></div>
+    <button class="btn" id="openMain">Открыть HERMES VPN</button>
+    <button class="btn ghost" data-go="partner">Стать партнёром</button>
+  </div>
+  <div id="cabBox" style="display:none">
+    <div class="bal"><small>Баланс к выводу</small><b id="cBal">0 ₽</b><div class="sub2" id="cEarned"></div></div>
+    <div class="kpis"><div class="kpi"><b id="kInv">0</b><span>пришло</span></div><div class="kpi"><b id="kPay">0</b><span>оплатили</span></div><div class="kpi"><b id="kConv">0%</b><span>конверсия</span></div></div>
+    <div class="spark"><div class="cols" id="spark"></div><div class="cap"><span id="spFrom"></span><span>доход по дням</span><span>сегодня</span></div></div>
+    <div class="link"><b id="cLink"></b><button id="copyLink">Копировать</button></div>
+    <div id="codes"></div>
+    <button class="btn" id="payout">Вывести</button>
+    <div class="msg" id="payMsg"></div>
+    <div id="detailsBox" style="display:none">
+      <input class="field" id="details" maxlength="200" placeholder="Телефон и банк для СБП, карта или кошелёк USDT TRC20">
+      <button class="btn sm" id="saveDetails">Сохранить и вывести</button>
+    </div>
+    <button class="btn ghost" id="nextTier" style="display:none"></button>
+    <h2>Последние клиенты</h2>
+    <div class="card" id="friends"></div>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="on" data-go="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/></svg>Помощь</button>
+  <button data-go="chat"><i class="badge" id="badge"></i><svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l1-4.2A8 8 0 1120 12z"/></svg>Чат</button>
+  <button data-go="partner"><svg class="i" viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Партнёрам</button>
+  <button data-go="cab"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span id="cabTab">Профиль</span></button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const SERVER_API = "https://hermeswebapp.duckdns.org";
+const POLL_MS = 6000;
+const tg = window.Telegram?.WebApp;
+const initData = tg?.initData || "";
+const DEMO = !initData;
+const $ = id => document.getElementById(id);
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.("#0b0b0b"); tg.setBackgroundColor?.("#0b0b0b"); }
+
+const TOPIC_WORDS = {
+  pay: /оплат|деньг|списал|списан|чек|плат[её]ж|возврат/,
+  dev: /устройств|нов(ый|ого|ом) телефон|сменил телефон|ноутбук|планшет|компьютер|лимит устр/,
+  slow: /медлен|тормоз|скорост|лага|лагает|долго (груз|откр)|буфер/,
+  conn: /не работа|не подключ|не груз|не открыва|не включа|ошибк|не коннект|нет интернета|отключил/,
+};
+const LOC = { ch: "Швейцария", se: "Швеция", nl: "Нидерланды", de: "Германия", fi: "Финляндия" };
+
+// --- demo data: the page opened outside Telegram (preview) ---
+const now = () => Date.now() / 1000;
+const DEMO_DATA = {
+  "/api/help/meta": { tiers: [{ need: 0, percent: 20 }, { need: 10, percent: 30 }, { need: 50, percent: 40 }], partner_months: 6, min_payout: 500, main_bot: "Hermesvpn_app", manager_status: "manager", username: "guest" },
+  "/api/me": { active: true, days_left: 27, plan: "3 устройства", device_limit: 3, traffic: { used: 41.2, limit: 300 }, expires_at: now() + 27 * 86400 },
+  "/api/servers": { checked_at: now(), locations: { ch: { status: "ok" }, se: { status: "ok" } } },
+  "/api/help/thread": { open: true, messages: [
+    { id: 1, me: true, text: "Купил новый телефон, не подключается", at: now() - 900 },
+    { id: 2, me: false, text: "Пришлите, пожалуйста, скриншот ошибки, посмотрю", at: now() - 600 } ] },
+  "/api/manager/stats": { link: "https://t.me/Hermesvpn_app?start=m_ivan", invited: 214, paying: 37, percent: 30, next: { need: 13, percent: 40 },
+    earned: 31200, balance: 12840, min_payout: 500, payout_details: "", payout_pending: 0,
+    days: Array.from({ length: 14 }, (_, i) => ({ d: "", users: 3 + i, rub: [300, 520, 410, 760, 650, 900, 820, 1100, 980, 1240, 1050, 1400, 1310, 1620][i] })),
+    codes: [{ code: "IVAN20", percent: 20, days: 0, sales: 11, earned: 2860 }],
+    friends: [{ name: "ал***", paid: true, brought: 1490 }, { name: "ma***", paid: false, brought: 0 }, { name: "ди***", paid: true, brought: 890 }] },
+};
+DEMO_DATA["/api/help/topic/dev"] = { title: "Новое устройство", text: "Сейчас занято 3 из 3 устройств. Чтобы подключить новый телефон, сбросьте устройства: все отключатся, и вы заново подключите нужные тем же ключом.", actions: [{ text: "Устройства и сброс", action: "devices" }, { text: "Больше устройств", action: "upgrade" }] };
+
+async function call(path, body) {
+  if (DEMO) {
+    await new Promise(r => setTimeout(r, 250));
+    if (path === "/api/support") { DEMO_DATA["/api/help/thread"].messages.push({ id: Date.now(), me: true, text: body.text, at: now() }); return { ok: true }; }
+    if (path.startsWith("/api/help/topic/")) return DEMO_DATA[path] || { title: "Ответ", text: "Здесь появится ответ по вашей подписке.", actions: [] };
+    return DEMO_DATA[path] || { ok: true };
+  }
+  const res = await fetch(SERVER_API + path, {
+    method: body ? "POST" : "GET",
+    headers: { "Content-Type": "application/json", "X-Init-Data": initData },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+const rub = n => Math.round(n).toLocaleString("ru-RU").replace(/,/g, " ") + " ₽";
+const hhmm = t => new Date(t * 1000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(el._h); el._h = setTimeout(() => el.classList.remove("show"), 1800); }
+const haptic = k => tg?.HapticFeedback?.notificationOccurred?.(k);
+const openMain = () => { const u = `https://t.me/${meta.main_bot || "Hermesvpn_app"}`; tg?.openTelegramLink ? tg.openTelegramLink(u) : open(u); };
+
+let meta = {}, me = null, stats = null, view = "help", lastSeen = 0, pollTimer = null;
+
+// --- navigation ---
+function go(v) {
+  if (!["help", "chat", "partner", "cab"].includes(v)) v = "help";
+  view = v;
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.go === v));
+  $("inp").classList.toggle("on", v === "chat");
+  if (v === "chat") { $("badge").classList.remove("on"); loadThread(true); }
+  if (v === "cab") loadCab();
+  scrollTo(0, v === "chat" ? document.body.scrollHeight : 0);
+  history.replaceState(null, "", "#" + v);
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) { tg?.HapticFeedback?.selectionChanged?.(); go(b.dataset.go); } });
+
+// --- help: topics, search, server status ---
+let current = null;
+async function showTopic(t) {
+  current = t;
+  $("answer").classList.add("on"); $("aTitle").textContent = "Смотрим вашу подписку…"; $("aText").textContent = ""; $("aChips").innerHTML = "";
+  try {
+    const r = await call("/api/help/topic/" + t);
+    $("aTitle").textContent = r.title; $("aText").textContent = r.text;
+    const chips = r.actions.map(a => `<button data-main>${esc(a.text)}</button>`).join("");
+    $("aChips").innerHTML = chips + `<button class="w" data-ok>Помогло</button><button data-op>Нужен оператор</button>`;
+  } catch { $("aTitle").textContent = "Нет связи с ботом"; $("aText").textContent = "Попробуйте ещё раз через минуту или напишите оператору."; }
+  $("answer").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+document.querySelectorAll(".topic").forEach(b => b.onclick = () => showTopic(b.dataset.t));
+$("aChips").onclick = async e => {
+  if (e.target.closest("[data-main]")) return openMain();
+  if (e.target.closest("[data-ok]")) {
+    $("answer").classList.remove("on"); haptic("success"); toast("Рады, что помогло");
+    call("/api/help/topic", { topic: current, helped: true }).catch(() => {});
+  }
+  if (e.target.closest("[data-op]")) {
+    await call("/api/help/topic", { topic: current, helped: false }).catch(() => {});
+    $("answer").classList.remove("on"); go("chat"); toast("Оператор подключится в чате");
+  }
+};
+$("q").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const text = $("q").value.trim().toLowerCase();
+  if (!text) return;
+  const t = Object.keys(TOPIC_WORDS).find(k => TOPIC_WORDS[k].test(text));
+  if (t) { $("q").blur(); showTopic(t); }
+  else { $("txt").value = $("q").value; $("q").value = ""; go("chat"); $("txt").focus(); }
+});
+async function loadServers() {
+  try {
+    const r = await call("/api/servers");
+    const locs = Object.entries(r.locations || {});
+    const bad = locs.filter(([, l]) => l.status === "down"), slow = locs.filter(([, l]) => l.status === "degraded");
+    const dot = $("srvDot");
+    if (!locs.length || !r.checked_at) { dot.className = "dot unk"; $("srvTitle").textContent = "Статус пока не проверен"; return; }
+    dot.className = "dot" + (bad.length ? " bad" : slow.length ? " warn" : "");
+    $("srvTitle").textContent = bad.length ? "Есть проблемы с серверами" : slow.length ? "Часть точек входа не отвечает" : "Все серверы работают";
+    $("srvSub").textContent = locs.map(([c, l]) => `${LOC[c] || c.toUpperCase()}: ${{ ok: "в норме", degraded: "частично", down: "недоступна", unknown: "проверяем" }[l.status]}`).join(" · ");
+  } catch { $("srvTitle").textContent = "Не удалось проверить серверы"; }
+}
+$("toChat").onclick = () => go("chat");
+
+// --- chat ---
+function renderThread(r) {
+  const box = $("msgs");
+  if (!r.messages.length) { box.innerHTML = `<div class="empty">Напишите, что случилось.<br>Оператор ответит здесь и в чате бота.</div>`; return; }
+  box.innerHTML = r.messages.map(m => `<div class="m ${m.me ? "me" : "them"}">${esc(m.text)}<small>${m.me ? "" : "Оператор · "}${hhmm(m.at)}</small></div>`).join("");
+}
+async function loadThread(scroll) {
+  try {
+    const r = await call("/api/help/thread");
+    const last = r.messages.length ? r.messages[r.messages.length - 1] : null;
+    const fresh = last && last.id !== lastSeen;
+    if (fresh && !last.me && lastSeen && view !== "chat") $("badge").classList.add("on");
+    if (last) lastSeen = last.id;
+    if (view === "chat" && (fresh || scroll)) { renderThread(r); scrollTo(0, document.body.scrollHeight); }
+    else if (scroll) renderThread(r);
+  } catch { if (scroll) $("msgs").innerHTML = `<div class="empty">Нет связи с ботом. Можно написать прямо в чат бота.</div>`; }
+}
+async function send() {
+  const text = $("txt").value.trim();
+  if (!text) return;
+  $("send").disabled = true;
+  try { await call("/api/support", { text }); $("txt").value = ""; autoGrow(); haptic("success"); await loadThread(true); }
+  catch { toast("Не отправилось, попробуйте ещё раз"); }
+  $("send").disabled = false;
+}
+$("send").onclick = send;
+const autoGrow = () => { const t = $("txt"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 120) + "px"; };
+$("txt").addEventListener("input", autoGrow);
+
+// --- partners ---
+function renderPartner() {
+  const tiers = meta.tiers || [], top = tiers[tiers.length - 1]?.percent || 40;
+  $("pTitle").textContent = `До ${top}% с оплат ваших клиентов`;
+  $("pSub").textContent = `Каждый месяц, до ${meta.partner_months || 6} месяцев. Выплаты от ${meta.min_payout || 500} ₽ на карту, по СБП или в USDT.`;
+  $("bars").innerHTML = tiers.map((t, i) => `<div class="bar${i === tiers.length - 1 ? " top" : ""}"><b>${t.percent}%</b><div class="dots" style="height:${Math.round(132 * t.percent / top / 12) * 12}px"></div></div>`).join("");
+  $("barLabels").innerHTML = tiers.map(t => `<span>${t.need ? `от ${t.need} клиентов` : "сразу"}</span>`).join("");
+  const st = meta.manager_status;
+  $("applyBox").style.display = st === "manager" || st === "pending" ? "none" : "";
+  $("pendingBox").style.display = st === "pending" ? "" : "none";
+  $("isMgrBox").style.display = st === "manager" ? "" : "none";
+  $("cabTab").textContent = st === "manager" ? "Кабинет" : "Профиль";
+}
+$("apply").onclick = async () => {
+  const note = $("note").value.trim();
+  if (note.length < 10) { $("applyMsg").textContent = "Расскажите чуть подробнее, где будете приглашать людей."; return; }
+  $("apply").disabled = true;
+  try {
+    const r = await call("/api/manager/apply", { note });
+    if (r.error) { $("applyMsg").textContent = r.error; haptic("error"); }
+    else { meta.manager_status = "pending"; renderPartner(); haptic("success"); }
+  } catch { $("applyMsg").textContent = "Нет связи с ботом. Попробуйте ещё раз."; }
+  $("apply").disabled = false;
+};
+
+// --- profile / cabinet ---
+async function loadCab() {
+  if (meta.manager_status === "manager") {
+    $("profileBox").style.display = "none"; $("cabBox").style.display = "";
+    try { stats = await call("/api/manager/stats"); renderCab(); } catch { $("payMsg").textContent = "Нет связи с ботом."; }
+    return;
+  }
+  $("profileBox").style.display = ""; $("cabBox").style.display = "none"; $("cabTag").textContent = "профиль";
+  try {
+    me = await call("/api/me");
+    $("hello").textContent = meta.username ? "@" + meta.username : "Профиль";
+    const rows = [["Подписка", me.active ? `активна, ещё ${me.days_left} дн.` : "не активна"]];
+    if (me.active) rows.push(["Тариф", me.plan], ["Устройств", me.device_limit]);
+    if (me.active && me.traffic) rows.push(["Трафик", `${(+me.traffic.used).toFixed(1).replace(".", ",")} из ${me.traffic.limit} ГБ`]);
+    $("subCard").innerHTML = rows.map(([a, b]) => `<div class="row"><span>${a}</span><b>${esc(b)}</b></div>`).join("");
+  } catch { $("subCard").innerHTML = `<div class="row"><span>Нет связи с ботом</span></div>`; }
+}
+function renderCab() {
+  const s = stats;
+  $("cabTag").textContent = `менеджер · ${s.percent}%`;
+  $("cBal").textContent = rub(s.balance);
+  $("cEarned").textContent = `всего заработано ${rub(s.earned)}` + (s.payout_pending ? ` · на выплате ${rub(s.payout_pending)}` : "");
+  $("kInv").textContent = s.invited; $("kPay").textContent = s.paying;
+  $("kConv").textContent = s.invited ? Math.round(100 * s.paying / s.invited) + "%" : "0%";
+  const days = s.days || [], max = Math.max(1, ...days.map(d => d.rub));
+  $("spark").innerHTML = days.map((d, i) => `<i class="${i === days.length - 1 ? "l" : ""}" style="height:${Math.max(4, Math.round(100 * d.rub / max))}%" title="${rub(d.rub)}"></i>`).join("");
+  $("spFrom").textContent = days.length ? `${days.length} дн.` : "";
+  $("cLink").textContent = s.link.replace("https://", "");
+  $("codes").innerHTML = (s.codes || []).map(c => `<div class="link"><b>${esc(c.code)} · ${c.percent ? `скидка ${c.percent}%` : `+${c.days} дн.`}</b><span>${c.sales || 0} продаж</span></div>`).join("");
+  const can = s.balance >= s.min_payout;
+  $("payout").textContent = can ? `Вывести ${rub(s.balance)}` : `Вывод от ${rub(s.min_payout)}`;
+  $("payout").disabled = !can;
+  $("nextTier").style.display = s.next ? "" : "none";
+  if (s.next) $("nextTier").textContent = `До ${s.next.percent}% осталось ${s.next.need} клиентов`;
+  $("friends").innerHTML = (s.friends || []).slice(0, 8).map(f => `<div class="row"><span>${esc(f.name)}${f.paid ? "" : " · не оплатил"}</span><b>${f.brought ? rub(f.brought) : "—"}</b></div>`).join("")
+    || `<div class="row"><span>Пока никого. Поделитесь ссылкой выше.</span></div>`;
+}
+$("copyLink").onclick = async () => { try { await navigator.clipboard.writeText(stats.link); toast("Ссылка скопирована"); } catch { toast(stats.link); } };
+async function payout(details) {
+  $("payout").disabled = true; $("payMsg").textContent = "";
+  try {
+    const r = await call("/api/payout", details ? { details } : {});
+    if (r.error) {
+      $("payMsg").textContent = r.error; haptic("error");
+      if (/реквизит/i.test(r.error)) $("detailsBox").style.display = "";
+    } else { $("detailsBox").style.display = "none"; $("payMsg").textContent = `Заявка на ${rub(r.payout.amount)} принята. Когда переведём, напишем в чате бота.`; haptic("success"); stats = await call("/api/manager/stats"); renderCab(); }
+  } catch { $("payMsg").textContent = "Нет связи с ботом. Попробуйте ещё раз."; }
+  $("payout").disabled = !(stats && stats.balance >= stats.min_payout);
+}
+$("payout").onclick = () => payout();
+$("saveDetails").onclick = () => payout($("details").value.trim());
+$("openMain").onclick = openMain;
+
+// --- start ---
+(async () => {
+  try { meta = await call("/api/help/meta"); } catch { meta = DEMO_DATA["/api/help/meta"]; meta = { ...meta, manager_status: "" }; }
+  renderPartner();
+  loadServers();
+  loadThread(false);
+  pollTimer = setInterval(() => loadThread(false), POLL_MS);
+  go((location.hash || "#help").slice(1));
+})();
+</script>
+</body></html>
