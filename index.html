@@ -2055,7 +2055,7 @@ function renderManagerView() {
   const tiers = meta.ref_tiers, status = me.manager?.status || "";
   $("mgrLead").textContent = "Менеджер получает процент с каждой оплаты тех, кого пригласил: " + tiers.map(([need, pct]) => `${pct}% ${need ? `от ${need} оплативших друзей` : "сразу"}`).join(", ") + ".";
   $("mgrPerks").replaceChildren(...[
-    ["Деньги", "на баланс, с каждой оплаты, навсегда"], ["Вывод", `от ${money(meta.ref_min_payout)}`], ["Ссылка", "личная, с вашим именем"],
+    ["Деньги", `на баланс, с каждой оплаты, ${meta.partner_months || 6} мес. с прихода клиента`], ["Вывод", `от ${money(meta.ref_min_payout)}`], ["Ссылка", "личная, с вашим именем"],
   ].map(([k, v]) => { const r = el("div"); r.append(el("span", "", k), el("b", "", v)); return r; }));
   const done = status === "pending" || status === "manager";
   $("mgrForm").hidden = done; $("mgrDone").hidden = !done;
@@ -4672,7 +4672,7 @@ function renderReferrals() {
   const percentMode = isManager(), tiers = meta.ref_tiers, top = tiers[tiers.length - 1][1];
   // one reward: days for everyone, a percent for managers (numbers only, no user text here)
   $("refModes").innerHTML = percentMode
-    ? `<div class="mode on"><em>Вы менеджер</em><b>${top}%</b><strong>до ${top}% деньгами</strong><span>с каждой оплаты приглашённых, навсегда</span></div>`
+    ? `<div class="mode on"><em>Вы менеджер</em><b>${top}%</b><strong>до ${top}% деньгами</strong><span>с каждой оплаты приглашённых, ${meta.partner_months || 6} мес. с прихода</span></div>`
     : `<div class="mode on"><b>+${me.referral_bonus_days}</b><strong>дней подписки</strong><span>за каждого друга, который оплатит подписку</span></div>`;
   const status = me.manager?.status || "";
   $("mgrCard").hidden = percentMode;

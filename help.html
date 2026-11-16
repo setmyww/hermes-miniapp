@@ -139,7 +139,7 @@
 <section class="view" id="v-partner">
   <div class="brand"><svg viewBox="0 0 512 512"><use href="#logo" fill="#fff"/></svg>hermes<em>партнёрам</em></div>
   <h1 id="pTitle">До 40% с оплат ваших клиентов</h1>
-  <p class="muted" id="pSub">Каждый месяц, до 6 месяцев. Выплаты на карту, по СБП или в USDT.</p>
+  <p class="muted" id="pSub">6 месяцев с прихода каждого клиента. Выплаты на карту, по СБП или в USDT.</p>
   <div class="bars" id="bars"></div>
   <div class="labels" id="barLabels"></div>
   <div class="list"><div><i>1</i>Личная ссылка и промокоды со скидкой для вашей аудитории</div><div><i>2</i>Статистика переходов, оплат и дохода по дням</div><div><i>3</i>Личный процент выше максимального для крупных команд</div></div>
@@ -341,7 +341,7 @@ $("txt").addEventListener("input", autoGrow);
 function renderPartner() {
   const tiers = meta.tiers || [], top = tiers[tiers.length - 1]?.percent || 40;
   $("pTitle").textContent = `До ${top}% с оплат ваших клиентов`;
-  $("pSub").textContent = `Каждый месяц, до ${meta.partner_months || 6} месяцев. Выплаты от ${meta.min_payout || 500} ₽ на карту, по СБП или в USDT.`;
+  $("pSub").textContent = `${meta.partner_months || 6} месяцев с прихода каждого клиента. Выплаты от ${meta.min_payout || 500} ₽ на карту, по СБП или в USDT.`;
   $("bars").innerHTML = tiers.map((t, i) => `<div class="bar${i === tiers.length - 1 ? " top" : ""}"><b>${t.percent}%</b><div class="dots" style="height:${Math.round(132 * t.percent / top / 12) * 12}px"></div></div>`).join("");
   $("barLabels").innerHTML = tiers.map(t => `<span>${t.need ? `от ${t.need} клиентов` : "сразу"}</span>`).join("");
   const st = meta.manager_status;
