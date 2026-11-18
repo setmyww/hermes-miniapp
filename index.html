@@ -774,7 +774,7 @@
     <div class="pl-dev">
       <div class="pl-dev-top">
         <b class="pl-num" id="plNum"></b>
-        <span><b>Устройства</b><small>Одновременно</small></span>
+        <span><b id="plWord">Устройства</b><small>Одновременно</small></span>
         <em class="pl-gb" id="planTraffic"></em>
       </div>
       <div class="pl-track" id="plTrack" role="slider" tabindex="0" aria-label="Устройства"><i class="pl-fill" id="plFill"></i><i class="pl-knob" id="plKnob"></i></div>
@@ -1274,9 +1274,13 @@ const DEMO_ME = {
   manager: { status: "", slug: null },
 };
 const DEMO_META = {
-  traffic_gb: { 2: 200, 3: 300, 5: 500, 10: 1000 }, trial_gb: 10,
+  traffic_gb: { 1: 100, 2: 200, 3: 300, 5: 500, 10: 1000 }, trial_gb: 10,
   traffic_packs: [{ code: "g50", gb: 50, rub: 99 }, { code: "g150", gb: 150, rub: 249 }],
   plans: [
+    { id: "d1", title: "1 устройство", days: 30, rub: 149, stars: 121, devices: 1 },
+    { id: "q1", title: "1 устройство, 3 месяца", days: 90, rub: 380, stars: 309, devices: 1 },
+    { id: "h1", title: "1 устройство, 6 месяцев", days: 180, rub: 670, stars: 545, devices: 1 },
+    { id: "yr1", title: "1 устройство, год", days: 365, rub: 1160, stars: 943, devices: 1 },
     { id: "d2", title: "2 устройства", days: 30, rub: 199, stars: 162, devices: 2 },
     { id: "d3", title: "3 устройства", days: 30, rub: 250, stars: 203, devices: 3 },
     { id: "d5", title: "5 устройств", days: 30, rub: 350, stars: 285, devices: 5 },
@@ -4596,6 +4600,7 @@ function renderPlans() {
   const p = cur(); plan = p.id;
   const i = devs.indexOf(p.devices);
   rollTo($("plNum"), p.devices);
+  $("plWord").textContent = plural(p.devices, "Устройство", "Устройства", "Устройств");
   $("plFill").style.width = `calc(${at(i)} + 22px)`;
   $("plKnob").style.left = at(i);
   track.setAttribute("aria-valuenow", p.devices); track.setAttribute("aria-valuetext", devicesWord(p.devices));
@@ -4878,7 +4883,8 @@ $("buyBtn").onclick = async () => {
     try { [me, meta] = await Promise.all([api("/api/me"), api("/api/meta")]); }
     catch { toast("Ошибка загрузки"); }
   }
-  plan = giftPlan = meta.plans[0].id;
+  // the pickers open on the 2-device month: the 1-device plan is the cheap way in, not the default
+  plan = giftPlan = (meta.plans.find((x) => x.id === "d2") || meta.plans[0]).id;
   if (!meta.admin) $("supportTab").remove();  // before the tab bar measures its buttons
   if (!isManager()) $("managerTab").remove();  // the managers' own tab: statistics, clients, payouts
   render();
