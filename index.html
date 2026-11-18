@@ -1004,7 +1004,6 @@
 
   <!-- PROMO CODE -->
   <section class="view" id="v-mstats">
-    <button class="back" data-back>← Назад</button>
     <h1 style="margin-top:8px">Моя статистика</h1>
     <p class="note" id="msSince"></p>
     <div id="msSkel"></div>
@@ -1247,6 +1246,7 @@
   <button data-go="locations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>Локации</button>
   <button data-go="plans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-6M12 20V9M19 20V4"/></svg>Тарифы</button>
   <button data-go="support" id="supportTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H9l-5 4z"/></svg>Админ</button>
+  <button data-go="mstats" id="managerTab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5c1.9.8 3 2.7 3 5.5"/></svg>Кабинет</button>
   <button data-go="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Профиль<i class="badge" id="profileBadge" hidden></i></button>
 </nav>
 
@@ -4761,7 +4761,7 @@ function countTo(el, to, ms) {
 // Stagger order for the entrance animation of each view's blocks
 document.querySelectorAll(".view").forEach((v) => [...v.children].forEach((c, i) => c.style.setProperty("--i", i)));
 
-const ROOT_VIEWS = new Set(["home", "locations", "plans", "support", "profile"]);
+const ROOT_VIEWS = new Set(["home", "locations", "plans", "support", "mstats", "profile"]);
 const viewStack = [];
 let currentView = "home";
 
@@ -4880,6 +4880,7 @@ $("buyBtn").onclick = async () => {
   }
   plan = giftPlan = meta.plans[0].id;
   if (!meta.admin) $("supportTab").remove();  // before the tab bar measures its buttons
+  if (!isManager()) $("managerTab").remove();  // the managers' own tab: statistics, clients, payouts
   render();
   initLiquid();
   initGlobe();
