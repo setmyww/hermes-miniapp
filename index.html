@@ -1302,12 +1302,12 @@ const DEMO_META = {
     { code: "ch", name: "Switzerland", city: "Zurich", scene: "alps", ping: 48, available: true },
     { code: "se", name: "Sweden", city: "Stockholm", scene: "forest", ping: 34, available: true },
     { code: "nl", name: "Netherlands", city: "Amsterdam", scene: "polder", ping: 38, available: false },
-    { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42, available: false },
+    { code: "de", name: "Germany", city: "Frankfurt", scene: "hills", ping: 42, available: true },
     { code: "fi", name: "Finland", city: "Helsinki", scene: "fjord", ping: 31, available: false },
     { code: "tr", name: "Turkey", city: "Istanbul", scene: "dunes", ping: 57, available: false },
   ],
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
-  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218"], sbp_min: 10, autopay: false,
+  ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["94.26.35.217", "136.148.213.218", "201.58.142.39"], sbp_min: 10, autopay: false,
   stars: false,
   servers: [["nl", "Нидерланды"], ["ch", "Швейцария"]].flatMap(([cc, country]) =>
     [["10", "10 Мбит/с", 350], ["100", "100 Мбит/с", 420], ["250", "250 Мбит/с", 490], ["500", "500 Мбит/с", 690], ["1000", "1 Гбит/с", 1190]]
@@ -4896,6 +4896,15 @@ $("buyBtn").onclick = async () => {
   // the bot can open the app on a given screen (e.g. the application from the referral screen)
   const startView = new URLSearchParams(location.search).get("v");
   if (startView && /^[a-z]+$/.test(startView) && document.getElementById("v-" + startView)) go(startView);
+  // The status in the link was baked when the bot last set this chat's menu button, maybe before a new country was
+  // switched on: take the live list of locations (and the VPN exit addresses for the check) from the bot.
+  if (STATE && initData) {
+    serverApi("/api/meta").then((m) => {
+      if (Array.isArray(m.locations) && m.locations.length) meta.locations = m.locations;
+      if (Array.isArray(m.vpn_ips)) meta.vpn_ips = m.vpn_ips;
+      renderLocations();
+    }).catch(() => { /* the cards from the link stay */ });
+  }
 })();
 </script>
 </body>
