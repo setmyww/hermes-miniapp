@@ -204,14 +204,14 @@ const TOPIC_WORDS = {
   slow: /медлен|тормоз|скорост|лага|лагает|долго (груз|откр)|буфер/,
   conn: /не работа|не подключ|не груз|не открыва|не включа|ошибк|не коннект|нет интернета|отключил/,
 };
-const LOC = { ch: "Швейцария", se: "Швеция", nl: "Нидерланды", de: "Германия", fi: "Финляндия" };
+const LOC = { es: "Испания", ch: "Швейцария", se: "Швеция", nl: "Нидерланды", de: "Германия", fi: "Финляндия" };
 
 // --- demo data: the page opened outside Telegram (preview) ---
 const now = () => Date.now() / 1000;
 const DEMO_DATA = {
   "/api/help/meta": { tiers: [{ need: 0, percent: 20 }, { need: 10, percent: 30 }, { need: 50, percent: 40 }], partner_months: 6, min_payout: 500, main_bot: "Hermesvpn_app", manager_status: "manager", username: "guest" },
   "/api/me": { active: true, days_left: 27, plan: "3 устройства", device_limit: 3, traffic: { used: 41.2, limit: 300 }, expires_at: now() + 27 * 86400 },
-  "/api/servers": { checked_at: now(), locations: { ch: { status: "ok" }, se: { status: "ok" } } },
+  "/api/servers": { checked_at: now(), locations: { es: { status: "ok" }, de: { status: "ok" } } },
   "/api/help/thread": { open: true, messages: [
     { id: 1, me: true, text: "Купил новый телефон, не подключается", at: now() - 900 },
     { id: 2, me: false, text: "Пришлите, пожалуйста, скриншот ошибки, посмотрю", at: now() - 600 } ] },
