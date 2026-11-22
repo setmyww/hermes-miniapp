@@ -300,6 +300,9 @@
   .srv-card .btn.srv-buy { height: 56px; margin-top: 14px; }
 
   .srv-planets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+  .srv-planets.many { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 2px; scrollbar-width: none; }
+  .srv-planets.many::-webkit-scrollbar { display: none; }
+  .srv-planets.many .srv-planet { flex: 0 0 128px; height: 104px; scroll-snap-align: start; }
   .srv-planet { position: relative; overflow: hidden; isolation: isolate; height: 128px; padding: 12px; border-radius: 18px; background: #1d1d1d; border: 1px solid var(--line); color: #fff; text-align: left; display: flex; flex-direction: column; justify-content: space-between; transition: background .3s, color .3s, border-color .3s, transform .18s var(--ease-out); }
   .srv-planet:active { transform: scale(.97); }
   .srv-planet::after { content: ""; position: absolute; z-index: -1; width: 150px; height: 150px; right: -52px; bottom: -62px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.4) 1.3px, transparent 1.9px) 0 0 / 7px 7px; -webkit-mask-image: radial-gradient(circle at 35% 35%, #000 40%, rgba(0,0,0,.25) 70%); mask-image: radial-gradient(circle at 35% 35%, #000 40%, rgba(0,0,0,.25) 70%); transition: transform .6s var(--ease-out); }
@@ -1309,9 +1312,15 @@ const DEMO_META = {
   bot_username: "hermes_vpn_bot", support: "hermes_support", trial_days: 3, admin: true,
   ref_tiers: [[0, 20], [10, 30], [50, 40]], ref_min_payout: 500, vpn_ips: ["196.245.52.134", "48.103.231.139", "136.148.213.218"], sbp_min: 10, autopay: false,
   stars: false,
-  servers: [["nl", "Нидерланды"], ["ch", "Швейцария"]].flatMap(([cc, country]) =>
-    [["10", "10 Мбит/с", 350], ["100", "100 Мбит/с", 420], ["250", "250 Мбит/с", 490], ["500", "500 Мбит/с", 690], ["1000", "1 Гбит/с", 1190]]
-      .map(([n, speed, rub]) => ({ code: cc + n, cc, speed, rub, stars: Math.ceil(rub / 1.23), title: `Сервер для ИИ · ${country} · ${speed}`, country, days: 30, setup_hours: 2 }))),
+  // the same list and prices as config.SERVER_LOCATIONS in the bot: pricier h1cloud locations cost more
+  servers: [["de", "Германия", 1], ["es", "Испания", 1], ["pl", "Польша", 1], ["nl", "Нидерланды", 1.5], ["ch", "Швейцария", 1.5],
+    ["us", "США", 1.25], ["se", "Швеция", 2], ["tr", "Турция", 2], ["il", "Израиль", 2], ["al", "Албания", 2], ["md", "Молдова", 2],
+    ["lt", "Литва", 2], ["pk", "Пакистан", 2], ["in", "Индия", 2], ["ee", "Эстония", 2.25], ["by", "Беларусь", 3], ["ge", "Грузия", 5]]
+    .flatMap(([cc, country, k]) =>
+    [["10", "10 Мбит/с", 350, 55], ["100", "100 Мбит/с", 420, 80], ["250", "250 Мбит/с", 490, 120], ["500", "500 Мбит/с", 690, 200], ["1000", "1 Гбит/с", 1190, 350]]
+      .map(([n, speed, base, cost]) => { const pk = { by: 2, ge: 2 }[cc] || k;  // SERVER_PRICE_FACTOR, SERVER_MIN_MARKUP 1.4
+        const rub = Math.ceil(Math.max(base * Math.max(1, pk / 1.5), cost * k * 1.4) / 10) * 10;
+        return { code: cc + n, cc, speed, rub, stars: Math.ceil(rub / 1.23), title: `Сервер для ИИ · ${country} · ${speed}`, country, days: 30, setup_hours: 2 }; })),
 };
 
 let me = DEMO_ME, meta = DEMO_META, plan = "d2", selectedLoc = 0;
@@ -3703,6 +3712,21 @@ let srvPick = null;
 const SRV_FLAGS = {
   nl: '<svg viewBox="0 0 24 24"><rect width="24" height="8" fill="#ae1c28"/><rect y="8" width="24" height="8" fill="#fff"/><rect y="16" width="24" height="8" fill="#21468b"/></svg>',
   ch: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#d52b1e"/><path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z" fill="#fff"/></svg>',
+  de: '<svg viewBox="0 0 24 24"><rect width="24" height="8" fill="#000"/><rect y="8" width="24" height="8" fill="#dd0000"/><rect y="16" width="24" height="8" fill="#ffce00"/></svg>',
+  es: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#aa151b"/><rect y="6" width="24" height="12" fill="#f1bf00"/></svg>',
+  pl: '<svg viewBox="0 0 24 24"><rect width="24" height="12" fill="#fff"/><rect y="12" width="24" height="12" fill="#dc143c"/></svg>',
+  ee: '<svg viewBox="0 0 24 24"><rect width="24" height="8" fill="#0072ce"/><rect y="8" width="24" height="8" fill="#000"/><rect y="16" width="24" height="8" fill="#fff"/></svg>',
+  lt: '<svg viewBox="0 0 24 24"><rect width="24" height="8" fill="#fdb913"/><rect y="8" width="24" height="8" fill="#006a44"/><rect y="16" width="24" height="8" fill="#c1272d"/></svg>',
+  se: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#006aa7"/><rect x="7" width="4" height="24" fill="#fecc00"/><rect y="10" width="24" height="4" fill="#fecc00"/></svg>',
+  md: '<svg viewBox="0 0 24 24"><rect width="8" height="24" fill="#0046ae"/><rect x="8" width="8" height="24" fill="#ffd200"/><rect x="16" width="8" height="24" fill="#cc092f"/><rect x="10" y="9" width="4" height="6" rx="1" fill="#b07e48"/></svg>',
+  by: '<svg viewBox="0 0 24 24"><rect width="24" height="16" fill="#c8313e"/><rect y="16" width="24" height="8" fill="#4aa657"/><rect width="5" height="24" fill="#fff"/><path d="M2.5 3l1.5 2-1.5 2L1 5zM2.5 10l1.5 2-1.5 2L1 12zM2.5 17l1.5 2-1.5 2L1 19z" fill="#c8313e"/></svg>',
+  ge: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/><rect x="10" width="4" height="24" fill="#e8112d"/><rect y="10" width="24" height="4" fill="#e8112d"/><path d="M4.5 3.5h2v1.5H8v2H6.5V8.5h-2V7H3V5h1.5zM17.5 3.5h2v1.5H21v2h-1.5V8.5h-2V7H16V5h1.5zM4.5 15.5h2V17H8v2H6.5v1.5h-2V19H3v-2h1.5zM17.5 15.5h2V17H21v2h-1.5v1.5h-2V19H16v-2h1.5z" fill="#e8112d"/></svg>',
+  us: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/><path d="M0 0h24v2H0zM0 4h24v2H0zM0 8h24v2H0zM0 12h24v2H0zM0 16h24v2H0zM0 20h24v2H0z" fill="#b22234"/><rect width="12" height="12" fill="#3c3b6e"/><g fill="#fff"><circle cx="3" cy="3" r=".9"/><circle cx="7" cy="3" r=".9"/><circle cx="5" cy="6" r=".9"/><circle cx="9" cy="6" r=".9"/><circle cx="3" cy="9" r=".9"/><circle cx="7" cy="9" r=".9"/></g></svg>',
+  tr: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#e30a17"/><circle cx="10" cy="12" r="6" fill="#fff"/><circle cx="11.5" cy="12" r="4.8" fill="#e30a17"/><path d="M17 9.2l.8 2.1 2.2.1-1.7 1.4.6 2.2L17 13.8l-1.9 1.2.6-2.2-1.7-1.4 2.2-.1z" fill="#fff"/></svg>',
+  il: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/><rect y="3" width="24" height="3" fill="#0038b8"/><rect y="18" width="24" height="3" fill="#0038b8"/><path d="M12 7.5l3.9 6.75H8.1zM12 16.5l-3.9-6.75h7.8z" fill="none" stroke="#0038b8" stroke-width="1.1"/></svg>',
+  pk: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#01411c"/><rect width="6" height="24" fill="#fff"/><circle cx="14.5" cy="12" r="5" fill="#fff"/><circle cx="16" cy="10.8" r="4.3" fill="#01411c"/><path d="M18.6 8l.5 1.4 1.5.1-1.2.9.4 1.4-1.2-.8-1.2.8.4-1.4-1.2-.9 1.5-.1z" fill="#fff"/></svg>',
+  in: '<svg viewBox="0 0 24 24"><rect width="24" height="8" fill="#ff9933"/><rect y="8" width="24" height="8" fill="#fff"/><rect y="16" width="24" height="8" fill="#138808"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="#000080" stroke-width=".9"/><circle cx="12" cy="12" r=".6" fill="#000080"/></svg>',
+  al: '<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#e41e20"/><path d="M12 5l1.6 2.2 2.9-1.4-.6 3 2.6 1.4-2.6 1.3.6 3-2.9-1.4L12 19l-1.6-5.9-2.9 1.4.6-3L5.5 10.2l2.6-1.4-.6-3 2.9 1.4z" fill="#000"/></svg>',
 };
 // what each speed is enough for, by megabits
 const srvHint = (mbit) => mbit >= 1000 ? "Максимум: большие файлы, модели и видео без ожидания на всех устройствах."
@@ -3726,7 +3750,7 @@ function renderSrvCards() {
   const c = el("div", "srv-card");
   c.append(el("b", "", "Сервер для ИИ-сервисов"),
     el("p", "note", `Свой IP-адрес: ChatGPT, Claude, Gemini без блокировок по региону. Трафик без лимита, готов за ${all[0].setup_hours} ч.`));
-  const tiles = el("div", "srv-planets");
+  const tiles = el("div", "srv-planets" + (countries.length > 4 ? " many" : ""));  // many countries: one row that scrolls
   countries.forEach(([cc, name]) => {
     const q = byCc(cc)[Math.min(idx, byCc(cc).length - 1)];
     const t = el("button", "srv-planet" + (cc === srvCountry ? " on" : "")); t.type = "button";
@@ -3740,6 +3764,15 @@ function renderSrvCards() {
     tiles.append(t);
   });
   c.append(tiles);
+  if (countries.length > 4) {  // keep the chosen country in view, and the scroll where it was
+    const keep = $("srvCards").querySelector(".srv-planets")?.scrollLeft || 0;
+    requestAnimationFrame(() => {
+      tiles.scrollLeft = keep;
+      const on = tiles.querySelector(".srv-planet.on");
+      if (on && (on.offsetLeft < tiles.scrollLeft || on.offsetLeft + on.offsetWidth > tiles.scrollLeft + tiles.clientWidth))
+        tiles.scrollTo({ left: on.offsetLeft - 8, behavior: "smooth" });
+    });
+  }
   const pills = el("div", "srv-pills");
   pills.setAttribute("role", "radiogroup"); pills.setAttribute("aria-label", "Скорость");
   list.forEach((x, i) => {
@@ -4902,6 +4935,7 @@ $("buyBtn").onclick = async () => {
     serverApi("/api/meta").then((m) => {
       if (Array.isArray(m.locations) && m.locations.length) meta.locations = m.locations;
       if (Array.isArray(m.vpn_ips)) meta.vpn_ips = m.vpn_ips;
+      if (Array.isArray(m.servers) && m.servers.length) { meta.servers = m.servers; renderSrvCards(); }  // countries and prices of AI servers
       renderLocations();
     }).catch(() => { /* the cards from the link stay */ });
   }
